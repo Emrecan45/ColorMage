@@ -15,11 +15,11 @@ Le joueur doit résoudre des puzzles en poussant des blocs colorés pour atteind
 
 1. Cloner le repo :
     ```bash
-    git clone https://github.com/Emrecan45/Color-Block.git
+    git clone https://github.com/Emrecan45/ColorBlock.git
     ```
 2. Entrer dans le dossier :
     ```bash
-    cd Color-Block
+    cd ColorBlock
     ```
 3. Installer Pygame :
     ```bash
@@ -27,7 +27,7 @@ Le joueur doit résoudre des puzzles en poussant des blocs colorés pour atteind
     ```
 4. Lancer le jeu :
     ```bash
-    python main.py
+    python game.py
     ```
     
 ## 📷 Screenshots
@@ -37,3 +37,4 @@ soon...
 ## 🧠 Objectifs
 
 ColorBlock explore une mécanique de puzzle innovante où couleur et stratégie sont essentielles. Le but est de créer un jeu amusant et stimulant, avec une courbe de difficulté progressive.
+
