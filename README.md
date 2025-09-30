@@ -21,13 +21,18 @@ Le joueur doit résoudre des puzzles en poussant des blocs colorés pour atteind
     ```bash
     cd ColorBlock
     ```
-3. Installer Pygame :
+3. Lancer un environnement virtuel :
+    ```bash
+    python3 -m venv venv 
+    source venv/bin/activate
+    ```
+4. Installer Pygame :
     ```bash
     pip install pygame
     ```
-4. Lancer le jeu :
+5. Lancer le jeu :
     ```bash
-    python game.py
+    python3 game.py
     ```
     
 ## 📷 Screenshots
@@ -37,4 +42,5 @@ soon...
 ## 🧠 Objectifs
 
 ColorBlock explore une mécanique de puzzle innovante où couleur et stratégie sont essentielles. Le but est de créer un jeu amusant et stimulant, avec une courbe de difficulté progressive.
+
 
