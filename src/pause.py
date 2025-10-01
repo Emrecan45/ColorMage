@@ -1,6 +1,15 @@
 import pygame
 import sys
 from config import LARGEUR_ECRAN, HAUTEUR_ECRAN
+import sys
+import os
+
+def resource_path(relative_path):
+    try:
+        base_path = sys._MEIPASS
+    except Exception:
+        base_path = os.path.abspath(".")
+    return os.path.join(base_path, relative_path)
 
 class MenuPause:
     """Gère le menu de pause avec bouton et options"""
@@ -9,7 +18,7 @@ class MenuPause:
         self.largeur_bouton = 70
         self.hauteur_bouton = 70
         self.marge = 15
-        self.image_pause = pygame.image.load("img/pause.png")
+        self.image_pause = pygame.image.load(resource_path("img/pause.png"))
         self.image_pause = pygame.transform.scale(self.image_pause, (self.largeur_bouton, self.hauteur_bouton))
         
         # Coordonnées du bouton pause

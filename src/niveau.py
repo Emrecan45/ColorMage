@@ -1,6 +1,14 @@
 import pygame
 from config import LARGEUR_GRILLE, HAUTEUR_GRILLE, TAILLE_CELLULE, COULEURS
+import sys
+import os
 
+def resource_path(relative_path):
+    try:
+        base_path = sys._MEIPASS
+    except Exception:
+        base_path = os.path.abspath(".")
+    return os.path.join(base_path, relative_path)
 
 class Niveau:
     """Représente un niveau du jeu avec sa grille"""
@@ -8,7 +16,7 @@ class Niveau:
     def __init__(self):
         self.grille = []
         self.traversables = ["change_rouge", "change_bleu", "change_vert", "porte", "vide", "pic"]
-        self.image_pic = pygame.image.load("img/pic.png")
+        self.image_pic = pygame.image.load(resource_path("img/pic.png"))
         self.image_pic = pygame.transform.scale(self.image_pic, (TAILLE_CELLULE, TAILLE_CELLULE))
     
     def creer_grille_niveau_1(self):

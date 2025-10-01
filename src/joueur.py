@@ -1,6 +1,15 @@
 import pygame
 from config import TAILLE_CELLULE, COULEURS, GRAVITE, VITESSE_DEPLACEMENT, FORCE_SAUT, LARGEUR_GRILLE, HAUTEUR_GRILLE
 
+import sys
+import os
+
+def resource_path(relative_path):
+    try:
+        base_path = sys._MEIPASS
+    except Exception:
+        base_path = os.path.abspath(".")
+    return os.path.join(base_path, relative_path)
 
 class Joueur:
     """Le mage qui change de couleur"""
@@ -21,16 +30,16 @@ class Joueur:
         # Chargement des images
         self.images = dict()
         
-        img_gris = pygame.image.load("img/joueur_gris.png")
+        img_gris = pygame.image.load(resource_path("img/joueur_gris.png"))
         self.images["gris"] = pygame.transform.scale(img_gris, (self.largeur, self.hauteur))
 
-        img_rouge = pygame.image.load("img/joueur_rouge.png")
+        img_rouge = pygame.image.load(resource_path("img/joueur_rouge.png"))
         self.images["rouge"] = pygame.transform.scale(img_rouge, (self.largeur, self.hauteur))
 
-        img_bleu = pygame.image.load("img/joueur_bleu.png")
+        img_bleu = pygame.image.load(resource_path("img/joueur_bleu.png"))
         self.images["bleu"] = pygame.transform.scale(img_bleu, (self.largeur, self.hauteur))
 
-        img_verte = pygame.image.load("img/joueur_vert.png")
+        img_verte = pygame.image.load(resource_path("img/joueur_vert.png"))
         self.images["vert"] = pygame.transform.scale(img_verte, (self.largeur, self.hauteur))
     
     def reset(self):
