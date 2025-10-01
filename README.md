@@ -16,7 +16,7 @@ Le joueur doit résoudre des parcours en changeant sa propre couleur pour pouvoi
 
 1.  Cloner le repo :
     ```bash
-    git clone [https://github.com/Emrecan45/ColorBlock.git](https://github.com/Emrecan45/ColorMage.git)
+    git clone https://github.com/Emrecan45/ColorMage.git
     ```
 2.  Entrer dans le dossier :
     ```bash
@@ -43,3 +43,4 @@ soon...
 ## 🧠 Objectifs
 
 **ColorMage** explore une mécanique de jeu innovante où couleur et stratégie sont essentielles. Le but est de créer un jeu amusant et stimulant, avec une difficulté progressive.
+
