@@ -100,7 +100,11 @@ def collision(rect):
         for x in range(LARGEUR_GRILLE):
             bloc = grille[y][x]
             if bloc not in traversables:
-                if bloc == "noir" or bloc == "sol" or bloc != couleur_joueur:
+                if bloc == "noir" or bloc == "sol":
+                    bloc_rect = pygame.Rect(x*TAILLE_CELLULE, y*TAILLE_CELLULE, TAILLE_CELLULE, TAILLE_CELLULE)
+                    if rect.colliderect(bloc_rect):
+                        return True
+                elif bloc in ["rouge", "bleu", "vert", "gris"] and bloc == couleur_joueur:
                     bloc_rect = pygame.Rect(x*TAILLE_CELLULE, y*TAILLE_CELLULE, TAILLE_CELLULE, TAILLE_CELLULE)
                     if rect.colliderect(bloc_rect):
                         return True
