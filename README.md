@@ -20,7 +20,7 @@ Le joueur doit résoudre des parcours en changeant sa propre couleur pour pouvoi
     ```
 2.  Entrer dans le dossier :
     ```bash
-    cd ColorBlock
+    cd ColorMage
     ```
 3.  Lancer un environnement virtuel :
     ```bash
@@ -43,5 +43,6 @@ soon...
 ## 🧠 Objectifs
 
 **ColorMage** explore une mécanique de jeu innovante où couleur et stratégie sont essentielles. Le but est de créer un jeu amusant et stimulant, avec une difficulté progressive.
+
 
 
