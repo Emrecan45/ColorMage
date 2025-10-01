@@ -1,134 +1,113 @@
 import pygame
-import sys
-from config import TAILLE_CELLULE, HAUTEUR_GRILLE, LARGEUR_GRILLE, COULEURS
-from grille import obtenir_bloc, grille, traversables
-from popup import afficher_popup
+from config import TAILLE_CELLULE, COULEURS, GRAVITE, VITESSE_DEPLACEMENT, FORCE_SAUT, LARGEUR_GRILLE, HAUTEUR_GRILLE
 
-# ----- JOUEUR -----
-couleur_joueur = "gris"
-largeur_joueur = TAILLE_CELLULE
-hauteur_joueur = TAILLE_CELLULE
-joueur_x = 0
-joueur_y = (HAUTEUR_GRILLE - 1) * TAILLE_CELLULE - hauteur_joueur
-vitesse_x = 0
-vitesse_y = 0
-vitesse = 3
-gravité = 0.5
-force_saut = -10
-au_sol = False
 
-# Images du joueur
-images_joueur = {
-    "gris": pygame.image.load("../img/joueur_gris.png"),
-    "rouge": pygame.image.load("../img/joueur_rouge.png"),
-    "bleu": pygame.image.load("../img/joueur_bleu.png"),
-    "vert": pygame.image.load("../img/joueur_vert.png")
-}
-# Redimensionner toutes les images
-for couleur in images_joueur:
-    images_joueur[couleur] = pygame.transform.scale(images_joueur[couleur], (largeur_joueur, hauteur_joueur))
+class Joueur:
+    """Le mage qui change de couleur"""
+    
+    def __init__(self, x, y):
+        self.x_initial = x
+        self.y_initial = y
+        self.x = x
+        self.y = y
+        self.largeur = TAILLE_CELLULE
+        self.hauteur = TAILLE_CELLULE
+        self.couleur = "gris"
+        
+        self.vitesse_x = 0
+        self.vitesse_y = 0
+        self.au_sol = False
+        
+        # Chargement des images
+        self.images = dict()
+        
+        img_gris = pygame.image.load("img/joueur_gris.png")
+        self.images["gris"] = pygame.transform.scale(img_gris, (self.largeur, self.hauteur))
 
-# ----- FONCTIONS -----
-def deplacer_joueur():
-    global joueur_x, joueur_y, vitesse_x, vitesse_y, au_sol, couleur_joueur
+        img_rouge = pygame.image.load("img/joueur_rouge.png")
+        self.images["rouge"] = pygame.transform.scale(img_rouge, (self.largeur, self.hauteur))
 
-    # Gravité
-    vitesse_y += gravité
-    nouveau_x = joueur_x + vitesse_x
-    nouveau_y = joueur_y + vitesse_y
+        img_bleu = pygame.image.load("img/joueur_bleu.png")
+        self.images["bleu"] = pygame.transform.scale(img_bleu, (self.largeur, self.hauteur))
 
-    # Empêcher de sortir de l'écran (murs invisibles)
-    if nouveau_x < 0:
-        nouveau_x = 0
-        vitesse_x = 0
-    if nouveau_x + largeur_joueur > LARGEUR_GRILLE * TAILLE_CELLULE:
-        nouveau_x = LARGEUR_GRILLE * TAILLE_CELLULE - largeur_joueur
-        vitesse_x = 0
-
-    # Collision X
-    if vitesse_x != 0:
-        rect = pygame.Rect(nouveau_x, joueur_y, largeur_joueur, hauteur_joueur)
-        if collision(rect):
-            while not collision(pygame.Rect(joueur_x + (1 if vitesse_x > 0 else -1), joueur_y, largeur_joueur, hauteur_joueur)):
-                joueur_x += (1 if vitesse_x > 0 else -1)
-            vitesse_x = 0
+        img_verte = pygame.image.load("img/joueur_vert.png")
+        self.images["vert"] = pygame.transform.scale(img_verte, (self.largeur, self.hauteur))
+    
+    def reset(self):
+        """Réinitialise le joueur à sa position de départ et sa couleur de base (gris)"""
+        self.x = self.x_initial
+        self.y = self.y_initial
+        self.couleur = "gris"
+        self.vitesse_x = 0
+        self.vitesse_y = 0
+        self.au_sol = False
+    
+    def deplacer(self, touches, niveau):
+        """Gère le déplacement du joueur"""
+        #Entrées clavier
+        self.vitesse_x = 0
+        if touches[pygame.K_LEFT]:
+            self.vitesse_x = -VITESSE_DEPLACEMENT
+        if touches[pygame.K_RIGHT]:
+            self.vitesse_x = VITESSE_DEPLACEMENT
+        if touches[pygame.K_UP] and self.au_sol:
+            self.vitesse_y = FORCE_SAUT
+            self.au_sol = False
+        
+        # Gravité
+        self.vitesse_y += GRAVITE
+        
+        # Calcul nouvelles positions
+        nouveau_x = self.x + self.vitesse_x
+        nouveau_y = self.y + self.vitesse_y
+        
+        # Limites de l'ecran
+        if nouveau_x < 0:
+            nouveau_x = 0
+            self.vitesse_x = 0
+        if nouveau_x + self.largeur > LARGEUR_GRILLE * TAILLE_CELLULE:
+            nouveau_x = LARGEUR_GRILLE * TAILLE_CELLULE - self.largeur
+            self.vitesse_x = 0
+        
+        # Collision horizontale
+        if self.vitesse_x != 0:
+            rect = pygame.Rect(nouveau_x, self.y, self.largeur, self.hauteur)
+            if niveau.collision(rect, self.couleur):
+                while not niveau.collision(pygame.Rect(self.x + (1 if self.vitesse_x > 0 else -1), self.y, self.largeur, self.hauteur),self.couleur):
+                    self.x += (1 if self.vitesse_x > 0 else -1)
+                self.vitesse_x = 0
+            else:
+                self.x = nouveau_x
+        
+        # Collision verticale
+        rect = pygame.Rect(self.x, nouveau_y, self.largeur, self.hauteur)
+        if niveau.collision(rect, self.couleur):
+            while not niveau.collision(pygame.Rect(self.x, self.y + (1 if self.vitesse_y > 0 else -1), self.largeur, self.hauteur),self.couleur):
+                self.y += (1 if self.vitesse_y > 0 else -1)
+            if self.vitesse_y > 0:
+                self.au_sol = True
+            self.vitesse_y = 0
         else:
-            joueur_x = nouveau_x
-
-    # Collision Y
-    rect = pygame.Rect(joueur_x, nouveau_y, largeur_joueur, hauteur_joueur)
-    if collision(rect):
-        while not collision(pygame.Rect(joueur_x, joueur_y + (1 if vitesse_y > 0 else -1), largeur_joueur, hauteur_joueur)):
-            joueur_y += (1 if vitesse_y > 0 else -1)
-        if vitesse_y > 0:
-            au_sol = True
-        vitesse_y = 0
-    else:
-        joueur_y = nouveau_y
-        au_sol = False
-
-    # Interaction blocs
-    bloc_x = int((joueur_x + largeur_joueur//2) / TAILLE_CELLULE)
-    bloc_y = int((joueur_y + hauteur_joueur//2) / TAILLE_CELLULE)
-    cible = obtenir_bloc(bloc_x, bloc_y)
-
-    if cible == "change_rouge":
-        couleur_joueur = "rouge"
+            self.y = nouveau_y
+            self.au_sol = False
+    
+    def interagir_avec_blocs(self, niveau):
+        """Vérifie les interactions avec les blocs spéciaux"""
+        bloc_x = int((self.x + self.largeur // 2) / TAILLE_CELLULE)
+        bloc_y = int((self.y + self.hauteur // 2) / TAILLE_CELLULE)
+        bloc = niveau.obtenir_bloc(bloc_x, bloc_y)
         
-    elif cible == "change_bleu":
-        couleur_joueur = "bleu"
+        if "change_" in bloc:
+            nouvelle_couleur = bloc.split("change_")[1] # fait une liste ["change_", "couleur"] et on récupere [1] de cette liste
+            self.couleur = nouvelle_couleur
         
-    elif cible == "change_vert":
-        couleur_joueur = "vert"
+        if bloc == "porte":
+            return "victoire"
         
-    if cible == "porte":
-        afficher_popup("Bravo, tu as gagné !")
-        pygame.quit()
-        sys.exit()
-        
-    if cible == "pic":
-        afficher_popup("Game Over ! Vous êtes mort.")
-        pygame.quit()
-        sys.exit()
-
-def collision(rect):
-    for y in range(HAUTEUR_GRILLE):
-        for x in range(LARGEUR_GRILLE):
-            bloc = grille[y][x]
-            if bloc not in traversables:
-                if bloc == "noir" or bloc == "sol":
-                    bloc_rect = pygame.Rect(x*TAILLE_CELLULE, y*TAILLE_CELLULE, TAILLE_CELLULE, TAILLE_CELLULE)
-                    if rect.colliderect(bloc_rect):
-                        return True
-                elif bloc in ["rouge", "bleu", "vert", "gris"] and bloc == couleur_joueur:
-                    bloc_rect = pygame.Rect(x*TAILLE_CELLULE, y*TAILLE_CELLULE, TAILLE_CELLULE, TAILLE_CELLULE)
-                    if rect.colliderect(bloc_rect):
-                        return True
-    return False
-
-def dessiner_joueur(ecran):
-    ecran.blit(images_joueur[couleur_joueur], (joueur_x, joueur_y))
-
-def reset():
-    global couleur_joueur
-    couleur_joueur = "gris"
-    global largeur_joueur
-    largeur_joueur = TAILLE_CELLULE
-    global hauteur_joueur
-    hauteur_joueur = TAILLE_CELLULE
-    global joueur_x
-    joueur_x = 0
-    global joueur_y
-    joueur_y = (HAUTEUR_GRILLE - 1) * TAILLE_CELLULE - hauteur_joueur
-    global vitesse_x
-    vitesse_x = 0
-    global vitesse_y
-    vitesse_y = 0
-    global vitesse
-    vitesse = 3
-    global gravité
-    gravité = 0.5
-    global force_saut
-    force_saut = -10
-    global au_sol
-    au_sol = False
+        if bloc == "pic":
+            return "mort"
+    
+    def dessiner(self, ecran):
+        """Dessine le joueur"""
+        if self.couleur in self.images:
+            ecran.blit(self.images[self.couleur], (self.x, self.y))
