@@ -20,37 +20,9 @@ class Niveau:
                 ligne.append("vide")
             self.grille.append(ligne)
         
-        # sol TODO faire une boucle pour éviter la répétition
-        self.grille[14][0] = "noir"
-        self.grille[14][1] = "noir"
-        self.grille[14][2] = "noir"
-        self.grille[14][3] = "noir"
-        self.grille[14][4] = "noir"
-        self.grille[14][5] = "noir"
-        self.grille[14][6] = "noir"
-        self.grille[14][7] = "noir"
-        self.grille[14][8] = "noir"
-        self.grille[14][9] = "noir"
-        self.grille[14][10] = "noir"
-        self.grille[14][11] = "noir"
-        self.grille[14][12] = "noir"
-        self.grille[14][13] = "noir"
-        self.grille[14][14] = "noir"
-        self.grille[14][15] = "noir"
-        self.grille[14][16] = "noir"
-        self.grille[14][17] = "noir"
-        self.grille[14][18] = "noir"
-        self.grille[14][19] = "noir"
-        self.grille[14][20] = "noir"
-        self.grille[14][21] = "noir"
-        self.grille[14][22] = "noir"
-        self.grille[14][23] = "noir"
-        self.grille[14][24] = "noir"
-        self.grille[14][25] = "noir"
-        self.grille[14][26] = "noir"
-        self.grille[14][27] = "noir"
-        self.grille[14][28] = "noir"
-        self.grille[14][29] = "noir"
+        # sol
+        for i in range(LARGEUR_GRILLE):
+            self.grille[14][i] = "noir"
 
         # Blocs bleus
         self.grille[9][0] = "bleu"
