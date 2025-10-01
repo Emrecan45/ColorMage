@@ -18,19 +18,15 @@ force_saut = -10
 au_sol = False
 
 # Images du joueur
-try:
-    images_joueur = {
-        "gris": pygame.image.load("../img/joueur_gris.png"),
-        "rouge": pygame.image.load("../img/joueur_rouge.png"),
-        "bleu": pygame.image.load("../img/joueur_bleu.png"),
-        "vert": pygame.image.load("../img/joueur_vert.png")
-    }
-    # Redimensionner toutes les images
-    for couleur in images_joueur:
-        images_joueur[couleur] = pygame.transform.scale(images_joueur[couleur], (largeur_joueur, hauteur_joueur))
-    utiliser_image = True
-except:
-    utiliser_image = False
+images_joueur = {
+    "gris": pygame.image.load("../img/joueur_gris.png"),
+    "rouge": pygame.image.load("../img/joueur_rouge.png"),
+    "bleu": pygame.image.load("../img/joueur_bleu.png"),
+    "vert": pygame.image.load("../img/joueur_vert.png")
+}
+# Redimensionner toutes les images
+for couleur in images_joueur:
+    images_joueur[couleur] = pygame.transform.scale(images_joueur[couleur], (largeur_joueur, hauteur_joueur))
 
 # ----- FONCTIONS -----
 def deplacer_joueur():
@@ -111,8 +107,28 @@ def collision(rect):
     return False
 
 def dessiner_joueur(ecran):
-    if utiliser_image:
-        ecran.blit(images_joueur[couleur_joueur], (joueur_x, joueur_y))
-    else:
-        pygame.draw.rect(ecran, COULEURS[couleur_joueur], (joueur_x, joueur_y, largeur_joueur, hauteur_joueur))
-        pygame.draw.rect(ecran, (0, 0, 0), (joueur_x, joueur_y, largeur_joueur, hauteur_joueur), 2)
+    ecran.blit(images_joueur[couleur_joueur], (joueur_x, joueur_y))
+
+def reset():
+    global couleur_joueur
+    couleur_joueur = "gris"
+    global largeur_joueur
+    largeur_joueur = TAILLE_CELLULE
+    global hauteur_joueur
+    hauteur_joueur = TAILLE_CELLULE
+    global joueur_x
+    joueur_x = 0
+    global joueur_y
+    joueur_y = (HAUTEUR_GRILLE - 1) * TAILLE_CELLULE - hauteur_joueur
+    global vitesse_x
+    vitesse_x = 0
+    global vitesse_y
+    vitesse_y = 0
+    global vitesse
+    vitesse = 3
+    global gravité
+    gravité = 0.5
+    global force_saut
+    force_saut = -10
+    global au_sol
+    au_sol = False

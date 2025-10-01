@@ -1,7 +1,8 @@
 import pygame
 import sys
 from config import LARGEUR_ECRAN, HAUTEUR_ECRAN
-from grille import dessiner_grille
+import grille
+import pause
 import joueur
 
 # ----- INITIALISATION -----
@@ -13,10 +14,19 @@ horloge = pygame.time.Clock()
 
 # ----- BOUCLE PRINCIPALE -----
 while True:
+    bouton_rect = pause.dessiner_bouton(ecran)
     for evenement in pygame.event.get():
         if evenement.type == pygame.QUIT:
             pygame.quit()
             sys.exit()
+             
+        # Gestion du bouton et de la touche pause
+        if evenement.type == pygame.KEYDOWN:
+            if evenement.key == pygame.K_p:
+                pause.menu_pause(ecran)
+        elif evenement.type == pygame.MOUSEBUTTONDOWN:
+            if bouton_rect.collidepoint(evenement.pos):
+                pause.menu_pause(ecran)
 
     touches = pygame.key.get_pressed()
     joueur.vitesse_x = 0
@@ -31,7 +41,8 @@ while True:
     joueur.deplacer_joueur()
 
     ecran.fill((255, 255, 255))
-    dessiner_grille(ecran)
+    grille.dessiner_grille(ecran)
     joueur.dessiner_joueur(ecran)
+    pause.dessiner_bouton(ecran)
     pygame.display.flip()
     horloge.tick(60)
