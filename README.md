@@ -6,13 +6,13 @@ Dans ce jeu, vous incarnez un Mage capable de traverser des portails de couleurs
 
 ## 🎮 Gameplay
 
-Le joueur doit résoudre des parcours en changeant sa propre couleur pour pouvoir utiliser les plateformes et atteindre le portail final.
+Le joueur doit résoudre des parcours en changeant sa propre couleur pour pouvoir utiliser les plateformes et atteindre le portail final (jaune).
 
 - Le Mage peut marcher sur les blocs de sa couleur et traverse ceux qui sont d'une couleur différente.
-- Les portails changent la couleur du Mage (par exemple : traverser un portail vert → le Mage devient vert).
-- L'objectif est d'atteindre le portail de sortie en utilisant la bonne séquence de couleurs et de déplacements.
+- Traverser un portail change la couleur du Mage (par exemple : traverser un portail vert → le Mage devient vert).
+- L'objectif est d'atteindre le portail de sortie (portail jaune) en utilisant la bonne séquence de couleurs et de déplacements.
 
-## ⚙ Installation
+## ⚙ Installation (raccourci au 6.)
 
 1.  Cloner le repo :
     ```bash
@@ -33,6 +33,16 @@ Le joueur doit résoudre des parcours en changeant sa propre couleur pour pouvoi
     ```
 5.  Lancer le jeu :
     ```bash
+    python3 src/game.py
+    ```
+
+6. 🚀 En une seule commande : 🚀
+    ```bash
+    git clone https://github.com/Emrecan45/ColorMage.git
+    cd ColorMage
+    python3 -m venv venv 
+    source venv/bin/activate
+    pip install pygame
     python3 src/game.py
     ```
 
