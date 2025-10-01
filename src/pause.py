@@ -2,7 +2,7 @@ import pygame
 import sys
 from config import LARGEUR_ECRAN, HAUTEUR_ECRAN
 
-class MenuPause:
+class Pause:
     """Gère le menu de pause avec bouton et options"""
     
     def __init__(self):
@@ -21,7 +21,7 @@ class MenuPause:
         """Dessine le bouton de pause en haut à droite"""
         ecran.blit(self.image_pause, (self.bouton_x, self.bouton_y))
     
-    def afficher_menu(self, ecran, joueur, niveau):
+    def afficher_pause(self, ecran, joueur, niveau):
         """Affiche le menu de pause avec options
         
         Returns:
@@ -35,7 +35,7 @@ class MenuPause:
         bouton_quitter = pygame.Rect(LARGEUR_ECRAN // 2 - 125, HAUTEUR_ECRAN // 2 + 20, 250, 50)
         
         en_pause = True
-        action = ""
+        action = "continuer"
         
         while en_pause:
             for event in pygame.event.get():
@@ -84,6 +84,4 @@ class MenuPause:
         if action == "recommencer":
             joueur.reset()
             niveau.reset()
-        elif action == "quitter":
-            pygame.quit()
-            sys.exit()
+        return action
