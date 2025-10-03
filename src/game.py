@@ -6,7 +6,7 @@ from niveau import Niveau
 from popup import Popup
 from pause import Pause
 from menu import Menu
-
+from parametres import Parametres
 
 class Game:
     """Classe principale gérant le jeu"""
@@ -33,6 +33,9 @@ class Game:
         # Menu de pause
         self.pause = Pause()
         
+        # Menu de parametres
+        self.parametres = Parametres()
+        
         self.en_cours = True
     
     def gerer_evenements(self):
@@ -50,9 +53,14 @@ class Game:
                         # Réinitialiser le jeu
                         self.joueur.reset()
                         self.niveau.reset()
+                    elif action == "parametres":
+                        self.etat = "param"
                     elif action == "quitter":
                         self.en_cours = False
-            
+                        
+            elif self.etat == "param":
+                if evenement.type == pygame.MOUSEBUTTONDOWN:
+                    action = self.parametres.afficher_parametres(self.ecran)
             elif self.etat == "jeu":
                 # Touche P pour mettre en pause
                 if evenement.type == pygame.KEYDOWN:
