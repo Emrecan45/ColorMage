@@ -34,8 +34,10 @@ Ce fichier README explique comment lancer, mettre à jour et reconstruire le jeu
    ```
    
 5. **Lancer le jeu** :
+
    Une fois le build terminé, aller dans "dist" puis double-cliquer sur **"ColorMage.exe"**.
-   ou taper cette commande :
+   
+   **ou** taper cette commande :
    ```powershell
    .\dist\ColorMage.exe
    ```
@@ -52,4 +54,5 @@ Les images doivent rester dans le dossier img/ pour que le jeu fonctionne correc
 
 
 Ce projet vise à permettre une installation simple du jeu sur Windows, sans avoir besoin d’installer Python ou d’autres dépendances. Il suffit de lancer ColorMage.exe.
+
 
