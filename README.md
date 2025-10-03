@@ -13,28 +13,28 @@ Ce fichier README explique comment lancer, mettre à jour et reconstruire le jeu
 
 ## 🚀 Lancer le jeu
 
-1. **Ouvrir PowerShell** 
-
-   Naviguer dans le dossier du projet :
+1. **Naviguer dans le dossier du projet :**
    ```powershell
    cd ColorMage
    ```
-2. **Donner la permission au script**
 
-   Donner le droit d'exécution au script de build
+2. **Installer pyinstaller :**
+   ```powershell
+   pip install pyinstaller
+   ```
+
+3. **Donner la permission d'exécution au script de build**
    ```powershell
    Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
    ```
-3. **Lancer le script de build**
-
-   Cette commande créera l’exécutable Windows :
+   
+4. **Lancer le script de build** :
    ```powershell
    .\build.ps1
    ```
-4. **Lancer le jeu**
-
-   Une fois le build terminé, aller dans "dist" puis double-cliquer sur **"ColorMage.exe"**.
    
+5. **Lancer le jeu** :
+   Une fois le build terminé, aller dans "dist" puis double-cliquer sur **"ColorMage.exe"**.
    ou taper cette commande :
    ```powershell
    .\dist\ColorMage.exe
@@ -52,3 +52,4 @@ Les images doivent rester dans le dossier img/ pour que le jeu fonctionne correc
 
 
 Ce projet vise à permettre une installation simple du jeu sur Windows, sans avoir besoin d’installer Python ou d’autres dépendances. Il suffit de lancer ColorMage.exe.
+
