@@ -1,5 +1,6 @@
 import pygame
 import sys
+import os
 from config import LARGEUR_ECRAN, HAUTEUR_ECRAN, FPS, TAILLE_CELLULE
 from joueur import Joueur
 from niveau import Niveau
@@ -7,12 +8,27 @@ from popup import Popup
 from pause import Pause
 from menu import Menu
 from parametres import Parametres
+from config_manager import ConfigManager
 
 class Game:
     """Classe principale gérant le jeu"""
 
     def __init__(self):
         pygame.init()
+        pygame.mixer.init()
+        
+        # Charger la configuration
+        self.gestionnaire_config = ConfigManager()
+        volumes = self.gestionnaire_config.obtenir_volumes()
+        
+        # Musique du jeu
+        music_path = os.path.join("audio", "main_theme.mp3")
+        pygame.mixer.music.load(music_path)
+        # Appliquer le volume sauvegardé (de 0 à 100 converti en 0.0 à 1.0)
+        volume_musique = volumes.get("musique", 50) / 100
+        pygame.mixer.music.set_volume(volume_musique)
+        pygame.mixer.music.play(-1)  # (-1) = boucle infinie
+        
         self.ecran = pygame.display.set_mode((LARGEUR_ECRAN, HAUTEUR_ECRAN))
         pygame.display.set_caption("ColorMage")
         self.horloge = pygame.time.Clock()
@@ -34,7 +50,7 @@ class Game:
         self.pause = Pause()
         
         # Menu de parametres
-        self.parametres = Parametres()
+        self.parametres = Parametres(self.joueur)
         
         self.en_cours = True
     

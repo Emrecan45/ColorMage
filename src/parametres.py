@@ -7,10 +7,12 @@ from config_manager import ConfigManager
 class Parametres:
     """Affiche les parametres et retourne l'action choisie"""
     
-    def __init__(self):
-        # charge les touches du joueur
+    def __init__(self, joueur = None):
+        self.joueur = joueur
+        # charge les touches du joueur et les volumes
         self.gestionnaire_config = ConfigManager()
         self.controls = self.gestionnaire_config.obtenir_controles()
+        self.volumes = self.gestionnaire_config.obtenir_volumes()
 
         # tailles de police
         self.font_1 = pygame.font.SysFont(None, 80)
@@ -39,8 +41,13 @@ class Parametres:
         self.bouton_retour = pygame.Rect(LARGEUR_ECRAN // 2 - 125, HAUTEUR_ECRAN // 2 + 200, 250, 50)
         self.jauge_musique = pygame.Rect(LARGEUR_ECRAN // 2 + 35, HAUTEUR_ECRAN // 2 + 0, 250, 15)
         self.jauge_general = pygame.Rect(LARGEUR_ECRAN // 2 + 35, HAUTEUR_ECRAN // 2 + 110, 250, 15)
-        self.val_jauge_musique = 50  # Valeur au debut de la jauge musique
-        self.val_jauge_general = 50  # Valeur au debut de la jauge musique
+        
+        # Charger les valeurs sauvegardées
+        self.val_jauge_musique = self.volumes.get("musique", 50)
+        self.val_jauge_general = self.volumes.get("effets", 50)
+        
+        # Variable pour savoir si on est en train de glisser une jauge
+        self.jauge_active = None
 
     def afficher_parametres(self, ecran):
         """Affiche le menu et retourne l'action choisie"""
@@ -138,7 +145,23 @@ class Parametres:
         self.controls["droite"] = self.droite_assign
         self.controls["gauche"] = self.gauche_assign
         self.controls["sauter"] = self.sauter_assign
-        self.gestionnaire_config.sauvegarder_controles(self.controls)
+        self.gestionnaire_config.controles = self.controls
+        self.gestionnaire_config.sauvegarder_config()
+    
+    def maj_jauge(self, pos):
+        """Met à jour la valeur d'une jauge selon la position de la souris"""
+        if self.jauge_active == "musique":
+            nouvelle_valeur = min(100, max(0, (pos[0] - self.jauge_musique.x) / self.jauge_musique.width * 100))
+            self.val_jauge_musique = nouvelle_valeur
+            self.gestionnaire_config.maj_volume("musique", nouvelle_valeur)
+            # Appliquer immédiatement le volume
+            pygame.mixer.music.set_volume(nouvelle_valeur / 100)
+        elif self.jauge_active == "effets":
+            nouvelle_valeur = min(100, max(0, (pos[0] - self.jauge_general.x) / self.jauge_general.width * 100))
+            self.val_jauge_general = nouvelle_valeur
+            self.gestionnaire_config.maj_volume("effets", nouvelle_valeur)
+            # Appliquer immédiatement le volume
+            self.joueur.son_saut.set_volume(nouvelle_valeur / 100)
 
     def gerer_events(self, evenement):
         """Gère les événements quand on est dans le menu paramètres"""
@@ -157,14 +180,25 @@ class Parametres:
                 self.sauvegarder_controles()
                 self.champ_actif = None
                 return "quitter"
+            
+            # Gestion des jauges de volume (début du glissement)
+            elif self.jauge_musique.collidepoint(evenement.pos):
+                self.jauge_active = "musique"
+                self.maj_jauge(evenement.pos)
+            elif self.jauge_general.collidepoint(evenement.pos):
+                self.jauge_active = "effets"
+                self.maj_jauge(evenement.pos)
             else:
                 self.champ_actif = None
-
-            # Gestion des jauges de volume
-            if self.jauge_musique.collidepoint(evenement.pos):
-                self.val_jauge_musique = min(100, max(0, (evenement.pos[0] - self.jauge_musique.x) / self.jauge_musique.width * 100))
-            if self.jauge_general.collidepoint(evenement.pos):
-                self.val_jauge_general = min(100, max(0, (evenement.pos[0] - self.jauge_general.x) / self.jauge_general.width * 100))
+        
+        elif evenement.type == pygame.MOUSEBUTTONUP:
+            # Fin du glissement
+            self.jauge_active = None
+        
+        elif evenement.type == pygame.MOUSEMOTION:
+            # Mise à jour pendant le glissement
+            if self.jauge_active:
+                self.maj_jauge(evenement.pos)
 
         elif evenement.type == pygame.KEYDOWN:
             if evenement.key == pygame.K_ESCAPE:

@@ -1,12 +1,13 @@
 import pygame
 import json
+import os
 from config import TAILLE_CELLULE, COULEURS, GRAVITE, VITESSE_DEPLACEMENT, FORCE_SAUT, LARGEUR_GRILLE, HAUTEUR_GRILLE
 from config_manager import ConfigManager
 
 
 class Joueur:
     """Le mage qui change de couleur"""
-    
+
     def __init__(self, x, y):
         self.x_initial = x
         self.y_initial = y
@@ -23,6 +24,11 @@ class Joueur:
         # Chargement des touches
         self.gestionnaire_config = ConfigManager()
         self.controls = self.gestionnaire_config.obtenir_controles()
+        
+        # Chargement des bruitages
+        self.son_saut = pygame.mixer.Sound(os.path.join("audio", "jump.mp3"))
+        volumes = self.gestionnaire_config.obtenir_volumes()
+        self.son_saut.set_volume(volumes.get("effets", 50) / 100)
 
         # Chargement des images
         self.images = dict()
@@ -64,6 +70,7 @@ class Joueur:
             if touches[pygame.key.key_code(self.controls['sauter'])] and self.au_sol:
                 self.vitesse_y = FORCE_SAUT
                 self.au_sol = False
+                self.son_saut.play()
 
         # Gravité
         self.vitesse_y += GRAVITE
@@ -121,6 +128,11 @@ class Joueur:
     def maj_controles(self):
         """Recharge les touches depuis le gestionnaire"""
         self.controls = self.gestionnaire_config.obtenir_controles()
+        
+    def maj_volume_effets(self):
+        """Met à jour le volume des effets sonores"""
+        volumes = self.gestionnaire_config.obtenir_volumes()
+        self.son_saut.set_volume(volumes.get("effets", 50) / 100)
     
     def dessiner(self, ecran):
         """Dessine le joueur"""
