@@ -17,11 +17,8 @@ class Game:
         pygame.display.set_caption("ColorMage")
         self.horloge = pygame.time.Clock()
         
-        # État du jeu : "menu" ou "jeu"
+        # État du jeu : "menu" ou "jeu" ou "parametres"
         self.etat = "menu"
-        
-        # Menu
-        self.menu = Menu()
         
         # Initialisation du niveau
         self.niveau = Niveau()
@@ -29,6 +26,9 @@ class Game:
         
         # Initialisation du joueur
         self.joueur = Joueur(0, HAUTEUR_ECRAN - 2*TAILLE_CELLULE)
+        
+        # Menu d'accueil
+        self.menu = Menu()
         
         # Menu de pause
         self.pause = Pause()
@@ -56,11 +56,13 @@ class Game:
                     elif action == "parametres":
                         self.etat = "param"
                     elif action == "quitter":
-                        self.en_cours = False
-                        
+                        self.en_cours = False  
+  
             elif self.etat == "param":
-                if evenement.type == pygame.MOUSEBUTTONDOWN:
-                    action = self.parametres.afficher_parametres(self.ecran)
+                action = self.parametres.afficher_parametres(self.ecran)
+                if action == "quitter":
+                    self.etat = "menu"
+    
             elif self.etat == "jeu":
                 # Touche P pour mettre en pause
                 if evenement.type == pygame.KEYDOWN:
