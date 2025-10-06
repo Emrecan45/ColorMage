@@ -1,27 +1,40 @@
 import pygame
 import sys
+import os
 from config import LARGEUR_ECRAN, HAUTEUR_ECRAN, FPS, TAILLE_CELLULE
 from joueur import Joueur
 from niveau import Niveau
 from popup import Popup
 from pause import Pause
 from menu import Menu
-
+from parametres import Parametres
+from config_manager import ConfigManager
 
 class Game:
     """Classe principale gérant le jeu"""
 
     def __init__(self):
         pygame.init()
+        pygame.mixer.init()
+        
+        # Charger la configuration
+        self.gestionnaire_config = ConfigManager()
+        volumes = self.gestionnaire_config.obtenir_volumes()
+        
+        # Musique du jeu
+        music_path = os.path.join("audio", "main_theme.mp3")
+        pygame.mixer.music.load(music_path)
+        # Appliquer le volume sauvegardé (de 0 à 100 converti en 0.0 à 1.0)
+        volume_musique = volumes.get("musique", 50) / 100
+        pygame.mixer.music.set_volume(volume_musique)
+        pygame.mixer.music.play(-1)  # (-1) = boucle infinie
+        
         self.ecran = pygame.display.set_mode((LARGEUR_ECRAN, HAUTEUR_ECRAN))
         pygame.display.set_caption("ColorMage")
         self.horloge = pygame.time.Clock()
         
-        # État du jeu : "menu" ou "jeu"
+        # État du jeu : "menu" ou "jeu" ou "parametres"
         self.etat = "menu"
-        
-        # Menu
-        self.menu = Menu()
         
         # Initialisation du niveau
         self.niveau = Niveau()
@@ -30,8 +43,14 @@ class Game:
         # Initialisation du joueur
         self.joueur = Joueur(0, HAUTEUR_ECRAN - 2*TAILLE_CELLULE)
         
+        # Menu d'accueil
+        self.menu = Menu()
+        
         # Menu de pause
         self.pause = Pause()
+        
+        # Menu de parametres
+        self.parametres = Parametres(self.joueur)
         
         self.en_cours = True
     
@@ -50,9 +69,17 @@ class Game:
                         # Réinitialiser le jeu
                         self.joueur.reset()
                         self.niveau.reset()
+                        self.joueur.maj_controles()
+                    elif action == "parametres":
+                        self.etat = "param"
                     elif action == "quitter":
-                        self.en_cours = False
-            
+                        self.en_cours = False  
+  
+            elif self.etat == "param":
+                action = self.parametres.gerer_events(evenement)
+                if action == "quitter":
+                    self.etat = "menu"
+    
             elif self.etat == "jeu":
                 # Touche P pour mettre en pause
                 if evenement.type == pygame.KEYDOWN:
@@ -78,11 +105,11 @@ class Game:
             resultat = self.joueur.interagir_avec_blocs(self.niveau)
             
             if resultat == "victoire":
-                Popup.afficher(self.ecran, "GG ! tu as gagné.")
+                Popup.afficher(self.ecran, "Bravo ! vous avez gagné.")
                 self.etat = "menu"
             
             elif resultat == "mort":
-                Popup.afficher(self.ecran, "Game Over ! tu es mort.")
+                Popup.afficher(self.ecran, "Game Over ! vous êtes mort.")
                 self.etat = "menu"
     
     def afficher(self):
@@ -95,6 +122,9 @@ class Game:
             self.niveau.dessiner(self.ecran)
             self.joueur.dessiner(self.ecran)
             self.pause.dessiner_bouton(self.ecran)
+
+        elif self.etat == "param":
+            self.parametres.afficher_parametres(self.ecran)
         
         pygame.display.flip()
     

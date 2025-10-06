@@ -1,3 +1,6 @@
+# Version du jeu
+VERSION_JEU = "v1.0.0"
+
 # Dimensions
 TAILLE_CELLULE = 40
 LARGEUR_GRILLE = 30
