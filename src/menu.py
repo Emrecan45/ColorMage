@@ -12,17 +12,13 @@ class Menu:
         self.bouton_quitter = pygame.Rect(LARGEUR_ECRAN // 2 - 125, HAUTEUR_ECRAN // 2 + 20, 250, 50)
     
     def afficher_menu(self, ecran):
-        """Affiche le menu et retourne l'action choisie
-        
-        Returns:
-            str: "jouer" ou "parametres" ou "quitter" ou None si toujours dans le menu
-        """
+        """Affiche le menu"""
         # Fond noir
         ecran.fill((0, 0, 0))
         
-        # Titre du jeu
-        titre = self.font.render("ColorMage", True, (255, 255, 255))
-        ecran.blit(titre, (LARGEUR_ECRAN // 2 - titre.get_width() // 2, HAUTEUR_ECRAN // 2 - 220))
+        # titre du jeu
+        titre_txt = self.font.render("ColorMage", True, (255, 255, 255))
+        ecran.blit(titre_txt, (LARGEUR_ECRAN // 2 - titre_txt.get_width() // 2, HAUTEUR_ECRAN // 2 - 220))
         
         # Dessiner les boutons
         pygame.draw.rect(ecran, (70, 70, 70), self.bouton_jouer)
@@ -41,7 +37,7 @@ class Menu:
         return None
     
     def gerer_clic(self, pos):
-        """Gère les clics de souris sur le menu
+        """Gère les clics de souris sur le menu et retourne le choix de l'utilisateur
         
         Args:
             pos: Position du clic (x, y)

@@ -59,9 +59,10 @@ class Game:
                         self.en_cours = False  
   
             elif self.etat == "param":
-                action = self.parametres.afficher_parametres(self.ecran)
-                if action == "quitter":
-                    self.etat = "menu"
+                if evenement.type == pygame.MOUSEBUTTONDOWN:
+                    action = self.parametres.gerer_clic(evenement.pos)
+                    if action == "quitter":
+                        self.etat = "menu"
     
             elif self.etat == "jeu":
                 # Touche P pour mettre en pause
@@ -105,6 +106,9 @@ class Game:
             self.niveau.dessiner(self.ecran)
             self.joueur.dessiner(self.ecran)
             self.pause.dessiner_bouton(self.ecran)
+
+        elif self.etat == "param":
+            self.parametres.afficher_parametres(self.ecran)
         
         pygame.display.flip()
     
