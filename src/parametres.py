@@ -36,7 +36,7 @@ class Parametres:
         ecran.blit(version_txt, (LARGEUR_ECRAN - version_txt.get_width() - 20, HAUTEUR_ECRAN - version_txt.get_height() - 20))
 
         # volume musique
-        musique_txt = self.font_3.render("Volume Musique", True, (255, 255, 255))
+        musique_txt = self.font_3.render("Volume musique", True, (255, 255, 255))
         ecran.blit(musique_txt, (LARGEUR_ECRAN // 2 - musique_txt.get_width() // 2, HAUTEUR_ECRAN // 2 - 130))
         pygame.draw.rect(ecran, (100, 100, 100), self.bouton_musique)
         # remplissage de la jauge
