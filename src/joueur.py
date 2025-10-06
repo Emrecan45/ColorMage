@@ -1,5 +1,7 @@
 import pygame
+import json
 from config import TAILLE_CELLULE, COULEURS, GRAVITE, VITESSE_DEPLACEMENT, FORCE_SAUT, LARGEUR_GRILLE, HAUTEUR_GRILLE
+from config_manager import ConfigManager
 
 
 class Joueur:
@@ -18,6 +20,10 @@ class Joueur:
         self.vitesse_y = 0
         self.au_sol = False
         
+        # Chargement des touches
+        self.gestionnaire_config = ConfigManager()
+        self.controls = self.gestionnaire_config.obtenir_controles()
+
         # Chargement des images
         self.images = dict()
         
@@ -46,14 +52,19 @@ class Joueur:
         """Gère le déplacement du joueur"""
         #Entrées clavier
         self.vitesse_x = 0
-        if touches[pygame.K_LEFT]:
-            self.vitesse_x = -VITESSE_DEPLACEMENT
-        if touches[pygame.K_RIGHT]:
-            self.vitesse_x = VITESSE_DEPLACEMENT
-        if touches[pygame.K_UP] and self.au_sol:
-            self.vitesse_y = FORCE_SAUT
-            self.au_sol = False
-        
+        if self.controls['gauche'] != "":
+            if touches[pygame.key.key_code(self.controls['gauche'])]:
+                self.vitesse_x = -VITESSE_DEPLACEMENT
+
+        if self.controls['droite'] != "":
+            if touches[pygame.key.key_code(self.controls['droite'])]:
+                self.vitesse_x = VITESSE_DEPLACEMENT
+
+        if self.controls['sauter'] != "":
+            if touches[pygame.key.key_code(self.controls['sauter'])] and self.au_sol:
+                self.vitesse_y = FORCE_SAUT
+                self.au_sol = False
+
         # Gravité
         self.vitesse_y += GRAVITE
         
@@ -106,6 +117,10 @@ class Joueur:
         
         if bloc == "pic":
             return "mort"
+    
+    def maj_controles(self):
+        """Recharge les touches depuis le gestionnaire"""
+        self.controls = self.gestionnaire_config.obtenir_controles()
     
     def dessiner(self, ecran):
         """Dessine le joueur"""

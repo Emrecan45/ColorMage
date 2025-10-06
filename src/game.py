@@ -53,16 +53,16 @@ class Game:
                         # Réinitialiser le jeu
                         self.joueur.reset()
                         self.niveau.reset()
+                        self.joueur.maj_controles()
                     elif action == "parametres":
                         self.etat = "param"
                     elif action == "quitter":
                         self.en_cours = False  
   
             elif self.etat == "param":
-                if evenement.type == pygame.MOUSEBUTTONDOWN:
-                    action = self.parametres.gerer_clic(evenement.pos)
-                    if action == "quitter":
-                        self.etat = "menu"
+                action = self.parametres.gerer_events(evenement)
+                if action == "quitter":
+                    self.etat = "menu"
     
             elif self.etat == "jeu":
                 # Touche P pour mettre en pause
@@ -89,11 +89,11 @@ class Game:
             resultat = self.joueur.interagir_avec_blocs(self.niveau)
             
             if resultat == "victoire":
-                Popup.afficher(self.ecran, "GG ! tu as gagné.")
+                Popup.afficher(self.ecran, "Bravo ! vous avez gagné.")
                 self.etat = "menu"
             
             elif resultat == "mort":
-                Popup.afficher(self.ecran, "Game Over ! tu es mort.")
+                Popup.afficher(self.ecran, "Game Over ! vous êtes mort.")
                 self.etat = "menu"
     
     def afficher(self):
