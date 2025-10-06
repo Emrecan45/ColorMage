@@ -1,6 +1,6 @@
 import pygame
 import sys
-from config import LARGEUR_ECRAN, HAUTEUR_ECRAN
+from config import LARGEUR_ECRAN, HAUTEUR_ECRAN, VERSION_JEU
 
 class Menu:
     """Menu du jeu"""
@@ -8,6 +8,7 @@ class Menu:
     def __init__(self):
         self.font_1 = pygame.font.SysFont(None, 80)
         self.font_2 = pygame.font.SysFont(None, 50)
+        self.font_3 = pygame.font.SysFont(None, 40)
         self.bouton_jouer = pygame.Rect(LARGEUR_ECRAN // 2 - 125, HAUTEUR_ECRAN // 2 - 80, 250, 50)
         self.bouton_parametres = pygame.Rect(LARGEUR_ECRAN // 2 - 125, HAUTEUR_ECRAN // 2 + 60, 250, 50)
         self.bouton_quitter = pygame.Rect(LARGEUR_ECRAN // 2 - 125, HAUTEUR_ECRAN // 2 + 200, 250, 50)
@@ -16,6 +17,10 @@ class Menu:
         """Affiche le menu"""
         # Fond noir
         ecran.fill((0, 0, 0))
+        
+        # version du jeu
+        version_txt = self.font_3.render(VERSION_JEU, True, (255, 255, 255))
+        ecran.blit(version_txt, (LARGEUR_ECRAN - version_txt.get_width() - 20, HAUTEUR_ECRAN - version_txt.get_height() - 20))
         
         # titre du jeu
         titre_txt = self.font_1.render("ColorMage", True, (255, 255, 255))
