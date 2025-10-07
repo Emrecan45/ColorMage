@@ -10,6 +10,9 @@ class MenuNiveaux:
         self.font_2 = pygame.font.SysFont(None, 50)
         self.font_3 = pygame.font.SysFont(None, 40)
         
+        self.image_fond = pygame.image.load("img/fond_menu2.png")
+        self.image_fond = pygame.transform.scale(self.image_fond, (LARGEUR_ECRAN, HAUTEUR_ECRAN))
+        
         self.gestionnaire_config = ConfigManager()
         self.config = self.gestionnaire_config.charger_config()
         self.niveau_max_debloque = self.config["niveau_actuel"]
@@ -30,7 +33,8 @@ class MenuNiveaux:
         self.config = self.gestionnaire_config.charger_config()
         self.niveau_max_debloque = self.config["niveau_actuel"]
         
-        ecran.fill((0, 0, 0))
+        # fond
+        ecran.blit(self.image_fond, (0, 0))
         
         titre_txt = self.font_1.render("Niveaux", True, (255, 255, 255))
         ecran.blit(titre_txt, (LARGEUR_ECRAN // 2 - titre_txt.get_width() // 2, 50))

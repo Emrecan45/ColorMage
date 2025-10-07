@@ -18,10 +18,9 @@ class Parametres:
         self.font_1 = pygame.font.SysFont(None, 80)
         self.font_2 = pygame.font.SysFont(None, 50)
         self.font_3 = pygame.font.SysFont(None, 40)
-
-        # fond noir
-        self.overlay = pygame.Surface((LARGEUR_ECRAN, HAUTEUR_ECRAN))
-        self.overlay.fill((0, 0, 0))
+ 
+        self.image_fond = pygame.image.load("img/fond_menu2.png")
+        self.image_fond = pygame.transform.scale(self.image_fond, (LARGEUR_ECRAN, HAUTEUR_ECRAN))
 
         # droite
         self.droite_field = pygame.Rect(LARGEUR_ECRAN // 3 + 100, HAUTEUR_ECRAN // 2 - 30, 90, 50)
@@ -51,8 +50,9 @@ class Parametres:
 
     def afficher_parametres(self, ecran):
         """Affiche le menu et retourne l'action choisie"""
-        # fond noir
-        ecran.blit(self.overlay, (0, 0))
+        
+        # fond
+        ecran.blit(self.image_fond, (0, 0))
         
         # version du jeu
         version_txt = self.font_3.render(VERSION_JEU, True, (255, 255, 255))

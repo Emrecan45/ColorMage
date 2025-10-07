@@ -22,6 +22,10 @@ class Game:
         self.gestionnaire_config = ConfigManager()
         volumes = self.gestionnaire_config.obtenir_volumes()
         
+        # Fond du jeu
+        self.fond_jeu = pygame.image.load("img/fond_jeu.png")
+        self.fond_jeu = pygame.transform.scale(self.fond_jeu, (LARGEUR_ECRAN, HAUTEUR_ECRAN))
+        
         # Musique du jeu
         music_path = os.path.join("audio", "main_theme.mp3")
         pygame.mixer.music.load(music_path)
@@ -41,7 +45,7 @@ class Game:
         self.niveau = Niveau()
         
         # Joueur
-        self.joueur = Joueur(0, HAUTEUR_ECRAN - 2*TAILLE_CELLULE)
+        self.joueur = Joueur(0, HAUTEUR_ECRAN - 2 * TAILLE_CELLULE)
         
         # Menu d'accueil
         self.menu = Menu()
@@ -174,7 +178,7 @@ class Game:
             self.menu_niveaux.afficher_selection(self.ecran)
             
         elif self.etat == "jeu":
-            self.ecran.fill((255, 255, 255))
+            self.ecran.blit(self.fond_jeu, (0, 0))
             self.niveau.dessiner(self.ecran)
             self.joueur.dessiner(self.ecran)
             self.pause.dessiner_bouton(self.ecran)
