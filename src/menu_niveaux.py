@@ -22,8 +22,14 @@ class MenuNiveaux:
             self.boutons_niveaux.append(pygame.Rect(largeur, hauteur, 80, 80))
         
         self.bouton_retour = pygame.Rect(LARGEUR_ECRAN // 2 - 125, HAUTEUR_ECRAN - 100, 250, 50)
+        
+        self.image_cadenas = pygame.image.load("img/cadena.png")
+        self.image_cadenas = pygame.transform.scale(self.image_cadenas, (40, 40))
     
     def afficher_selection(self, ecran):
+        self.config = self.gestionnaire_config.charger_config()
+        self.niveau_max_debloque = self.config["niveau_actuel"]
+        
         ecran.fill((0, 0, 0))
         
         titre_txt = self.font_1.render("Niveaux", True, (255, 255, 255))
@@ -31,12 +37,26 @@ class MenuNiveaux:
         
         for i in range(len(self.boutons_niveaux)):
             bouton = self.boutons_niveaux[i]
-            couleur_bouton = (0, 0, 0)
+            niveau_numero = i + 1
+            
+            if niveau_numero <= self.niveau_max_debloque :
+                est_debloque = True
+            else :
+                est_debloque = False
+            
+            if est_debloque:
+                couleur_bouton = (0, 100, 0)  # Vert foncé pour débloqué
+            else:
+                couleur_bouton = (50, 50, 50)  # Gris foncé pour verrouillé
+            
             pygame.draw.rect(ecran, couleur_bouton, bouton)
             pygame.draw.rect(ecran, (255, 255, 255), bouton, 3)
             
-            numero_txt = self.font_1.render(str(i + 1), True, (255, 255, 255))
-            ecran.blit(numero_txt, (bouton.centerx - numero_txt.get_width() // 2, bouton.centery - numero_txt.get_height() // 2))
+            if est_debloque:
+                numero_txt = self.font_1.render(str(niveau_numero), True, (255, 255, 255))
+                ecran.blit(numero_txt, (bouton.centerx - numero_txt.get_width() // 2, bouton.centery - numero_txt.get_height() // 2))
+            else:
+                ecran.blit(self.image_cadenas, (bouton.centerx - 20, bouton.centery - 20))
         
         pygame.draw.rect(ecran, (70, 70, 70), self.bouton_retour)
         retour_txt = self.font_2.render("Retour", True, (255, 255, 255))
@@ -48,7 +68,11 @@ class MenuNiveaux:
     def gerer_clic(self, pos):
         for i in range(len(self.boutons_niveaux)):
             if self.boutons_niveaux[i].collidepoint(pos):
-                return i + 1
+                niveau_numero = i + 1
+                if niveau_numero <= self.niveau_max_debloque:
+                    return niveau_numero
+                else:
+                    return None
         
         if self.bouton_retour.collidepoint(pos):
             return 0
