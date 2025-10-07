@@ -25,6 +25,7 @@ class ConfigManager:
         self.config = self.charger_config()
         self.controles = self.config.get("controles", {})
         self.volumes = self.config.get("volumes", {})
+        self.niveau_actuel = self.config.get("niveau_actuel", 1)
     
     def charger_config(self):
         """Charge la configuration depuis le fichier ou crée un fichier par défaut"""
@@ -38,7 +39,8 @@ class ConfigManager:
             "volumes": {
                 "musique": 50,
                 "effets": 50
-            }
+            },
+            "niveau_actuel": 1
         }
         
         # Si le fichier existe, le charger
@@ -82,13 +84,15 @@ class ConfigManager:
         if config is None:
             config = {
                 "controles": self.controles,
-                "volumes": self.volumes
+                "volumes": self.volumes,
+                "niveau_actuel": self.niveau_actuel
             }
         with open(self.chemin_config, "w", encoding="utf-8") as f:
             json.dump(config, f, ensure_ascii=False)
         self.config = config
         self.controles = config.get("controles", {})
         self.volumes = config.get("volumes", {})
+        self.niveau_actuel = config.get("niveau_actuel", 1)
     
     def obtenir_controles(self):
         """Retourne les touches actuelles en relisant le fichier"""
@@ -101,6 +105,15 @@ class ConfigManager:
         self.config = self.charger_config()
         self.volumes = self.config.get("volumes", {})
         return self.volumes
+    
+    def obtenir_chemin_config(self):
+        """Retourne le chemin du fichier de configuration"""
+        return self.chemin_config
+
+    def obtenir_niveau_actuel(self):
+        """Retourne le niveau actuel du joueur"""
+        self.config = self.charger_config()
+        return self.config.get("niveau_actuel", 1)
         
     def maj_controle(self, action, touche):
         """Met à jour une touche spécifique et sauvegarde"""
@@ -116,7 +129,8 @@ class ConfigManager:
         """
         self.volumes[type_volume] = int(valeur)
         self.sauvegarder_config()
-    
-    def obtenir_chemin_config(self):
-        """Retourne le chemin du fichier de configuration"""
-        return self.chemin_config
+
+    def maj_niveau_actuel(self, niveau):
+        """Met à jour le niveau actuel du joueur"""
+        self.niveau_actuel = int(niveau)
+        self.sauvegarder_config()

@@ -1,5 +1,5 @@
 # Version du jeu
-VERSION_JEU = "v1.0.0"
+VERSION_JEU = "v1.0.1"
 
 # Dimensions
 TAILLE_CELLULE = 40
