@@ -9,6 +9,7 @@ from pause import Pause
 from menu import Menu
 from parametres import Parametres
 from config_manager import ConfigManager
+from menu_niveaux import MenuNiveaux
 
 class Game:
     """Classe principale gérant le jeu"""
@@ -38,7 +39,6 @@ class Game:
         
         # Initialisation du niveau
         self.niveau = Niveau()
-        self.niveau.charger_niveau_1()
         
         # Initialisation du joueur
         self.joueur = Joueur(0, HAUTEUR_ECRAN - 2*TAILLE_CELLULE)
@@ -51,6 +51,9 @@ class Game:
         
         # Menu de parametres
         self.parametres = Parametres(self.joueur)
+        
+        self.menu_niveaux = MenuNiveaux()
+        self.niveau_actuel = self.gestionnaire_config.obtenir_niveau_actuel()
         
         self.en_cours = True
     
@@ -65,11 +68,7 @@ class Game:
                 if evenement.type == pygame.MOUSEBUTTONDOWN:
                     action = self.menu.gerer_clic(evenement.pos)
                     if action == "jouer":
-                        self.etat = "jeu"
-                        # Réinitialiser le jeu
-                        self.joueur.reset()
-                        self.niveau.reset()
-                        self.joueur.maj_controles()
+                        self.etat = "selection"
                     elif action == "parametres":
                         self.etat = "param"
                     elif action == "quitter":
@@ -79,7 +78,23 @@ class Game:
                 action = self.parametres.gerer_events(evenement)
                 if action == "quitter":
                     self.etat = "menu"
-    
+
+            elif self.etat == "selection":
+                if evenement.type == pygame.MOUSEBUTTONDOWN:
+                    resultat = self.menu_niveaux.gerer_clic(evenement.pos)
+                    if resultat is None:  # Bouton retour
+                        self.etat = "menu"
+                    elif resultat > 0:  # Un niveau a été choisi
+                        # Réinitialiser le jeu
+                        self.joueur.reset()
+                        self.niveau.reset(resultat, self.ecran)
+                        self.joueur.maj_controles()
+                        self.niveau_actuel = resultat
+                        self.niveau.charger_niveau(resultat, self.ecran)
+                        self.joueur.reset()
+                        self.joueur.maj_controles()
+                        self.etat = "jeu"
+            
             elif self.etat == "jeu":
                 # Touche P pour mettre en pause
                 if evenement.type == pygame.KEYDOWN:
@@ -106,6 +121,7 @@ class Game:
             
             if resultat == "victoire":
                 Popup.afficher(self.ecran, "Bravo ! vous avez gagné.")
+                self.gestionnaire_config.maj_niveau_actuel(self.niveau_actuel + 1)
                 self.etat = "menu"
             
             elif resultat == "mort":
@@ -116,7 +132,10 @@ class Game:
         """Dessine tous les éléments"""
         if self.etat == "menu":
             self.menu.afficher_menu(self.ecran)
-        
+            
+        elif self.etat == "selection": 
+            self.menu_niveaux.afficher_selection(self.ecran)
+            
         elif self.etat == "jeu":
             self.ecran.fill((255, 255, 255))
             self.niveau.dessiner(self.ecran)

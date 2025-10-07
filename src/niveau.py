@@ -1,5 +1,6 @@
 import pygame
 from config import LARGEUR_GRILLE, HAUTEUR_GRILLE, TAILLE_CELLULE, COULEURS
+from popup import Popup
 
 
 class Niveau:
@@ -100,13 +101,16 @@ class Niveau:
         return self.grille
 
     
-    def charger_niveau_1(self):
-        """Charge le premier niveau"""
-        self.grille = self.creer_grille_niveau_1()
-    
-    def reset(self):
+    def charger_niveau(self, numero, ecran):
+        """Charge le niveau correspondant au numéro"""
+        if numero == 1:
+            self.grille = self.creer_grille_niveau_1()
+        else:
+            Popup.afficher(ecran, "Niveau pas encore inventé...")
+
+    def reset(self, numero, ecran):
         """Réinitialise le niveau"""
-        self.charger_niveau_1()
+        self.charger_niveau(numero, ecran)
     
     def obtenir_bloc(self, x, y):
         """Retourne le type de bloc à une position donnée"""
