@@ -30,7 +30,7 @@ class Game:
         pygame.mixer.music.set_volume(volume_musique)
         pygame.mixer.music.play(-1)  # (-1) = boucle infinie
         
-        self.ecran = pygame.display.set_mode((LARGEUR_ECRAN, HAUTEUR_ECRAN))
+        self.ecran = pygame.display.set_mode((LARGEUR_ECRAN, HAUTEUR_ECRAN)) 
         pygame.display.set_caption("ColorMage")
         self.horloge = pygame.time.Clock()
         
@@ -72,7 +72,7 @@ class Game:
                     elif action == "parametres":
                         self.etat = "param"
                     elif action == "quitter":
-                        self.en_cours = False  
+                        self.en_cours = False
   
             elif self.etat == "param":
                 action = self.parametres.gerer_events(evenement)
@@ -82,33 +82,36 @@ class Game:
             elif self.etat == "selection":
                 if evenement.type == pygame.MOUSEBUTTONDOWN:
                     resultat = self.menu_niveaux.gerer_clic(evenement.pos)
-                    if resultat is None:  # Bouton retour
+                    if resultat == 0:  # Bouton retour
                         self.etat = "menu"
-                    elif resultat > 0:  # Un niveau a été choisi
-                        # Réinitialiser le jeu
-                        self.joueur.reset()
-                        self.niveau.reset(resultat, self.ecran)
-                        self.joueur.maj_controles()
-                        self.niveau_actuel = resultat
-                        self.niveau.charger_niveau(resultat, self.ecran)
-                        self.joueur.reset()
-                        self.joueur.maj_controles()
-                        self.etat = "jeu"
-            
+                    elif resultat is not None and resultat > 0:  # Un niveau a été choisi
+                        if resultat == 1: 
+                            # Réinitialiser le jeu
+                            self.joueur.reset()
+                            self.niveau.reset(resultat, self.ecran)
+                            self.joueur.maj_controles()
+                            self.niveau_actuel = resultat
+                            self.niveau.charger_niveau(resultat, self.ecran)
+                            self.joueur.reset()
+                            self.joueur.maj_controles()
+                            self.etat = "jeu"
+                        else:
+                            Popup.afficher(self.ecran, "Niveau non disponible", duree=1000)
+                                    
             elif self.etat == "jeu":
                 # Touche P pour mettre en pause
                 if evenement.type == pygame.KEYDOWN:
                     if evenement.key == pygame.K_p:
                         action = self.pause.afficher_pause(self.ecran, self.joueur, self.niveau)
                         if action == "quitter":
-                            self.etat = "menu"
+                            self.etat = "selection"
                 
                 # Clic sur le bouton pause
                 if evenement.type == pygame.MOUSEBUTTONDOWN:
                     if self.pause.bouton_rect.collidepoint(evenement.pos):
                         action = self.pause.afficher_pause(self.ecran, self.joueur, self.niveau)
                         if action == "quitter":
-                            self.etat = "menu"
+                            self.etat = "selection"
     
     def maj(self):
         """Met à jour la logique du jeu"""
@@ -122,11 +125,11 @@ class Game:
             if resultat == "victoire":
                 Popup.afficher(self.ecran, "Bravo ! vous avez gagné.")
                 self.gestionnaire_config.maj_niveau_actuel(self.niveau_actuel + 1)
-                self.etat = "menu"
+                self.etat = "selection"
             
             elif resultat == "mort":
                 Popup.afficher(self.ecran, "Game Over ! vous êtes mort.")
-                self.etat = "menu"
+                self.etat = "selection"
     
     def afficher(self):
         """Dessine tous les éléments"""

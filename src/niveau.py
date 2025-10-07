@@ -1,6 +1,5 @@
 import pygame
 from config import LARGEUR_GRILLE, HAUTEUR_GRILLE, TAILLE_CELLULE, COULEURS
-from popup import Popup
 
 
 class Niveau:
@@ -105,8 +104,6 @@ class Niveau:
         """Charge le niveau correspondant au numéro"""
         if numero == 1:
             self.grille = self.creer_grille_niveau_1()
-        else:
-            Popup.afficher(ecran, "Niveau pas encore inventé...")
 
     def reset(self, numero, ecran):
         """Réinitialise le niveau"""
