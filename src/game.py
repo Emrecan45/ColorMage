@@ -82,11 +82,13 @@ class Game:
             elif self.etat == "selection":
                 if evenement.type == pygame.MOUSEBUTTONDOWN:
                     resultat = self.menu_niveaux.gerer_clic(evenement.pos)
-                    if resultat == 0:  # Bouton retour
+                    if resultat == 0:
                         self.etat = "menu"
-                    elif resultat is not None and resultat > 0:  # Un niveau a été choisi
-                        if resultat == 1:  # TODO pour l'instant ca marche car y'a que 1 niveau mais faudra un test plus efficace (pour eviter le gros bloc en dessous a chaque niveau) 
-                            # Réinitialiser le jeu
+                    elif resultat is not None and resultat > 0:
+                        chemin = "niveaux/niveau_" + str(resultat) + ".json"
+                        try:
+                            fichier = open(chemin, "r")
+                            fichier.close()
                             self.joueur.reset()
                             self.niveau.reset(resultat, self.ecran)
                             self.joueur.maj_controles()
@@ -95,8 +97,8 @@ class Game:
                             self.joueur.reset()
                             self.joueur.maj_controles()
                             self.etat = "jeu"
-                        else:
-                            Popup.afficher(self.ecran, "Niveau non disponible", duree=1000)
+                        except FileNotFoundError:
+                            Popup.afficher(self.ecran, "Niveau non disponible", duree=1500)
                                     
             elif self.etat == "jeu":
                 # Touche P pour mettre en pause
