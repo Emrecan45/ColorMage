@@ -1,5 +1,5 @@
 import pygame
-from config import LARGEUR_ECRAN, HAUTEUR_ECRAN, VERSION_JEU
+from config import LARGEUR_ECRAN, HAUTEUR_ECRAN, VERSION_JEU, COULEUR_BOUTON, COULEUR_SURVOL, COULEUR_BORDURE
 from config_manager import ConfigManager
 
 class MenuNiveaux:
@@ -45,20 +45,29 @@ class MenuNiveaux:
                 est_debloque = False
             
             if est_debloque:
-                couleur_bouton = (0, 100, 0)  # Vert foncé pour débloqué
+                if bouton.collidepoint(pygame.mouse.get_pos()):
+                    couleur_bouton = (0, 120, 0)  # Vert plus clair au survol de la souris
+                else:
+                    couleur_bouton = (0, 80, 0)   # Vert foncé normal
             else:
-                couleur_bouton = (50, 50, 50)  # Gris foncé pour verrouillé
+                if bouton.collidepoint(pygame.mouse.get_pos()):
+                    couleur_bouton = COULEUR_SURVOL  # Gris plus clair au survol dela souris
+                else:
+                    couleur_bouton = COULEUR_BOUTON  # Gris foncé normal
             
             pygame.draw.rect(ecran, couleur_bouton, bouton)
-            pygame.draw.rect(ecran, (255, 255, 255), bouton, 3)
+            pygame.draw.rect(ecran, COULEUR_BORDURE, bouton, 3)
             
             if est_debloque:
                 numero_txt = self.font_1.render(str(niveau_numero), True, (255, 255, 255))
                 ecran.blit(numero_txt, (bouton.centerx - numero_txt.get_width() // 2, bouton.centery - numero_txt.get_height() // 2))
             else:
                 ecran.blit(self.image_cadenas, (bouton.centerx - 20, bouton.centery - 20))
-        
-        pygame.draw.rect(ecran, (70, 70, 70), self.bouton_retour)
+        if self.bouton_retour.collidepoint(pygame.mouse.get_pos()):
+            pygame.draw.rect(ecran, COULEUR_SURVOL, self.bouton_retour)
+        else:
+            pygame.draw.rect(ecran, COULEUR_BOUTON, self.bouton_retour)
+        pygame.draw.rect(ecran, COULEUR_BORDURE, self.bouton_retour, 3)
         retour_txt = self.font_2.render("Retour", True, (255, 255, 255))
         ecran.blit(retour_txt, (LARGEUR_ECRAN // 2 - retour_txt.get_width() // 2, HAUTEUR_ECRAN - 90))
         

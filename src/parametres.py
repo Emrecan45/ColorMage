@@ -1,7 +1,7 @@
 import pygame
 import sys
 import json
-from config import LARGEUR_ECRAN, HAUTEUR_ECRAN, VERSION_JEU
+from config import LARGEUR_ECRAN, HAUTEUR_ECRAN, VERSION_JEU, COULEUR_BOUTON, COULEUR_SURVOL, COULEUR_BORDURE
 from config_manager import ConfigManager
 
 class Parametres:
@@ -95,7 +95,11 @@ class Parametres:
         if self.champ_actif == "droite":
             pygame.draw.rect(ecran, (255, 0, 0), self.droite_field)
         else:
-            pygame.draw.rect(ecran, (100, 100, 100), self.droite_field)
+            if self.droite_field.collidepoint(pygame.mouse.get_pos()):
+                pygame.draw.rect(ecran, COULEUR_SURVOL, self.droite_field)
+            else:
+                pygame.draw.rect(ecran, COULEUR_BOUTON, self.droite_field)
+        pygame.draw.rect(ecran, COULEUR_BORDURE, self.droite_field, 3)
         # Texte dans le champ
         if self.champ_actif == "droite":
             droite_assign_txt = self.font_3.render("...", True, (255, 255, 255))
@@ -110,7 +114,11 @@ class Parametres:
         if self.champ_actif == "gauche":
             pygame.draw.rect(ecran, (255, 0, 0), self.gauche_field)
         else:
-            pygame.draw.rect(ecran, (100, 100, 100), self.gauche_field)
+            if self.gauche_field.collidepoint(pygame.mouse.get_pos()):
+                pygame.draw.rect(ecran, COULEUR_SURVOL, self.gauche_field)
+            else:
+                pygame.draw.rect(ecran, COULEUR_BOUTON, self.gauche_field)
+        pygame.draw.rect(ecran, COULEUR_BORDURE, self.gauche_field, 3)
         # Texte dans le champ
         if self.champ_actif == "gauche":
             gauche_assign_txt = self.font_3.render("...", True, (255, 255, 255))
@@ -123,9 +131,13 @@ class Parametres:
         ecran.blit(sauter_txt, (LARGEUR_ECRAN // 3 - sauter_txt.get_width() // 2, HAUTEUR_ECRAN // 2 + 100))
         # Couleur du champ selon l'état
         if self.champ_actif == "sauter":
-            pygame.draw.rect(ecran, (255, 0, 0), self.sauter_field)
+                pygame.draw.rect(ecran, (255, 0, 0), self.sauter_field)
         else:
-            pygame.draw.rect(ecran, (100, 100, 100), self.sauter_field)
+            if self.sauter_field.collidepoint(pygame.mouse.get_pos()):
+                pygame.draw.rect(ecran, COULEUR_SURVOL, self.sauter_field)
+            else:
+                pygame.draw.rect(ecran, COULEUR_BOUTON, self.sauter_field)
+        pygame.draw.rect(ecran, COULEUR_BORDURE, self.sauter_field, 3)
         # Texte dans le champ
         if self.champ_actif == "sauter":
             sauter_assign_txt = self.font_3.render("...", True, (255, 255, 255))
@@ -134,7 +146,12 @@ class Parametres:
         ecran.blit(sauter_assign_txt, (LARGEUR_ECRAN // 2 - sauter_assign_txt.get_width() // 2 - 55, HAUTEUR_ECRAN // 2 + 100))
         
         # -------bouton retour
-        pygame.draw.rect(ecran, (70, 70, 70), self.bouton_retour)
+        if self.bouton_retour.collidepoint(pygame.mouse.get_pos()):
+            pygame.draw.rect(ecran, COULEUR_SURVOL, self.bouton_retour)
+        else:
+            pygame.draw.rect(ecran, COULEUR_BOUTON, self.bouton_retour)
+            
+        pygame.draw.rect(ecran, COULEUR_BORDURE, self.bouton_retour, 3)
         retour_txt = self.font_2.render("Retour", True, (255, 255, 255))
         ecran.blit(retour_txt, (LARGEUR_ECRAN // 2 - retour_txt.get_width() // 2, HAUTEUR_ECRAN // 2 + 210))
           

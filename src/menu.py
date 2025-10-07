@@ -1,6 +1,6 @@
 import pygame
 import sys
-from config import LARGEUR_ECRAN, HAUTEUR_ECRAN, VERSION_JEU
+from config import LARGEUR_ECRAN, HAUTEUR_ECRAN, VERSION_JEU, COULEUR_BOUTON, COULEUR_SURVOL, COULEUR_BORDURE
 
 class Menu:
     """Menu du jeu"""
@@ -26,11 +26,21 @@ class Menu:
         titre_txt = self.font_1.render("ColorMage", True, (255, 255, 255))
         ecran.blit(titre_txt, (LARGEUR_ECRAN // 2 - titre_txt.get_width() // 2, HAUTEUR_ECRAN // 2 - 220))
         
-        # Dessiner les boutons
-        pygame.draw.rect(ecran, (70, 70, 70), self.bouton_jouer)
-        pygame.draw.rect(ecran, (70, 70, 70), self.bouton_parametres)
-        pygame.draw.rect(ecran, (70, 70, 70), self.bouton_quitter)
-        
+        boutons = [self.bouton_jouer, self.bouton_parametres, self.bouton_quitter]
+
+        for rect in boutons:
+            # Effet de la souris sur les boutons
+            if rect.collidepoint(pygame.mouse.get_pos()):
+                couleur = COULEUR_SURVOL
+            else:
+                couleur = COULEUR_BOUTON
+
+            # Dessiner les boutons
+            pygame.draw.rect(ecran, couleur, rect)
+            
+            # Bordure des boutons
+            pygame.draw.rect(ecran, COULEUR_BORDURE, rect, 3)
+
         # Textes des boutons
         jouer_txt = self.font_2.render("Jouer", True, (255, 255, 255))
         parametres_txt = self.font_2.render("Paramètres", True, (255, 255, 255))
