@@ -99,11 +99,12 @@ class Niveau:
 
         return self.grille
 
+    # TODO def creer_grille_niveau_X(self): faire d'autres niveaux
     
     def charger_niveau(self, numero, ecran):
         """Charge le niveau correspondant au numéro"""
         if numero == 1:
-            self.grille = self.creer_grille_niveau_1()
+            self.grille = self.creer_grille_niveau_1() #TODO if niveau == x ; then creer_grille_niveau_x() -> le faire pour chaque niveau 
 
     def reset(self, numero, ecran):
         """Réinitialise le niveau"""

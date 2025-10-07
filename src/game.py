@@ -85,7 +85,7 @@ class Game:
                     if resultat == 0:  # Bouton retour
                         self.etat = "menu"
                     elif resultat is not None and resultat > 0:  # Un niveau a été choisi
-                        if resultat == 1: 
+                        if resultat == 1:  # TODO pour l'instant ca marche car y'a que 1 niveau mais faudra un test plus efficace (pour eviter le gros bloc en dessous a chaque niveau) 
                             # Réinitialiser le jeu
                             self.joueur.reset()
                             self.niveau.reset(resultat, self.ecran)
