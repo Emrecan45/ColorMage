@@ -45,7 +45,7 @@ class Game:
         self.niveau = Niveau()
         
         # Joueur
-        self.joueur = Joueur(0, HAUTEUR_ECRAN - 2 * TAILLE_CELLULE)
+        self.joueur = Joueur(0, HAUTEUR_ECRAN - 2 * TAILLE_CELLULE, self.gestionnaire_config)
         
         # Menu d'accueil
         self.menu = Menu()
@@ -54,7 +54,7 @@ class Game:
         self.pause = Pause()
         
         # Parametres
-        self.parametres = Parametres(self.joueur)
+        self.parametres = Parametres(self.joueur, self.gestionnaire_config)
         
         self.menu_niveaux = MenuNiveaux()
         self.niveau_actuel = self.gestionnaire_config.obtenir_niveau_actuel()
@@ -165,7 +165,7 @@ class Game:
                 self.popup_actif = "victoire"
                 # Débloquer le niveau suivant si c'etait pas deja le cas
                 niveau_max = self.gestionnaire_config.obtenir_niveau_actuel()
-                if self.niveau_actuel >= niveau_max:
+                if self.niveau_actuel == niveau_max:
                     self.gestionnaire_config.maj_niveau_actuel(self.niveau_actuel + 1)
 
             # Cas de défaite

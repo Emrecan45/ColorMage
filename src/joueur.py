@@ -9,7 +9,7 @@ from config_manager import ConfigManager
 class Joueur:
     """Le mage qui change de couleur"""
 
-    def __init__(self, x, y):
+    def __init__(self, x, y, gestionnaire_config=None):
         self.x_initial = x
         self.y_initial = y
         self.x = x
@@ -23,7 +23,10 @@ class Joueur:
         self.au_sol = False
         
         # Chargement des touches
-        self.gestionnaire_config = ConfigManager()
+        if gestionnaire_config is None:
+            self.gestionnaire_config = ConfigManager()
+        else:
+            self.gestionnaire_config = gestionnaire_config
         self.controls = self.gestionnaire_config.obtenir_controles()
         
         # Chargement des bruitages
@@ -160,6 +163,7 @@ class Joueur:
     
     def maj_controles(self):
         """Recharge les touches depuis le gestionnaire"""
+        self.gestionnaire_config.charger_config()
         self.controls = self.gestionnaire_config.obtenir_controles()
         
     def maj_volume_effets(self):

@@ -21,7 +21,7 @@ class ConfigManager:
         # Créer le dossier s'il n'existe pas
         os.makedirs(chemin_base, exist_ok=True)
         
-        self.chemin_config = os.path.join(chemin_base, "controls.json")
+        self.chemin_config = os.path.join(chemin_base, "save.json")
         self.config = self.charger_config()
         self.controles = self.config.get("controles", {})
         self.volumes = self.config.get("volumes", {})
@@ -93,7 +93,7 @@ class ConfigManager:
         self.controles = config.get("controles", {})
         self.volumes = config.get("volumes", {})
         self.niveau_actuel = config.get("niveau_actuel", 1)
-    
+        
     def obtenir_controles(self):
         """Retourne les touches actuelles en relisant le fichier"""
         self.config = self.charger_config()

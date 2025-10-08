@@ -8,10 +8,13 @@ from config_manager import ConfigManager
 class Parametres:
     """Affiche les parametres et retourne l'action choisie"""
     
-    def __init__(self, joueur = None):
+    def __init__(self, joueur = None, gestionnaire_config=None):
         self.joueur = joueur
         # charge les touches du joueur et les volumes
-        self.gestionnaire_config = ConfigManager()
+        if gestionnaire_config is None:
+            self.gestionnaire_config = ConfigManager()
+        else:
+            self.gestionnaire_config = gestionnaire_config
         self.controls = self.gestionnaire_config.obtenir_controles()
         self.volumes = self.gestionnaire_config.obtenir_volumes()
         
