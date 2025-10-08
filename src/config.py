@@ -1,3 +1,6 @@
+# Version du jeu
+VERSION_JEU = "v1.0.1"
+
 # Dimensions
 TAILLE_CELLULE = 40
 LARGEUR_GRILLE = 30
@@ -20,6 +23,10 @@ COULEURS = {
     "noir": (0, 0, 0),
     "pic": (100, 100, 100)
 }
+
+COULEUR_BOUTON = (70, 70, 70)
+COULEUR_SURVOL = (100, 100, 100)
+COULEUR_BORDURE = (255, 255, 255)
 
 # Physique
 GRAVITE = 0.5
