@@ -22,6 +22,10 @@ class Game:
         self.gestionnaire_config = ConfigManager()
         volumes = self.gestionnaire_config.obtenir_volumes()
         
+        # Fond du jeu
+        self.fond_jeu = pygame.image.load("img/fond_jeu.png")
+        self.fond_jeu = pygame.transform.scale(self.fond_jeu, (LARGEUR_ECRAN, HAUTEUR_ECRAN))
+        
         # Musique du jeu
         music_path = os.path.join("audio", "main_theme.mp3")
         pygame.mixer.music.load(music_path)
@@ -41,7 +45,7 @@ class Game:
         self.niveau = Niveau()
         
         # Joueur
-        self.joueur = Joueur(0, HAUTEUR_ECRAN - 2*TAILLE_CELLULE)
+        self.joueur = Joueur(0, HAUTEUR_ECRAN - 2 * TAILLE_CELLULE)
         
         # Menu d'accueil
         self.menu = Menu()
@@ -60,7 +64,6 @@ class Game:
         # Popups
         self.popup = Popup()
         self.popup_actif = None
-        self.boutons_popup = []
     
     def gerer_evenements(self):
         """Gère les événements pygame"""
@@ -69,12 +72,18 @@ class Game:
                 self.en_cours = False
 
             if self.popup_actif is not None:
-                if evenement.type == pygame.MOUSEBUTTONDOWN and evenement.button == 1: #Si un clic de souris est détecté et que c'est le bouton gauche
-                    for rect, action in self.boutons_popup:
-                        if rect.collidepoint(evenement.pos):
-                            self.traiter_action_popup(action)
-                            self.popup_actif = None
-                            self.boutons_popup = []
+                if evenement.type == pygame.MOUSEBUTTONDOWN and evenement.button == 1:
+                    # Gérer les clics selon le type de popup
+                    if self.popup_actif == "victoire":
+                        action = self.popup.gerer_clic_victoire(evenement.pos, self.niveau_actuel)
+                    elif self.popup_actif == "defaite":
+                        action = self.popup.gerer_clic_defaite(evenement.pos)
+                    else:
+                        action = None
+                    
+                    if action:
+                        self.traiter_action_popup(action)
+                        self.popup_actif = None
             else:
                 if self.etat == "menu":
                     if evenement.type == pygame.MOUSEBUTTONDOWN:
@@ -108,13 +117,13 @@ class Game:
 
                 elif self.etat == "jeu":
                     if evenement.type == pygame.KEYDOWN and evenement.key == pygame.K_p:
-                        action = self.pause.afficher_pause(self.ecran, self.joueur, self.niveau)
+                        action = self.pause.afficher_pause(self.ecran, self.joueur, self.niveau, self.niveau_actuel)
                         if action == "quitter":
                             self.etat = "selection"
 
             if evenement.type == pygame.MOUSEBUTTONDOWN:
                 if self.pause.bouton_rect.collidepoint(evenement.pos):
-                    action = self.pause.afficher_pause(self.ecran, self.joueur, self.niveau)
+                    action = self.pause.afficher_pause(self.ecran, self.joueur, self.niveau, self.niveau_actuel)
                     if action == "quitter":
                         self.etat = "selection"
 
@@ -155,14 +164,10 @@ class Game:
                 niveau_max = self.gestionnaire_config.obtenir_niveau_actuel()
                 if self.niveau_actuel >= niveau_max:
                     self.gestionnaire_config.maj_niveau_actuel(self.niveau_actuel + 1)
-                # Enregistrer les boutons de victoires pour le popup
-                self.boutons_popup = self.popup.creer_boutons_victoire(self.niveau_actuel)
 
-            # Cas de victoire (pour les nuls)
+            # Cas de défaite
             elif resultat == "mort":
                 self.popup_actif = "defaite"
-                # Enregistrer les boutons de defaites pour le popup
-                self.boutons_popup = self.popup.creer_boutons_defaite()
 
     def afficher(self):
         """Dessine tous les éléments"""
@@ -173,16 +178,16 @@ class Game:
             self.menu_niveaux.afficher_selection(self.ecran)
             
         elif self.etat == "jeu":
-            self.ecran.fill((255, 255, 255))
+            self.ecran.blit(self.fond_jeu, (0, 0))
             self.niveau.dessiner(self.ecran)
             self.joueur.dessiner(self.ecran)
             self.pause.dessiner_bouton(self.ecran)
             
             # Afficher le popup s'il y en a un
             if self.popup_actif == "victoire":
-                self.popup.dessiner_popup_victoire(self.ecran, self.boutons_popup, self.niveau_actuel)
+                self.popup.dessiner_popup_victoire(self.ecran, self.niveau_actuel)
             elif self.popup_actif == "defaite":
-                self.popup.dessiner_popup_defaite(self.ecran, self.boutons_popup)
+                self.popup.dessiner_popup_defaite(self.ecran)
 
         elif self.etat == "param":
             self.parametres.afficher_parametres(self.ecran)

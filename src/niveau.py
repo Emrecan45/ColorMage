@@ -74,19 +74,19 @@ class Niveau:
             for x in range(LARGEUR_GRILLE):
                 bloc = self.grille[y][x]
                 
-                if bloc == "pic" and self.image_pic:
-                    ecran.blit(self.image_pic, (x * TAILLE_CELLULE, y * TAILLE_CELLULE))
-                
-                elif bloc.startswith("change_"):
-                    # Portails = cercles colorés
-                    couleur = COULEURS[bloc]
-                    centre_x = x * TAILLE_CELLULE + TAILLE_CELLULE // 2
-                    centre_y = y * TAILLE_CELLULE + TAILLE_CELLULE // 2
-                    pygame.draw.circle(ecran, couleur, (centre_x, centre_y), TAILLE_CELLULE // 2 - 4)
-                
-                else:
-                    # Blocs normaux
-                    couleur = COULEURS[bloc]
-                    pygame.draw.rect(ecran, couleur, (x * TAILLE_CELLULE, y * TAILLE_CELLULE, TAILLE_CELLULE, TAILLE_CELLULE))
-                    if bloc != "vide":
+                if bloc != "vide":
+                    if bloc == "pic" and self.image_pic:
+                        ecran.blit(self.image_pic, (x * TAILLE_CELLULE, y * TAILLE_CELLULE))
+                    
+                    elif "change_" in bloc:
+                        # Portails = cercles colorés
+                        couleur = COULEURS[bloc]
+                        centre_x = x * TAILLE_CELLULE + TAILLE_CELLULE // 2
+                        centre_y = y * TAILLE_CELLULE + TAILLE_CELLULE // 2
+                        pygame.draw.circle(ecran, couleur, (centre_x, centre_y), TAILLE_CELLULE // 2 - 4)
+                    
+                    else:
+                        # Blocs normaux
+                        couleur = COULEURS[bloc]
+                        pygame.draw.rect(ecran, couleur, (x * TAILLE_CELLULE, y * TAILLE_CELLULE, TAILLE_CELLULE, TAILLE_CELLULE))
                         pygame.draw.rect(ecran, (0, 0, 0), (x * TAILLE_CELLULE, y * TAILLE_CELLULE, TAILLE_CELLULE, TAILLE_CELLULE), 1)

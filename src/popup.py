@@ -8,25 +8,24 @@ class Popup:
         self.font = pygame.font.Font(None, 48)
         self.largeur_popup = 600
         self.hauteur_popup = 400
-
-    def creer_boutons(self, options):
-        """Crée les boutons pour un popup avec les options donnés"""
-        position_horizontale_popup = (LARGEUR_ECRAN - self.largeur_popup) // 2
-        position_verticale_popup = (HAUTEUR_ECRAN - self.hauteur_popup) // 2
-        popup_rect = pygame.Rect(position_horizontale_popup, position_verticale_popup, self.largeur_popup, self.hauteur_popup)
-
-        liste_boutons = []
-        position_verticale_bouton = popup_rect.top + 160  # position de départ
-
-        for texte_bouton, action_bouton in options:
-            largeur_bouton = 260 
-            hauteur_bouton = 60
-            bouton_rect = pygame.Rect(0, 0, largeur_bouton, hauteur_bouton)
-            bouton_rect.center = (popup_rect.centerx, position_verticale_bouton)  # centrer horizontalement
-            liste_boutons.append((bouton_rect, action_bouton))
-            position_verticale_bouton += 90  # espace entre boutons
-
-        return liste_boutons
+        
+        # Rectangle du popup
+        self.popup_rect = pygame.Rect(
+            (LARGEUR_ECRAN - self.largeur_popup) // 2,
+            (HAUTEUR_ECRAN - self.hauteur_popup) // 2,
+            self.largeur_popup,
+            self.hauteur_popup
+        )
+        
+        # Créer les boutons (positionnés verticalement)
+        self.bouton_suivant = pygame.Rect(0, 0, 260, 60)
+        self.bouton_suivant.center = (self.popup_rect.centerx, self.popup_rect.top + 160)
+        
+        self.bouton_recommencer = pygame.Rect(0, 0, 260, 60)
+        self.bouton_recommencer.center = (self.popup_rect.centerx, self.popup_rect.top + 250)
+        
+        self.bouton_quitter = pygame.Rect(0, 0, 260, 60)
+        self.bouton_quitter.center = (self.popup_rect.centerx, self.popup_rect.top + 340)
 
     def niveau_existe(self, numero_niveau):
         """Vérifie si un fichier de niveau existe"""
@@ -38,43 +37,80 @@ class Popup:
         except:
             return False
 
-    def creer_boutons_victoire(self, niveau_actuel):
-        """Crée les boutons pour le popup de victoire"""
-        options = []
+    def gerer_clic_victoire(self, pos, niveau_actuel):
+        """Gère les clics pour le popup de victoire
         
-        # Vérifier si le niveau suivant existe
+        Args:
+            pos: Position du clic (x, y)
+            niveau_actuel: Numéro du niveau actuel
+            
+        Returns:
+            str: "suivant", "rejouer", "quitter" ou None
+        """
+        # Vérifier si le niveau suivant existe pour activer le bouton
         if self.niveau_existe(niveau_actuel + 1):
-            options.append(("Niveau suivant", "suivant"))
+            if self.bouton_suivant.collidepoint(pos):
+                return "suivant"
         
-        options.append(("Recommencer", "rejouer"))
-        options.append(("Quitter", "quitter"))
-        
-        return self.creer_boutons(options)
+        if self.bouton_recommencer.collidepoint(pos):
+            return "rejouer"
+        elif self.bouton_quitter.collidepoint(pos):
+            return "quitter"
+        return None
     
-    def creer_boutons_defaite(self):
-        """Crée les boutons pour le popup de défaite"""
-        return self.creer_boutons([("Recommencer", "rejouer"), ("Quitter", "quitter")])
+    def gerer_clic_defaite(self, pos):
+        """Gère les clics pour le popup de défaite
+        
+        Args:
+            pos: Position du clic (x, y)
+            
+        Returns:
+            str: "rejouer", "quitter" ou None
+        """
+        if self.bouton_recommencer.collidepoint(pos):
+            return "rejouer"
+        elif self.bouton_quitter.collidepoint(pos):
+            return "quitter"
+        return None
 
-    def dessiner_popup(self, ecran, titre, options_texte, boutons):
-        """Dessine un popup avec un titre et des boutons"""
-        popup_rect = pygame.Rect((LARGEUR_ECRAN - self.largeur_popup) // 2, (HAUTEUR_ECRAN - self.hauteur_popup) // 2, self.largeur_popup, self.hauteur_popup)
-
+    def dessiner_popup_victoire(self, ecran, niveau_actuel):
+        """Dessine le popup de victoire"""
         # Fond du popup
-        pygame.draw.rect(ecran, (255, 255, 255), popup_rect)
-        pygame.draw.rect(ecran, (0, 0, 0), popup_rect, 4)
+        pygame.draw.rect(ecran, (255, 255, 255), self.popup_rect)
+        pygame.draw.rect(ecran, (0, 0, 0), self.popup_rect, 4)
 
         # Titre
-        titre_surface = self.font.render(titre, True, (0, 0, 0))
-        titre_x = popup_rect.x + (popup_rect.width - titre_surface.get_width()) // 2
-        titre_y = popup_rect.y + 80
+        titre_surface = self.font.render("Bravo ! Niveau terminé", True, (0, 0, 0))
+        titre_x = self.popup_rect.x + (self.popup_rect.width - titre_surface.get_width()) // 2
+        titre_y = self.popup_rect.y + 80
         ecran.blit(titre_surface, (titre_x, titre_y))
 
-        # Dessiner les boutons
-        for i in range(len(boutons)):
-            rect = boutons[i][0]
-            texte = options_texte[i][0]
+        # Liste des boutons avec leurs textes
+        boutons = []
+        
+        # Ajouter le bouton "Niveau suivant" seulement s'il existe
+        if self.niveau_existe(niveau_actuel + 1):
+            boutons.append((self.bouton_suivant, "Niveau suivant"))
+        
+        # Ajuster la position du bouton recommencer selon s'il y a un bouton suivant
+        if self.niveau_existe(niveau_actuel + 1):
+            self.bouton_recommencer.center = (self.popup_rect.centerx, self.popup_rect.top + 250)
+        else:
+            self.bouton_recommencer.center = (self.popup_rect.centerx, self.popup_rect.top + 160)
+        
+        boutons.append((self.bouton_recommencer, "Recommencer"))
+        
+        # Ajuster la position du bouton quitter
+        if self.niveau_existe(niveau_actuel + 1):
+            self.bouton_quitter.center = (self.popup_rect.centerx, self.popup_rect.top + 340)
+        else:
+            self.bouton_quitter.center = (self.popup_rect.centerx, self.popup_rect.top + 250)
+        
+        boutons.append((self.bouton_quitter, "Quitter"))
 
-            # Effet de la souris sur les boutons (important)
+        # Dessiner les boutons
+        for rect, texte in boutons:
+            # Effet de survol
             if rect.collidepoint(pygame.mouse.get_pos()):
                 pygame.draw.rect(ecran, (200, 200, 200), rect)
             else:
@@ -89,20 +125,41 @@ class Popup:
             texte_y = rect.y + (rect.height - texte_surface.get_height()) // 2
             ecran.blit(texte_surface, (texte_x, texte_y))
 
-    def dessiner_popup_victoire(self, ecran, boutons, niveau_actuel):
-        """Dessine le popup de victoire"""
-        options = []
-        
-        # Vérifier si le niveau suivant existe
-        if self.niveau_existe(niveau_actuel + 1):
-            options.append(("Niveau suivant", "suivant"))
-        
-        options.append(("Recommencer", "rejouer"))
-        options.append(("Quitter", "quitter"))
-        
-        self.dessiner_popup(ecran, "Bravo ! Niveau terminé", options, boutons)
-
-    def dessiner_popup_defaite(self, ecran, boutons):
+    def dessiner_popup_defaite(self, ecran):
         """Dessine le popup de défaite"""
-        options = [("Recommencer", "rejouer"), ("Quitter", "quitter")]
-        self.dessiner_popup(ecran, "Game Over ! Vous êtes mort", options, boutons)
+        # Fond du popup
+        pygame.draw.rect(ecran, (255, 255, 255), self.popup_rect)
+        pygame.draw.rect(ecran, (0, 0, 0), self.popup_rect, 4)
+
+        # Titre
+        titre_surface = self.font.render("Game Over ! Vous êtes mort", True, (0, 0, 0))
+        titre_x = self.popup_rect.x + (self.popup_rect.width - titre_surface.get_width()) // 2
+        titre_y = self.popup_rect.y + 80
+        ecran.blit(titre_surface, (titre_x, titre_y))
+
+        # Ajuster les positions pour 2 boutons
+        self.bouton_recommencer.center = (self.popup_rect.centerx, self.popup_rect.top + 160)
+        self.bouton_quitter.center = (self.popup_rect.centerx, self.popup_rect.top + 250)
+
+        # Liste des boutons avec leurs textes
+        boutons = [
+            (self.bouton_recommencer, "Recommencer"),
+            (self.bouton_quitter, "Quitter")
+        ]
+
+        # Dessiner les boutons
+        for rect, texte in boutons:
+            # Effet de survol
+            if rect.collidepoint(pygame.mouse.get_pos()):
+                pygame.draw.rect(ecran, (200, 200, 200), rect)
+            else:
+                pygame.draw.rect(ecran, (230, 230, 230), rect)
+
+            # Bordure
+            pygame.draw.rect(ecran, (0, 0, 0), rect, 3)
+
+            # Texte du bouton
+            texte_surface = self.font.render(texte, True, (0, 0, 0))
+            texte_x = rect.x + (rect.width - texte_surface.get_width()) // 2
+            texte_y = rect.y + (rect.height - texte_surface.get_height()) // 2
+            ecran.blit(texte_surface, (texte_x, texte_y))
