@@ -37,6 +37,10 @@ class Joueur:
         # Liste des sons de changements de couleur
         self.sons_changement = [son_change_couleur1, son_change_couleur2, son_change_couleur3]
         
+        # Variable pour empêcher le spam des sons de changement de couleur
+        self.dernier_changement_couleur = 0
+        self.delai_changement_couleur = 200  # millisecondes entre chaque son
+        
         # Appliquer les volumes initiaux
         self.maj_volume_effets()
 
@@ -126,10 +130,25 @@ class Joueur:
         bloc = niveau.obtenir_bloc(bloc_x, bloc_y)
         
         if "change_" in bloc:
-            nouvelle_couleur = bloc.split("change_")[1] # fait une liste ["change_", "couleur"] et on récupere [1] de cette liste
-            self.couleur = nouvelle_couleur
-            son_change_aleatoire = random.choice(self.sons_changement)
-            son_change_aleatoire.play()      
+            # ca prend juste 'couleur' dans 'change_couleur'
+            nouvelle_couleur = bloc.split("change_")[1]
+            
+            # vérifier si on change de couleur
+            if self.couleur != nouvelle_couleur:
+                # Vérifier le délai depuis le dernier son
+                temps_actuel = pygame.time.get_ticks() # Renvoie le nombre de millisecondes depuis le lancement de pygame
+                if temps_actuel - self.dernier_changement_couleur >= self.delai_changement_couleur:
+                    self.couleur = nouvelle_couleur
+                    # Arrêter tous les sons de changement en cours
+                    for son in self.sons_changement:
+                        son.stop()
+                    # Jouer un nouveau son
+                    son_change_aleatoire = random.choice(self.sons_changement)
+                    son_change_aleatoire.play()
+                    self.dernier_changement_couleur = temps_actuel
+                else:
+                    # Changer la couleur mais sans jouer de son
+                    self.couleur = nouvelle_couleur
   
         if bloc == "porte":
             self.son_victoire.play()

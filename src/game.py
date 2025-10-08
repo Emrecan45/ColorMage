@@ -117,15 +117,18 @@ class Game:
 
                 elif self.etat == "jeu":
                     if evenement.type == pygame.KEYDOWN and evenement.key == pygame.K_p:
+                        self.pause.son_select.play()
                         action = self.pause.afficher_pause(self.ecran, self.joueur, self.niveau, self.niveau_actuel)
                         if action == "quitter":
                             self.etat = "selection"
-
-            if evenement.type == pygame.MOUSEBUTTONDOWN:
-                if self.pause.bouton_rect.collidepoint(evenement.pos):
-                    action = self.pause.afficher_pause(self.ecran, self.joueur, self.niveau, self.niveau_actuel)
-                    if action == "quitter":
-                        self.etat = "selection"
+                    
+                    # Gérer le clic sur le bouton pause
+                    if evenement.type == pygame.MOUSEBUTTONDOWN:
+                        if self.pause.bouton_rect.collidepoint(evenement.pos):
+                            self.pause.son_select.play()
+                            action = self.pause.afficher_pause(self.ecran, self.joueur, self.niveau, self.niveau_actuel)
+                            if action == "quitter":
+                                self.etat = "selection"
 
     
     def traiter_action_popup(self, action):

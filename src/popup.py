@@ -1,11 +1,18 @@
 import pygame
+import os
 from config import LARGEUR_ECRAN, HAUTEUR_ECRAN
+from config_manager import ConfigManager
 
 class Popup:
     """Gère l'affichage des popups de victoire et de défaite"""
 
     def __init__(self):
         self.font = pygame.font.Font(None, 48)
+        
+        # son des clics
+        self.gestionnaire_config = ConfigManager()
+        self.son_select = pygame.mixer.Sound(os.path.join("audio", "select.mp3"))
+        
         self.largeur_popup = 600
         self.hauteur_popup = 400
         
@@ -50,11 +57,15 @@ class Popup:
         # Vérifier si le niveau suivant existe pour activer le bouton
         if self.niveau_existe(niveau_actuel + 1):
             if self.bouton_suivant.collidepoint(pos):
+                self.son_select.play()
                 return "suivant"
         
         if self.bouton_recommencer.collidepoint(pos):
+            self.son_select.play()
             return "rejouer"
+
         elif self.bouton_quitter.collidepoint(pos):
+            self.son_select.play()
             return "quitter"
         return None
     
@@ -68,8 +79,10 @@ class Popup:
             str: "rejouer", "quitter" ou None
         """
         if self.bouton_recommencer.collidepoint(pos):
+            self.son_select.play()
             return "rejouer"
         elif self.bouton_quitter.collidepoint(pos):
+            self.son_select.play()
             return "quitter"
         return None
 

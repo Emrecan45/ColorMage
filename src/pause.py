@@ -1,6 +1,8 @@
 import pygame
 import sys
+import os
 from config import LARGEUR_ECRAN, HAUTEUR_ECRAN
+from config_manager import ConfigManager
 
 class Pause:
     """Gère le menu de pause avec bouton et options"""
@@ -11,6 +13,10 @@ class Pause:
         self.marge = 15
         self.image_pause = pygame.image.load("img/pause.png")
         self.image_pause = pygame.transform.scale(self.image_pause, (self.largeur_bouton, self.hauteur_bouton))
+        
+        # son des clics
+        self.gestionnaire_config = ConfigManager()
+        self.son_select = pygame.mixer.Sound(os.path.join("audio", "select.mp3"))
         
         # Coordonnées du bouton pause
         self.bouton_x = LARGEUR_ECRAN - self.largeur_bouton - self.marge
@@ -120,11 +126,13 @@ class Pause:
                 
                 if event.type == pygame.MOUSEBUTTONDOWN:
                     action = self.gerer_clic(event.pos)
+                    self.son_select.play()
                     if action:
                         en_pause = False
                 
                 if event.type == pygame.KEYDOWN:
                     if event.key == pygame.K_ESCAPE or event.key == pygame.K_p:
+                        self.son_select.play()
                         action = "continuer"
                         en_pause = False
             
