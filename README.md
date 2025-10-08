@@ -12,43 +12,39 @@ Le joueur doit résoudre des parcours en changeant sa propre couleur pour pouvoi
 - Traverser un portail change la couleur du Mage (par exemple : traverser un portail vert → le Mage devient vert).
 - L'objectif est d'atteindre le portail de sortie (portail jaune) en utilisant la bonne séquence de couleurs et de déplacements.
 
-## ⚙ Installation (raccourci au 6.)
+## ⚙ Installation
 
-1.  Cloner le repo :
+- **Sur Linux :**
     ```bash
     git clone https://github.com/Emrecan45/ColorMage.git
-    ```
-2.  Entrer dans le dossier :
-    ```bash
     cd ColorMage
-    ```
-3.  Lancer un environnement virtuel :
-    ```bash
     python3 -m venv venv 
     source venv/bin/activate
-    ```
-4.  Installer Pygame :
-    ```bash
     pip install pygame
-    ```
-5.  Lancer le jeu :
-    ```bash
     python3 src/game.py
     ```
 
-6. 🚀 En une seule commande : 🚀
-    ```bash
+- **Sur Windows :**
+    ```PowerShell
     git clone https://github.com/Emrecan45/ColorMage.git
     cd ColorMage
-    python3 -m venv venv 
-    source venv/bin/activate
     pip install pygame
+    python src/game.py
+    ```
+
+- **Sur macOS :**
+    ```zsh
+    git clone https://github.com/Emrecan45/ColorMage.git
+    cd ColorMage
+    python3 -m pip install pygame
     python3 src/game.py
     ```
 
 ## 📷 Screenshots
 
-soon...
+![screenshot_menu](img/screenshot_menu.png)
+
+![screenshot_game](img/screenshot_game.png)
 
 ## 🧠 Objectifs
 
