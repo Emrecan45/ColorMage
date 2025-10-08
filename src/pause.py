@@ -46,6 +46,11 @@ class Pause:
         self.bouton_quitter = pygame.Rect(0, 0, 260, 60)
         self.bouton_quitter.center = (self.popup_rect.centerx, self.popup_rect.top + 340)
     
+    def maj_volume(self):
+        """Met à jour le volume du son de sélection"""
+        volumes = self.gestionnaire_config.obtenir_volumes()
+        self.son_select.set_volume(volumes.get("effets", 50) / 100)
+    
     def dessiner_bouton(self, ecran):
         """Dessine le bouton de pause en haut à droite"""
         ecran.blit(self.image_pause, (self.bouton_x, self.bouton_y))
@@ -117,6 +122,7 @@ class Pause:
         """
         en_pause = True
         action = "continuer"
+        self.maj_volume()
         
         while en_pause:
             for event in pygame.event.get():

@@ -34,6 +34,11 @@ class Popup:
         self.bouton_quitter = pygame.Rect(0, 0, 260, 60)
         self.bouton_quitter.center = (self.popup_rect.centerx, self.popup_rect.top + 340)
 
+    def maj_volume(self):
+        """Met à jour le volume du son de sélection"""
+        volumes = self.gestionnaire_config.obtenir_volumes()
+        self.son_select.set_volume(volumes.get("effets", 50) / 100)
+
     def niveau_existe(self, numero_niveau):
         """Vérifie si un fichier de niveau existe"""
         chemin = "niveaux/niveau_" + str(numero_niveau) + ".json"
@@ -88,6 +93,8 @@ class Popup:
 
     def dessiner_popup_victoire(self, ecran, niveau_actuel):
         """Dessine le popup de victoire"""
+        self.maj_volume()
+        
         # Fond du popup
         pygame.draw.rect(ecran, (255, 255, 255), self.popup_rect)
         pygame.draw.rect(ecran, (0, 0, 0), self.popup_rect, 4)
@@ -140,6 +147,8 @@ class Popup:
 
     def dessiner_popup_defaite(self, ecran):
         """Dessine le popup de défaite"""
+        self.maj_volume()
+        
         # Fond du popup
         pygame.draw.rect(ecran, (255, 255, 255), self.popup_rect)
         pygame.draw.rect(ecran, (0, 0, 0), self.popup_rect, 4)
