@@ -1,6 +1,7 @@
 import pygame
 import sys
 import json
+import os
 from config import LARGEUR_ECRAN, HAUTEUR_ECRAN, VERSION_JEU
 from config_manager import ConfigManager
 
@@ -13,7 +14,12 @@ class Parametres:
         self.gestionnaire_config = ConfigManager()
         self.controls = self.gestionnaire_config.obtenir_controles()
         self.volumes = self.gestionnaire_config.obtenir_volumes()
-
+        
+        # son des clics
+        self.son_select = pygame.mixer.Sound(os.path.join("audio", "select.mp3"))
+        volumes = self.gestionnaire_config.obtenir_volumes()
+        self.son_select.set_volume(volumes.get("effets", 50) / 100)
+        
         # tailles de police
         self.font_1 = pygame.font.SysFont(None, 80)
         self.font_2 = pygame.font.SysFont(None, 50)
@@ -160,23 +166,30 @@ class Parametres:
             nouvelle_valeur = min(100, max(0, (pos[0] - self.jauge_general.x) / self.jauge_general.width * 100))
             self.val_jauge_general = nouvelle_valeur
             self.gestionnaire_config.maj_volume("effets", nouvelle_valeur)
-            # Appliquer immédiatement le volume
-            self.joueur.son_saut.set_volume(nouvelle_valeur / 100)
+            # Appliquer immédiatement le volume à TOUS les sons
+            if self.joueur:
+                self.joueur.maj_volume_effets()
+            # Mettre à jour aussi le son de sélection
+            self.son_select.set_volume(nouvelle_valeur / 100)
 
     def gerer_events(self, evenement):
         """Gère les événements quand on est dans le menu paramètres"""
         if evenement.type == pygame.MOUSEBUTTONDOWN:
             # Gestion des clics sur les champs de touches
             if self.droite_field.collidepoint(evenement.pos):
+                self.son_select.play()
                 self.champ_actif = "droite"
                 return None
             elif self.gauche_field.collidepoint(evenement.pos):
+                self.son_select.play()
                 self.champ_actif = "gauche"
                 return None
             elif self.sauter_field.collidepoint(evenement.pos):
+                self.son_select.play()
                 self.champ_actif = "sauter"
                 return None
             elif self.bouton_retour.collidepoint(evenement.pos):
+                self.son_select.play()
                 self.sauvegarder_controles()
                 self.champ_actif = None
                 return "quitter"
@@ -216,10 +229,13 @@ class Parametres:
 
                 # On assigne la nouvelle touche
                 if self.champ_actif == "droite":
+                    self.son_select.play()
                     self.droite_assign = nouvelle_touche
                 elif self.champ_actif == "gauche":
+                    self.son_select.play()
                     self.gauche_assign = nouvelle_touche
                 elif self.champ_actif == "sauter":
+                    self.son_select.play()
                     self.sauter_assign = nouvelle_touche
 
                 self.champ_actif = None

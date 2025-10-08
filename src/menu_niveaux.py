@@ -1,4 +1,5 @@
 import pygame
+import os
 from config import LARGEUR_ECRAN, HAUTEUR_ECRAN, VERSION_JEU
 from config_manager import ConfigManager
 
@@ -26,7 +27,19 @@ class MenuNiveaux:
         self.image_cadenas = pygame.image.load("img/cadena.png")
         self.image_cadenas = pygame.transform.scale(self.image_cadenas, (40, 40))
     
+        # son des clics
+        self.son_select = pygame.mixer.Sound(os.path.join("audio", "select.mp3"))
+        self.maj_volume()
+    
+    def maj_volume(self):
+        """Met à jour le volume du son de sélection"""
+        volumes = self.gestionnaire_config.obtenir_volumes()
+        self.son_select.set_volume(volumes.get("effets", 50) / 100)
+        
     def afficher_selection(self, ecran):
+        # Mettre à jour le volume à chaque affichage
+        self.maj_volume()
+        
         self.config = self.gestionnaire_config.charger_config()
         self.niveau_max_debloque = self.config["niveau_actuel"]
         
@@ -68,6 +81,7 @@ class MenuNiveaux:
     def gerer_clic(self, pos):
         for i in range(len(self.boutons_niveaux)):
             if self.boutons_niveaux[i].collidepoint(pos):
+                self.son_select.play()
                 niveau_numero = i + 1
                 if niveau_numero <= self.niveau_max_debloque:
                     return niveau_numero
@@ -75,6 +89,7 @@ class MenuNiveaux:
                     return None
         
         if self.bouton_retour.collidepoint(pos):
+            self.son_select.play()
             return 0
         
         return None

@@ -1,6 +1,7 @@
 import pygame
 import json
 import os
+import random
 from config import TAILLE_CELLULE, COULEURS, GRAVITE, VITESSE_DEPLACEMENT, FORCE_SAUT, LARGEUR_GRILLE, HAUTEUR_GRILLE
 from config_manager import ConfigManager
 
@@ -27,8 +28,17 @@ class Joueur:
         
         # Chargement des bruitages
         self.son_saut = pygame.mixer.Sound(os.path.join("audio", "jump.mp3"))
-        volumes = self.gestionnaire_config.obtenir_volumes()
-        self.son_saut.set_volume(volumes.get("effets", 50) / 100)
+        self.son_mort = pygame.mixer.Sound(os.path.join("audio", "death.mp3"))
+        self.son_victoire = pygame.mixer.Sound(os.path.join("audio", "win.mp3"))
+        
+        son_change_couleur1 = pygame.mixer.Sound(os.path.join("audio", "color_change1.mp3"))
+        son_change_couleur2 = pygame.mixer.Sound(os.path.join("audio", "color_change2.mp3"))
+        son_change_couleur3 = pygame.mixer.Sound(os.path.join("audio", "color_change3.mp3"))
+        # Liste des sons de changements de couleur
+        self.sons_changement = [son_change_couleur1, son_change_couleur2, son_change_couleur3]
+        
+        # Appliquer les volumes initiaux
+        self.maj_volume_effets()
 
         # Chargement des images
         self.images = dict()
@@ -118,11 +128,15 @@ class Joueur:
         if "change_" in bloc:
             nouvelle_couleur = bloc.split("change_")[1] # fait une liste ["change_", "couleur"] et on récupere [1] de cette liste
             self.couleur = nouvelle_couleur
-        
+            son_change_aleatoire = random.choice(self.sons_changement)
+            son_change_aleatoire.play()      
+  
         if bloc == "porte":
+            self.son_victoire.play()
             return "victoire"
         
         if bloc == "pic":
+            self.son_mort.play()
             return "mort"
     
     def maj_controles(self):
@@ -130,9 +144,18 @@ class Joueur:
         self.controls = self.gestionnaire_config.obtenir_controles()
         
     def maj_volume_effets(self):
-        """Met à jour le volume des effets sonores"""
+        """Met à jour le volume de TOUS les effets sonores"""
         volumes = self.gestionnaire_config.obtenir_volumes()
-        self.son_saut.set_volume(volumes.get("effets", 50) / 100)
+        volume = volumes.get("effets", 50) / 100
+        
+        # Mettre à jour tous les sons
+        self.son_saut.set_volume(volume)
+        self.son_mort.set_volume(volume)
+        self.son_victoire.set_volume(volume)
+        
+        # Mettre à jour tous les sons de changement de couleur
+        for son in self.sons_changement:
+            son.set_volume(volume)
     
     def dessiner(self, ecran):
         """Dessine le joueur"""
