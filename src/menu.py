@@ -1,6 +1,8 @@
 import pygame
 import sys
+import os
 from config import LARGEUR_ECRAN, HAUTEUR_ECRAN, VERSION_JEU, COULEUR_BOUTON, COULEUR_SURVOL, COULEUR_BORDURE
+from config_manager import ConfigManager
 
 class Menu:
     """Menu du jeu"""
@@ -16,9 +18,21 @@ class Menu:
         self.bouton_jouer = pygame.Rect(LARGEUR_ECRAN // 2 - 125, HAUTEUR_ECRAN // 2 - 80, 250, 50)
         self.bouton_parametres = pygame.Rect(LARGEUR_ECRAN // 2 - 125, HAUTEUR_ECRAN // 2 + 60, 250, 50)
         self.bouton_quitter = pygame.Rect(LARGEUR_ECRAN // 2 - 125, HAUTEUR_ECRAN // 2 + 200, 250, 50)
+        # son des clics
+        self.gestionnaire_config = ConfigManager()
+        self.son_select = pygame.mixer.Sound(os.path.join("audio", "select.mp3"))
+        self.maj_volume()
+    
+    def maj_volume(self):
+        """Met à jour le volume du son de sélection"""
+        volumes = self.gestionnaire_config.obtenir_volumes()
+        self.son_select.set_volume(volumes.get("effets", 50) / 100)
     
     def afficher_menu(self, ecran):
         """Affiche le menu"""
+        # Mettre à jour le volume à chaque affichage
+        self.maj_volume()
+        
         # fond
         ecran.blit(self.image_fond, (0, 0))
         
@@ -66,9 +80,13 @@ class Menu:
             str: "jouer" ou "parametres" ou "quitter" ou None
         """
         if self.bouton_jouer.collidepoint(pos):
+            self.son_select.play()
             return "jouer"
         elif self.bouton_parametres.collidepoint(pos):
+            self.son_select.play()
             return "parametres"
         elif self.bouton_quitter.collidepoint(pos):
+            self.son_select.play()
+            pygame.time.wait(500) # pour que le son_select s'entende
             return "quitter"
         return None
