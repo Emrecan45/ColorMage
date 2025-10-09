@@ -2,6 +2,7 @@ import pygame
 import json
 import os
 import random
+import math
 from config import TAILLE_CELLULE, COULEURS, GRAVITE, VITESSE_DEPLACEMENT, FORCE_SAUT, LARGEUR_GRILLE, HAUTEUR_GRILLE
 from config_manager import ConfigManager
 
@@ -9,7 +10,7 @@ from config_manager import ConfigManager
 class Joueur:
     """Le mage qui change de couleur"""
 
-    def __init__(self, x, y):
+    def __init__(self, x, y, gestionnaire_config=None):
         self.x_initial = x
         self.y_initial = y
         self.x = x
@@ -22,8 +23,14 @@ class Joueur:
         self.vitesse_y = 0
         self.au_sol = False
         
+        # Direction du personnage (1 = droite, -1 = gauche)
+        self.direction = 1
+        
         # Chargement des touches
-        self.gestionnaire_config = ConfigManager()
+        if gestionnaire_config is None:
+            self.gestionnaire_config = ConfigManager()
+        else:
+            self.gestionnaire_config = gestionnaire_config
         self.controls = self.gestionnaire_config.obtenir_controles()
         
         # Chargement des bruitages
@@ -67,18 +74,21 @@ class Joueur:
         self.vitesse_x = 0
         self.vitesse_y = 0
         self.au_sol = False
+        self.direction = 1
     
     def deplacer(self, touches, niveau):
         """Gère le déplacement du joueur"""
-        #Entrées clavier
+        # Entrées clavier
         self.vitesse_x = 0
         if self.controls['gauche'] != "":
             if touches[pygame.key.key_code(self.controls['gauche'])]:
                 self.vitesse_x = -VITESSE_DEPLACEMENT
+                self.direction = -1  # Tourner vers la gauche
 
         if self.controls['droite'] != "":
             if touches[pygame.key.key_code(self.controls['droite'])]:
                 self.vitesse_x = VITESSE_DEPLACEMENT
+                self.direction = 1  # Tourner vers la droite
 
         if self.controls['sauter'] != "":
             if touches[pygame.key.key_code(self.controls['sauter'])] and self.au_sol:
@@ -160,6 +170,7 @@ class Joueur:
     
     def maj_controles(self):
         """Recharge les touches depuis le gestionnaire"""
+        self.gestionnaire_config.charger_config()
         self.controls = self.gestionnaire_config.obtenir_controles()
         
     def maj_volume_effets(self):
@@ -177,6 +188,11 @@ class Joueur:
             son.set_volume(volume)
     
     def dessiner(self, ecran):
-        """Dessine le joueur"""
+        """Dessine le joueur avec effet miroir en fonction du sens"""
         if self.couleur in self.images:
-            ecran.blit(self.images[self.couleur], (self.x, self.y))
+            image_base = self.images[self.couleur]
+            if self.direction == -1:
+                image = pygame.transform.flip(image_base, True, False)
+            else:
+                image = image_base      
+            ecran.blit(image, (self.x, self.y))
