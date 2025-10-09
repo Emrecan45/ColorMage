@@ -22,6 +22,7 @@ class Joueur:
         self.vitesse_x = 0
         self.vitesse_y = 0
         self.au_sol = False
+        self.etait_au_sol = True
         
         # Direction du personnage (1 = droite, -1 = gauche)
         self.direction = 1
@@ -73,7 +74,9 @@ class Joueur:
         self.frame_index = 0
         self.temps_derniere_frame = 0
         self.delai_animation = 50
-        self.en_saut = False
+        self.en_animation = False
+        self.type_animation = None
+        self.animation_terminee = False
     
     def reset(self):
         """Réinitialise le joueur à sa position de départ et sa couleur de base (gris)"""
@@ -83,10 +86,17 @@ class Joueur:
         self.vitesse_x = 0
         self.vitesse_y = 0
         self.au_sol = False
+        self.etait_au_sol = True
         self.direction = 1
+        self.en_animation = False
+        self.type_animation = None
+        self.animation_terminee = False
+        self.frame_index = 0
     
     def deplacer(self, touches, niveau):
         """Gère le déplacement du joueur"""
+        self.etait_au_sol = self.au_sol
+        
         # Entrées clavier
         self.vitesse_x = 0
         if self.controls['gauche'] != "":
@@ -104,9 +114,7 @@ class Joueur:
                 self.vitesse_y = FORCE_SAUT
                 self.au_sol = False
                 self.son_saut.play()
-                self.en_saut = True
-                self.frame_index = 0
-                self.temps_derniere_frame = pygame.time.get_ticks()
+                self.demarrer_animation("saut")
 
         # Gravité
         self.vitesse_y += GRAVITE
@@ -127,7 +135,7 @@ class Joueur:
         if self.vitesse_x != 0:
             rect = pygame.Rect(nouveau_x, self.y, self.largeur, self.hauteur)
             if niveau.collision(rect, self.couleur):
-                while not niveau.collision(pygame.Rect(self.x + (1 if self.vitesse_x > 0 else -1), self.y, self.largeur, self.hauteur),self.couleur):
+                while not niveau.collision(pygame.Rect(self.x + (1 if self.vitesse_x > 0 else -1), self.y, self.largeur, self.hauteur), self.couleur):
                     self.x += (1 if self.vitesse_x > 0 else -1)
                 self.vitesse_x = 0
             else:
@@ -136,14 +144,33 @@ class Joueur:
         # Collision verticale
         rect = pygame.Rect(self.x, nouveau_y, self.largeur, self.hauteur)
         if niveau.collision(rect, self.couleur):
-            while not niveau.collision(pygame.Rect(self.x, self.y + (1 if self.vitesse_y > 0 else -1), self.largeur, self.hauteur),self.couleur):
+            while not niveau.collision(pygame.Rect(self.x, self.y + (1 if self.vitesse_y > 0 else -1), self.largeur, self.hauteur), self.couleur):
                 self.y += (1 if self.vitesse_y > 0 else -1)
             if self.vitesse_y > 0:
                 self.au_sol = True
+                # renitialiser l'animation quand on touche le sol
+                if self.en_animation:
+                    self.en_animation = False
+                    self.type_animation = None
+                    self.animation_terminee = False
+                    self.frame_index = 0
             self.vitesse_y = 0
         else:
             self.y = nouveau_y
             self.au_sol = False
+        
+        # chute (on quitte le sol sans avoir sauté)
+        if self.etait_au_sol and not self.au_sol and self.type_animation != "saut":
+            self.demarrer_animation("chute")
+    
+    def demarrer_animation(self, type_anim):
+        """Démarre une nouvelle animation si aucune n'est en cours"""
+        if not self.en_animation or (self.en_animation and self.type_animation == "chute" and type_anim == "saut"):
+            self.en_animation = True
+            self.type_animation = type_anim
+            self.frame_index = 1  # commence a la première frame (pas la frame "repos")
+            self.temps_derniere_frame = pygame.time.get_ticks()
+            self.animation_terminee = False
     
     def interagir_avec_blocs(self, niveau):
         """Vérifie les interactions avec les blocs spéciaux"""
@@ -158,7 +185,7 @@ class Joueur:
             # vérifier si on change de couleur
             if self.couleur != nouvelle_couleur:
                 # Vérifier le délai depuis le dernier son
-                temps_actuel = pygame.time.get_ticks() # Renvoie le nombre de millisecondes depuis le lancement de pygame
+                temps_actuel = pygame.time.get_ticks()
                 if temps_actuel - self.dernier_changement_couleur >= self.delai_changement_couleur:
                     self.couleur = nouvelle_couleur
                     # Arrêter tous les sons de changement en cours
@@ -200,8 +227,8 @@ class Joueur:
             son.set_volume(volume)
     
     def animer(self):
-        """Joue l’animation de saut une seule fois"""
-        if self.en_saut:
+        """Joue l'animation de saut/chute une seule fois"""
+        if self.en_animation and not self.animation_terminee:
             temps_actuel = pygame.time.get_ticks()
             if temps_actuel - self.temps_derniere_frame >= self.delai_animation:
                 self.temps_derniere_frame = temps_actuel
@@ -209,12 +236,14 @@ class Joueur:
                     self.frame_index += 1
                 else:
                     # Fin de l’animation de saut
-                    self.en_saut = False
-
+                    self.animation_terminee = True
+        
+        if not self.au_sol and self.animation_terminee:
+            self.frame_index = len(self.images[self.couleur]) - 1
+        
         # Quand le joueur touche le sol, on remet à l’état initial
-        if self.au_sol and not self.en_saut:
+        if self.au_sol and not self.en_animation:
             self.frame_index = 0
-
     
     def dessiner(self, ecran):
         """Dessine le joueur avec effet miroir en fonction du sens"""
