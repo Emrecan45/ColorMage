@@ -53,18 +53,27 @@ class Joueur:
 
         # Chargement des images
         self.images = dict()
-        
-        img_gris = pygame.image.load("img/joueur_gris.png")
-        self.images["gris"] = pygame.transform.scale(img_gris, (self.largeur, self.hauteur))
+        couleurs = ["gris", "rouge", "bleu", "vert"]
+        for couleur in couleurs:
+            frames = []
+            
+            chemin_base = "img/joueur_" + couleur + ".png"
+            image_res = pygame.image.load(chemin_base)
+            image_res = pygame.transform.scale(image_res, (self.largeur, self.hauteur))
+            frames.append(image_res)
 
-        img_rouge = pygame.image.load("img/joueur_rouge.png")
-        self.images["rouge"] = pygame.transform.scale(img_rouge, (self.largeur, self.hauteur))
+            for i in range(1, 4):
+                chemin = "img/joueur_" + couleur + "_saut" + str(i) + ".png"
+                image = pygame.image.load(chemin)
+                image = pygame.transform.scale(image, (self.largeur, self.hauteur))
+                frames.append(image)
 
-        img_bleu = pygame.image.load("img/joueur_bleu.png")
-        self.images["bleu"] = pygame.transform.scale(img_bleu, (self.largeur, self.hauteur))
+            self.images[couleur] = frames
 
-        img_verte = pygame.image.load("img/joueur_vert.png")
-        self.images["vert"] = pygame.transform.scale(img_verte, (self.largeur, self.hauteur))
+        self.frame_index = 0
+        self.temps_derniere_frame = 0
+        self.delai_animation = 50
+        self.en_saut = False
     
     def reset(self):
         """Réinitialise le joueur à sa position de départ et sa couleur de base (gris)"""
@@ -95,6 +104,9 @@ class Joueur:
                 self.vitesse_y = FORCE_SAUT
                 self.au_sol = False
                 self.son_saut.play()
+                self.en_saut = True
+                self.frame_index = 0
+                self.temps_derniere_frame = pygame.time.get_ticks()
 
         # Gravité
         self.vitesse_y += GRAVITE
@@ -187,12 +199,29 @@ class Joueur:
         for son in self.sons_changement:
             son.set_volume(volume)
     
+    def animer(self):
+        """Joue l’animation de saut une seule fois"""
+        if self.en_saut:
+            temps_actuel = pygame.time.get_ticks()
+            if temps_actuel - self.temps_derniere_frame >= self.delai_animation:
+                self.temps_derniere_frame = temps_actuel
+                if self.frame_index < len(self.images[self.couleur]) - 1:
+                    self.frame_index += 1
+                else:
+                    # Fin de l’animation de saut
+                    self.en_saut = False
+
+        # Quand le joueur touche le sol, on remet à l’état initial
+        if self.au_sol and not self.en_saut:
+            self.frame_index = 0
+
+    
     def dessiner(self, ecran):
         """Dessine le joueur avec effet miroir en fonction du sens"""
-        if self.couleur in self.images:
-            image_base = self.images[self.couleur]
-            if self.direction == -1:
-                image = pygame.transform.flip(image_base, True, False)
-            else:
-                image = image_base      
-            ecran.blit(image, (self.x, self.y))
+        frames = self.images[self.couleur]
+        image_res = frames[self.frame_index]
+        if self.direction == -1:
+            image = pygame.transform.flip(image_res, True, False)
+        else:
+            image = image_res
+        ecran.blit(image, (self.x, self.y))

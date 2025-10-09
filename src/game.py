@@ -156,7 +156,7 @@ class Game:
         if self.etat == "jeu":
             touches = pygame.key.get_pressed()
             self.joueur.deplacer(touches, self.niveau)
-
+            self.joueur.animer()
             # Stocke l'interaction du joueur
             resultat = self.joueur.interagir_avec_blocs(self.niveau)
 
