@@ -55,6 +55,7 @@ class Joueur:
         # Chargement des spritesheets
         self.spritesheets = dict()
         self.images = dict()
+        self.images_boules = dict()
         couleurs = ["gris", "rouge", "bleu", "vert"]
         
         # Dimensions d'un sprite dans le spritesheet (768x590 divisé par 4 colonnes x 3 lignes)
@@ -75,8 +76,9 @@ class Joueur:
                 (0, 0),
                 
                 # saut
-                (2, 2),  # debut du saut
-                (3, 2)   # milieu du saut
+                (2, 1),  # debut du saut
+                (3, 1),  # milieu du saut
+                (0, 2)   # fin du saut
             ]
             
             for col, ligne in positions:
@@ -84,14 +86,29 @@ class Joueur:
                 y_sprite = ligne * self.sprite_hauteur
                 
                 #extraire le sprite
-                sprite = spritesheet.subsurface(
-                    pygame.Rect(x_sprite, y_sprite, self.sprite_largeur, self.sprite_hauteur)
-                )
-                
+                sprite = spritesheet.subsurface(pygame.Rect(x_sprite, y_sprite, self.sprite_largeur, self.sprite_hauteur))
                 sprite = pygame.transform.scale(sprite, (self.largeur, self.hauteur))
                 frames.append(sprite)
             
             self.images[couleur] = frames
+            
+            positions_boules = {
+                "rouge": (1, 1),
+                "bleu":  (2, 0),
+                "vert":  (0, 1)
+            }
+
+            boules = {}
+            for couleur_boule, (col, ligne) in positions_boules.items():
+                x_sprite = col*self.sprite_largeur
+                y_sprite = ligne*self.sprite_hauteur
+
+                sprite = spritesheet.subsurface(pygame.Rect(x_sprite, y_sprite, self.sprite_largeur, self.sprite_hauteur))
+                sprite = pygame.transform.scale(sprite, (self.largeur, self.hauteur))
+                boules[couleur_boule] = sprite
+
+            boules["gris"] = self.images[couleur][0]
+            self.images_boules[couleur] = boules
 
         self.frame_index = 0
         self.temps_derniere_frame = 0
@@ -99,6 +116,10 @@ class Joueur:
         self.en_animation = False
         self.type_animation = None
         self.animation_terminee = False
+        self.en_changement_couleur = False
+        self.etape_changement = 0
+        self.couleur_cible = None
+        self.couleur_precedente = None
     
     def reset(self):
         """Réinitialise le joueur à sa position de départ et sa couleur de base (gris)"""
@@ -114,11 +135,17 @@ class Joueur:
         self.type_animation = None
         self.animation_terminee = False
         self.frame_index = 0
+        self.en_changement_couleur = False
+        self.etape_changement = 0
+        self.couleur_cible = None
+        self.couleur_precedente = None
     
     def deplacer(self, touches, niveau):
         """Gère le déplacement du joueur"""
         self.etait_au_sol = self.au_sol
-        
+        # empeche le joueur de bouger pendant l'animation de changement de couleur
+        if self.en_changement_couleur:
+            return None
         # Entrées clavier
         self.vitesse_x = 0
         if self.controls['gauche'] != "":
@@ -194,6 +221,45 @@ class Joueur:
             self.temps_derniere_frame = pygame.time.get_ticks()
             self.animation_terminee = False
     
+    def demarrer_changement_couleur(self, nouvelle_couleur):
+        """Démarre l'animation de changement de couleur"""
+        if nouvelle_couleur != self.couleur:
+            self.en_changement_couleur = True
+            self.etape_changement = 0
+            self.couleur_precedente = self.couleur
+            self.couleur_cible = nouvelle_couleur
+            self.temps_derniere_frame = pygame.time.get_ticks()
+            
+            # Arrêter tous les sons de changement en cours et jouer un nouveau
+            for son in self.sons_changement:
+                son.stop()
+            son_change_aleatoire = random.choice(self.sons_changement)
+            son_change_aleatoire.play()
+    
+    def animer_changement_couleur(self):
+        """Gère l'animation de changement de couleur par étapes"""
+        if not self.en_changement_couleur:
+            return
+        
+        temps_actuel = pygame.time.get_ticks()
+        
+        if self.etape_changement == 0:
+            delai_etape = 500#ms
+        else:
+            delai_etape = 100#ms
+
+        
+        if temps_actuel - self.temps_derniere_frame >= delai_etape:
+            self.temps_derniere_frame = temps_actuel
+            self.etape_changement += 1
+
+            
+            if self.etape_changement >= 4:
+                # Fin de l'animation
+                self.en_changement_couleur = False
+                self.etape_changement = 0
+                self.couleur_precedente = None
+    
     def interagir_avec_blocs(self, niveau):
         """Vérifie les interactions avec les blocs spéciaux"""
         bloc_x = int((self.x + self.largeur // 2) / TAILLE_CELLULE)
@@ -205,19 +271,8 @@ class Joueur:
             nouvelle_couleur = bloc.split("change_")[1]
             
             # vérifier si on change de couleur
-            if self.couleur != nouvelle_couleur:
-                # Vérifier le délai depuis le dernier son
-                temps_actuel = pygame.time.get_ticks()
-                if temps_actuel - self.dernier_changement_couleur >= self.delai_changement_couleur:
-                    self.couleur = nouvelle_couleur
-                    for son in self.sons_changement:
-                        son.stop()
-                    son_change_aleatoire = random.choice(self.sons_changement)
-                    son_change_aleatoire.play()
-                    self.dernier_changement_couleur = temps_actuel
-                else:
-                    # Changer la couleur mais sans jouer de son
-                    self.couleur = nouvelle_couleur
+            if self.couleur != nouvelle_couleur and not self.en_changement_couleur:
+                self.demarrer_changement_couleur(nouvelle_couleur)
   
         if bloc == "porte":
             self.son_victoire.play()
@@ -248,6 +303,10 @@ class Joueur:
     
     def animer(self):
         """Joue l'animation de saut/chute une seule fois"""
+        if self.en_changement_couleur:
+            self.animer_changement_couleur()
+            return None
+        
         if self.en_animation and not self.animation_terminee:
             temps_actuel = pygame.time.get_ticks()
             if temps_actuel - self.temps_derniere_frame >= self.delai_animation:
@@ -267,8 +326,20 @@ class Joueur:
     
     def dessiner(self, ecran):
         """Dessine le joueur avec effet miroir en fonction du sens"""
-        frames = self.images[self.couleur]
-        image_res = frames[self.frame_index]
+        image_res = None
+        
+        if self.en_changement_couleur:
+            if self.etape_changement == 0:
+                # Affiche la boule de couleur cible (effet visuel)
+                image_res = self.images_boules[self.couleur_precedente][self.couleur_cible]
+            else:
+                self.couleur = self.couleur_cible
+                image_res = self.images[self.couleur][0]
+
+        else:
+            frames = self.images[self.couleur]
+            image_res = frames[self.frame_index]
+
         if self.direction == -1:
             image = pygame.transform.flip(image_res, True, False)
         else:
