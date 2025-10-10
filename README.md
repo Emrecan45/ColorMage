@@ -21,7 +21,10 @@ Le joueur doit résoudre des parcours en changeant sa propre couleur pour pouvoi
     python3 -m venv venv 
     source venv/bin/activate
     pip install pygame
-    python3 src/game.py
+    ```
+5.  Lancer le jeu :
+    ```bash
+    python3 src/ColorMage.py
     ```
 
 - **Sur Windows :**
@@ -29,15 +32,7 @@ Le joueur doit résoudre des parcours en changeant sa propre couleur pour pouvoi
     git clone https://github.com/Emrecan45/ColorMage.git
     cd ColorMage
     pip install pygame
-    python src/game.py
-    ```
-
-- **Sur macOS :**
-    ```zsh
-    git clone https://github.com/Emrecan45/ColorMage.git
-    cd ColorMage
-    python3 -m pip install pygame
-    python3 src/game.py
+    python3 src/ColorMage.py
     ```
 
 ## 📷 Screenshots

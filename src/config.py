@@ -1,8 +1,8 @@
 # Version du jeu
-VERSION_JEU = "v1.1.0"
+VERSION_JEU = "v1.1.1"
 
 # Dimensions
-TAILLE_CELLULE = 60
+TAILLE_CELLULE = 50
 LARGEUR_GRILLE = 30
 HAUTEUR_GRILLE = 15
 
