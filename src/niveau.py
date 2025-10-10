@@ -29,7 +29,7 @@ class Niveau:
         self.creer_grille_vide()
         for type_bloc, positions in data.items():
             for pos in positions:
-                y, x = pos
+                x, y = pos
                 self.grille[y][x] = type_bloc
         
         return self.grille

@@ -91,8 +91,8 @@ class Popup:
             return "quitter"
         return None
 
-    def dessiner_popup_victoire(self, ecran, niveau_actuel):
-        """Dessine le popup de victoire"""
+    def dessiner_popup_victoire(self, ecran, niveau_actuel, temps_ms=0):
+        """Dessine le popup de victoire avec le temps"""
         self.maj_volume()
         
         # Fond du popup
@@ -102,8 +102,23 @@ class Popup:
         # Titre
         titre_surface = self.font.render("Bravo ! Niveau terminé", True, (0, 0, 0))
         titre_x = self.popup_rect.x + (self.popup_rect.width - titre_surface.get_width()) // 2
-        titre_y = self.popup_rect.y + 80
+        titre_y = self.popup_rect.y + 50
         ecran.blit(titre_surface, (titre_x, titre_y))
+        
+        #afficher le temps
+        if temps_ms > 0:
+            secondes_totales = temps_ms // 1000
+            millisecondes = (temps_ms % 1000) // 10
+            
+            if millisecondes < 10:
+                temps_texte = "Temps: " + str(secondes_totales) + ":0" + str(millisecondes)
+            else:
+                temps_texte = "Temps: " + str(secondes_totales) + ":" + str(millisecondes)
+            font_temps = pygame.font.Font(None, 40)
+            temps_surface = font_temps.render(temps_texte, True, (0, 100, 0))
+            temps_x = self.popup_rect.x + (self.popup_rect.width - temps_surface.get_width()) // 2
+            temps_y = self.popup_rect.y + 100
+            ecran.blit(temps_surface, (temps_x, temps_y))
 
         # Liste des boutons avec leurs textes
         boutons = []
@@ -116,7 +131,7 @@ class Popup:
         if self.niveau_existe(niveau_actuel + 1):
             self.bouton_recommencer.center = (self.popup_rect.centerx, self.popup_rect.top + 250)
         else:
-            self.bouton_recommencer.center = (self.popup_rect.centerx, self.popup_rect.top + 160)
+            self.bouton_recommencer.center = (self.popup_rect.centerx, self.popup_rect.top + 200)
         
         boutons.append((self.bouton_recommencer, "Recommencer"))
         
@@ -124,7 +139,7 @@ class Popup:
         if self.niveau_existe(niveau_actuel + 1):
             self.bouton_quitter.center = (self.popup_rect.centerx, self.popup_rect.top + 340)
         else:
-            self.bouton_quitter.center = (self.popup_rect.centerx, self.popup_rect.top + 250)
+            self.bouton_quitter.center = (self.popup_rect.centerx, self.popup_rect.top + 290)
         
         boutons.append((self.bouton_quitter, "Quitter"))
 
