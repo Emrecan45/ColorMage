@@ -12,12 +12,17 @@ class Joueur:
 
     def __init__(self, x, y, gestionnaire_config=None):
         self.x_initial = x
-        self.y_initial = y
+        self.y_initial = y - TAILLE_CELLULE 
         self.x = x
         self.y = y
-        self.largeur = TAILLE_CELLULE
-        self.hauteur = TAILLE_CELLULE
+        self.largeur = TAILLE_CELLULE * 2
+        self.hauteur = TAILLE_CELLULE * 2
         self.couleur = "gris"
+        
+        #hitbox
+        self.marge_x = 40
+        self.marge_y_haut = 40  
+        self.marge_y_bas = 0
         
         self.vitesse_x = 0
         self.vitesse_y = 0
@@ -59,8 +64,8 @@ class Joueur:
         couleurs = ["gris", "rouge", "bleu", "vert"]
         
         # Dimensions d'un sprite dans le spritesheet (768x590 divisé par 4 colonnes x 3 lignes)
-        self.sprite_largeur = 192  # 768 ÷ 4
-        self.sprite_hauteur = 196  # 590 ÷ 3
+        self.sprite_largeur = 192  # 768 / 4
+        self.sprite_hauteur = 196  # 590 / 3
         
         for couleur in couleurs:
             # Charger le spritesheet
@@ -173,28 +178,42 @@ class Joueur:
         nouveau_y = self.y + self.vitesse_y
         
         # Limites de l'ecran
-        if nouveau_x < 0:
-            nouveau_x = 0
+        hitbox_gauche = nouveau_x + self.marge_x
+        hitbox_droite = nouveau_x + self.largeur - self.marge_x
+        
+        if hitbox_gauche < 0:
+            nouveau_x = -self.marge_x
             self.vitesse_x = 0
-        if nouveau_x + self.largeur > LARGEUR_GRILLE * TAILLE_CELLULE:
-            nouveau_x = LARGEUR_GRILLE * TAILLE_CELLULE - self.largeur
+        if hitbox_droite > LARGEUR_GRILLE * TAILLE_CELLULE:
+            nouveau_x = LARGEUR_GRILLE * TAILLE_CELLULE - self.largeur + self.marge_x
             self.vitesse_x = 0
         
         # Collision horizontale
         if self.vitesse_x != 0:
-            rect = pygame.Rect(nouveau_x, self.y, self.largeur, self.hauteur)
+            self.x = nouveau_x
+            rect = pygame.Rect(self.x + self.marge_x, self.y + self.marge_y_haut, self.largeur - 2 * self.marge_x, self.hauteur - self.marge_y_haut - self.marge_y_bas)
             if niveau.collision(rect, self.couleur):
-                while not niveau.collision(pygame.Rect(self.x + (1 if self.vitesse_x > 0 else -1), self.y, self.largeur, self.hauteur), self.couleur):
+                self.x = nouveau_x - self.vitesse_x
+                rect = pygame.Rect(self.x + self.marge_x, self.y + self.marge_y_haut, self.largeur - 2 * self.marge_x, self.hauteur - self.marge_y_haut - self.marge_y_bas)
+                while not niveau.collision(rect, self.couleur):
                     self.x += (1 if self.vitesse_x > 0 else -1)
+                    rect = pygame.Rect(self.x + self.marge_x, self.y + self.marge_y_haut, self.largeur - 2 * self.marge_x, self.hauteur - self.marge_y_haut - self.marge_y_bas)
+                self.x -= (1 if self.vitesse_x > 0 else -1)
                 self.vitesse_x = 0
-            else:
-                self.x = nouveau_x
         
         # Collision verticale
-        rect = pygame.Rect(self.x, nouveau_y, self.largeur, self.hauteur)
+        self.y = nouveau_y
+        rect = pygame.Rect(self.x + self.marge_x, self.y + self.marge_y_haut, self.largeur - 2 * self.marge_x, self.hauteur - self.marge_y_haut - self.marge_y_bas)
         if niveau.collision(rect, self.couleur):
-            while not niveau.collision(pygame.Rect(self.x, self.y + (1 if self.vitesse_y > 0 else -1), self.largeur, self.hauteur), self.couleur):
+            self.y = nouveau_y - self.vitesse_y
+            rect = pygame.Rect(self.x + self.marge_x, self.y + self.marge_y_haut, 
+                              self.largeur - 2 * self.marge_x, self.hauteur - self.marge_y_haut - self.marge_y_bas)
+            while not niveau.collision(rect, self.couleur):
                 self.y += (1 if self.vitesse_y > 0 else -1)
+                rect = pygame.Rect(self.x + self.marge_x, self.y + self.marge_y_haut, 
+                                  self.largeur - 2 * self.marge_x, self.hauteur - self.marge_y_haut - self.marge_y_bas)
+            self.y -= (1 if self.vitesse_y > 0 else -1)
+            
             if self.vitesse_y > 0:
                 self.au_sol = True
                 # renitialiser l'animation quand on touche le sol
@@ -205,7 +224,6 @@ class Joueur:
                     self.frame_index = 0
             self.vitesse_y = 0
         else:
-            self.y = nouveau_y
             self.au_sol = False
         
         # chute
@@ -244,10 +262,9 @@ class Joueur:
         temps_actuel = pygame.time.get_ticks()
         
         if self.etape_changement == 0:
-            delai_etape = 500#ms
+            delai_etape = 350#ms
         else:
             delai_etape = 100#ms
-
         
         if temps_actuel - self.temps_derniere_frame >= delai_etape:
             self.temps_derniere_frame = temps_actuel
@@ -262,25 +279,43 @@ class Joueur:
     
     def interagir_avec_blocs(self, niveau):
         """Vérifie les interactions avec les blocs spéciaux"""
-        bloc_x = int((self.x + self.largeur // 2) / TAILLE_CELLULE)
-        bloc_y = int((self.y + self.hauteur // 2) / TAILLE_CELLULE)
-        bloc = niveau.obtenir_bloc(bloc_x, bloc_y)
+        hitbox = pygame.Rect(self.x + self.marge_x, self.y + self.marge_y_haut, self.largeur - 2 * self.marge_x, self.hauteur - self.marge_y_haut - self.marge_y_bas)
         
-        if "change_" in bloc:
-            # ca prend juste 'couleur' dans 'change_couleur'
-            nouvelle_couleur = bloc.split("change_")[1]
-            
-            # vérifier si on change de couleur
-            if self.couleur != nouvelle_couleur and not self.en_changement_couleur:
-                self.demarrer_changement_couleur(nouvelle_couleur)
-  
-        if bloc == "porte":
-            self.son_victoire.play()
-            return "victoire"
+        # Vérifier tous les blocs que la hitbox touche
+        x_debut = int(hitbox.left / TAILLE_CELLULE)
+        x_fin = int(hitbox.right / TAILLE_CELLULE)
+        y_debut = int(hitbox.top / TAILLE_CELLULE)
+        y_fin = int(hitbox.bottom / TAILLE_CELLULE)
         
-        if bloc == "pic":
-            self.son_mort.play()
-            return "mort"
+        # Pour chaque blocs touchés par la hitbox
+        for y in range(y_debut, y_fin + 1):
+            for x in range(x_debut, x_fin + 1):
+                bloc = niveau.obtenir_bloc(x, y)
+                
+                if "change_" in bloc:
+                    bloc_rect = pygame.Rect(x * TAILLE_CELLULE, y * TAILLE_CELLULE, TAILLE_CELLULE, TAILLE_CELLULE)
+                    if hitbox.colliderect(bloc_rect):
+                        # ça prend juste 'couleur' dans 'change_couleur'
+                        nouvelle_couleur = bloc.split("change_")[1]
+                        
+                        # vérifier si on change de couleur
+                        if self.couleur != nouvelle_couleur and not self.en_changement_couleur:
+                            self.demarrer_changement_couleur(nouvelle_couleur)
+                            return None
+        
+                if bloc == "porte":
+                    bloc_rect = pygame.Rect(x * TAILLE_CELLULE, y * TAILLE_CELLULE, TAILLE_CELLULE, TAILLE_CELLULE)
+                    if hitbox.colliderect(bloc_rect):
+                        self.son_victoire.play()
+                        return "victoire"
+                
+                if bloc == "pic":
+                    bloc_rect = pygame.Rect(x * TAILLE_CELLULE, y * TAILLE_CELLULE, TAILLE_CELLULE, TAILLE_CELLULE)
+                    if hitbox.colliderect(bloc_rect):
+                        self.son_mort.play()
+                        return "mort"
+        
+        return None
     
     def maj_controles(self):
         """Recharge les touches depuis le gestionnaire"""
