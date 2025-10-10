@@ -8,7 +8,7 @@ class Menu:
     """Menu du jeu"""
 
     def __init__(self):
-        self.font_1 = pygame.font.SysFont(None, 100)
+        self.font_1 = pygame.font.SysFont(None, 150)
         self.font_2 = pygame.font.SysFont(None, 50)
         self.font_3 = pygame.font.SysFont(None, 40)
         
