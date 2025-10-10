@@ -32,15 +32,15 @@ class Parametres:
         self.image_fond = pygame.transform.scale(self.image_fond, (LARGEUR_ECRAN, HAUTEUR_ECRAN))
 
         # droite
-        self.droite_field = pygame.Rect(LARGEUR_ECRAN // 3 + 100, HAUTEUR_ECRAN // 2 - 30, 90, 50)
+        self.droite_field = pygame.Rect(LARGEUR_ECRAN // 3 + 150, HAUTEUR_ECRAN // 2 - 30, 90, 50)
         self.droite_assign = self.controls.get("droite", "right")
 
         # gauche
-        self.gauche_field = pygame.Rect(LARGEUR_ECRAN // 3 + 100, HAUTEUR_ECRAN // 2 + 30, 90, 50)
+        self.gauche_field = pygame.Rect(LARGEUR_ECRAN // 3 + 150, HAUTEUR_ECRAN // 2 + 30, 90, 50)
         self.gauche_assign = self.controls.get("gauche", "left")
 
         # sauter
-        self.sauter_field = pygame.Rect(LARGEUR_ECRAN // 3 + 100, HAUTEUR_ECRAN // 2 + 90, 90, 50)
+        self.sauter_field = pygame.Rect(LARGEUR_ECRAN // 3 + 150, HAUTEUR_ECRAN // 2 + 90, 90, 50)
         self.sauter_assign = self.controls.get("sauter", "up")
 
         # Variable pour savoir quel champ est actuellement en cours d'attribution
@@ -80,6 +80,7 @@ class Parametres:
         des_touches_txt = self.font_2.render("des touches", True, (255, 255, 255))
         ecran.blit(des_touches_txt, (LARGEUR_ECRAN // 2 - des_touches_txt.get_width() // 2 - 110, HAUTEUR_ECRAN // 2 - 90))
 
+
         # ---------volume musique
         musique_txt = self.font_3.render("Musique", True, (255, 255, 255))
         ecran.blit(musique_txt, (LARGEUR_ECRAN // 2 - musique_txt.get_width() // 2 + 160, HAUTEUR_ECRAN // 2 - 40))
@@ -87,6 +88,7 @@ class Parametres:
         # remplissage de la jauge
         largeur_remplie = int((self.val_jauge_musique / 100) * self.jauge_musique.width)
         pygame.draw.rect(ecran, (0, 200, 0), (self.jauge_musique.x, self.jauge_musique.y, largeur_remplie, self.jauge_musique.height))
+
 
         # ----------volume général
         general_txt = self.font_3.render("Effets sonores", True, (255, 255, 255))
@@ -97,9 +99,11 @@ class Parametres:
         pygame.draw.rect(ecran, (0, 200, 0), (self.jauge_general.x, self.jauge_general.y, largeur_remplie, self.jauge_general.height))
 
         # -----------------configuration des touches
+        
+        
         # ----------touche droite
         droite_txt = self.font_3.render("Droite", True, (255, 255, 255))
-        ecran.blit(droite_txt, (LARGEUR_ECRAN // 3 - droite_txt.get_width() // 2, HAUTEUR_ECRAN // 2 - 30))
+        ecran.blit(droite_txt, (LARGEUR_ECRAN // 3 + 50 - droite_txt.get_width() // 2, HAUTEUR_ECRAN // 2 - 30))
         # Couleur du champ selon l'état
         if self.champ_actif == "droite":
             pygame.draw.rect(ecran, (255, 0, 0), self.droite_field)
@@ -114,11 +118,13 @@ class Parametres:
             droite_assign_txt = self.font_3.render("...", True, (255, 255, 255))
         else:
             droite_assign_txt = self.font_3.render(self.droite_assign, True, (255, 255, 255))
-        ecran.blit(droite_assign_txt, (LARGEUR_ECRAN // 2 - droite_assign_txt.get_width() // 2 - 55, HAUTEUR_ECRAN // 2 - 20))
+        text_rect = droite_assign_txt.get_rect(center=self.droite_field.center)
+        ecran.blit(droite_assign_txt, text_rect)
+
 
         # ---------touche gauche
         gauche_txt = self.font_3.render("Gauche", True, (255, 255, 255))
-        ecran.blit(gauche_txt, (LARGEUR_ECRAN // 3 - gauche_txt.get_width() // 2, HAUTEUR_ECRAN // 2 + 30))
+        ecran.blit(gauche_txt, (LARGEUR_ECRAN // 3 + 50 - gauche_txt.get_width() // 2, HAUTEUR_ECRAN // 2 + 30))
         # Couleur du champ selon l'état
         if self.champ_actif == "gauche":
             pygame.draw.rect(ecran, (255, 0, 0), self.gauche_field)
@@ -133,11 +139,13 @@ class Parametres:
             gauche_assign_txt = self.font_3.render("...", True, (255, 255, 255))
         else:
             gauche_assign_txt = self.font_3.render(self.gauche_assign, True, (255, 255, 255))
-        ecran.blit(gauche_assign_txt, (LARGEUR_ECRAN // 2 - gauche_assign_txt.get_width() // 2 - 55, HAUTEUR_ECRAN // 2 + 40))
+        text_rect = gauche_assign_txt.get_rect(center=self.gauche_field.center)
+        ecran.blit(gauche_assign_txt, text_rect)
+        
         
         # --------touche sauter
         sauter_txt = self.font_3.render("Sauter", True, (255, 255, 255))
-        ecran.blit(sauter_txt, (LARGEUR_ECRAN // 3 - sauter_txt.get_width() // 2, HAUTEUR_ECRAN // 2 + 100))
+        ecran.blit(sauter_txt, (LARGEUR_ECRAN // 3 + 50 - sauter_txt.get_width() // 2, HAUTEUR_ECRAN // 2 + 100))
         # Couleur du champ selon l'état
         if self.champ_actif == "sauter":
                 pygame.draw.rect(ecran, (255, 0, 0), self.sauter_field)
@@ -152,7 +160,10 @@ class Parametres:
             sauter_assign_txt = self.font_3.render("...", True, (255, 255, 255))
         else:
             sauter_assign_txt = self.font_3.render(self.sauter_assign, True, (255, 255, 255))
-        ecran.blit(sauter_assign_txt, (LARGEUR_ECRAN // 2 - sauter_assign_txt.get_width() // 2 - 55, HAUTEUR_ECRAN // 2 + 100))
+        text_rect = sauter_assign_txt.get_rect(center=self.sauter_field.center)
+        ecran.blit(sauter_assign_txt, text_rect)
+        
+        
         
         # -------bouton retour
         if self.bouton_retour.collidepoint(pygame.mouse.get_pos()):

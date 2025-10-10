@@ -17,12 +17,12 @@ class MenuNiveaux:
         self.gestionnaire_config = ConfigManager()
         self.config = self.gestionnaire_config.charger_config()
         self.niveau_max_debloque = self.config["niveau_actuel"]
-        self.nombre_niveaux = 10
+        self.nombre_niveaux = 24
         
         self.boutons_niveaux = []
         for i in range(self.nombre_niveaux):
-            largeur = LARGEUR_ECRAN // 6 + (i % 8) * 100
-            hauteur = HAUTEUR_ECRAN // 4 + (i // 8) * 100
+            largeur = LARGEUR_ECRAN // 6 + (i % 12) * 100
+            hauteur = HAUTEUR_ECRAN // 4 + (i // 12) * 100
             self.boutons_niveaux.append(pygame.Rect(largeur, hauteur, 80, 80))
         
         self.bouton_retour = pygame.Rect(LARGEUR_ECRAN // 2 - 125, HAUTEUR_ECRAN - 100, 250, 50)
