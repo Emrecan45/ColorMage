@@ -33,7 +33,7 @@ Le joueur doit résoudre des parcours en changeant sa propre couleur pour pouvoi
     ```
 5.  Lancer le jeu :
     ```bash
-    python3 src/game.py
+    python3 src/ColorMage.py
     ```
 
 6. 🚀 En une seule commande : 🚀
@@ -43,7 +43,7 @@ Le joueur doit résoudre des parcours en changeant sa propre couleur pour pouvoi
     python3 -m venv venv 
     source venv/bin/activate
     pip install pygame
-    python3 src/game.py
+    python3 src/ColorMage.py
     ```
 
 ## 📷 Screenshots
