@@ -108,7 +108,7 @@ class Pause:
             return "quitter"
         return None
     
-    def afficher_pause(self, ecran, joueur, niveau, numero_niveau):
+    def afficher_pause(self, ecran, joueur, niveau, numero_niveau, chrono=None):
         """Affiche le menu de pause avec options
         
         Args:
@@ -116,6 +116,7 @@ class Pause:
             joueur: Instance du joueur
             niveau: Instance du niveau
             numero_niveau: Numéro du niveau actuel
+            chrono: chronomètre
         
         Returns:
             str: "continuer", "recommencer", ou "quitter"
@@ -149,6 +150,7 @@ class Pause:
             niveau.dessiner(ecran)
             joueur.dessiner(ecran)
             self.dessiner_bouton(ecran)
+            chrono.dessiner(ecran)
             
             # Dessiner le popup de pause
             self.dessiner_popup(ecran)

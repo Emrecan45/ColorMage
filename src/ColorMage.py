@@ -10,6 +10,7 @@ from menu import Menu
 from parametres import Parametres
 from config_manager import ConfigManager
 from menu_niveaux import MenuNiveaux
+from chronometre import Chronometre  # Nouvelle import
 
 class Game:
     """Classe principale gérant le jeu"""
@@ -58,6 +59,9 @@ class Game:
         
         self.menu_niveaux = MenuNiveaux()
         self.niveau_actuel = self.gestionnaire_config.obtenir_niveau_actuel()
+        
+        # Chronomètre
+        self.chrono = Chronometre()
         
         self.en_cours = True
         
@@ -113,21 +117,39 @@ class Game:
                             self.niveau.charger_niveau(resultat, self.ecran)
                             self.joueur.reset()
                             self.joueur.maj_controles()
+                            # Démarrer le chronomètre
+                            self.chrono.demarrer()
                             self.etat = "jeu"
 
                 elif self.etat == "jeu":
                     if evenement.type == pygame.KEYDOWN and evenement.key == pygame.K_p:
+                        # Mettre en pause le chronomètre
+                        self.chrono.pause()
+                        
                         self.pause.son_select.play()
-                        action = self.pause.afficher_pause(self.ecran, self.joueur, self.niveau, self.niveau_actuel)
-                        if action == "quitter":
+                        action = self.pause.afficher_pause(self.ecran, self.joueur, self.niveau, self.niveau_actuel, self.chrono)
+                        
+                        # Reprendre le chronomètre
+                        if action == "continuer":
+                            self.chrono.reprendre()
+                        elif action == "quitter":
+                            self.chrono.arreter()
                             self.etat = "selection"
                     
                     # Gérer le clic sur le bouton pause
                     if evenement.type == pygame.MOUSEBUTTONDOWN:
                         if self.pause.bouton_rect.collidepoint(evenement.pos):
+                            # Mettre en pause le chronomètre
+                            self.chrono.pause()
+                            
                             self.pause.son_select.play()
-                            action = self.pause.afficher_pause(self.ecran, self.joueur, self.niveau, self.niveau_actuel)
-                            if action == "quitter":
+                            action = self.pause.afficher_pause(self.ecran, self.joueur, self.niveau, self.niveau_actuel, self.chrono)
+                            
+                            # Reprendre le chronomètre
+                            if action == "continuer":
+                                self.chrono.reprendre()
+                            elif action == "quitter":
+                                self.chrono.arreter()
                                 self.etat = "selection"
 
     
@@ -138,13 +160,16 @@ class Game:
             self.niveau.reset(self.niveau_actuel, self.ecran)
             self.joueur.reset()
             self.joueur.maj_controles()
+            self.chrono.demarrer()
             self.etat = "jeu"
         elif action == "rejouer":
             self.niveau.reset(self.niveau_actuel, self.ecran)
             self.joueur.reset()
             self.joueur.maj_controles()
+            self.chrono.demarrer()
             self.etat = "jeu"
         elif action == "quitter":
+            self.chrono.arreter()
             self.etat = "selection"
     
     def maj(self):
@@ -163,6 +188,7 @@ class Game:
             # Cas de victoire
             if resultat == "victoire":
                 self.popup_actif = "victoire"
+                self.chrono.arreter()
                 # Débloquer le niveau suivant si c'etait pas deja le cas
                 niveau_max = self.gestionnaire_config.obtenir_niveau_actuel()
                 if self.niveau_actuel == niveau_max:
@@ -171,6 +197,7 @@ class Game:
             # Cas de défaite
             elif resultat == "mort":
                 self.popup_actif = "defaite"
+                self.chrono.arreter()
 
     def afficher(self):
         """Dessine tous les éléments"""
@@ -185,10 +212,12 @@ class Game:
             self.niveau.dessiner(self.ecran)
             self.joueur.dessiner(self.ecran)
             self.pause.dessiner_bouton(self.ecran)
+            self.chrono.dessiner(self.ecran)
             
             # Afficher le popup s'il y en a un
             if self.popup_actif == "victoire":
-                self.popup.dessiner_popup_victoire(self.ecran, self.niveau_actuel)
+                temps_final = self.chrono.obtenir_temps()
+                self.popup.dessiner_popup_victoire(self.ecran, self.niveau_actuel, temps_final)
             elif self.popup_actif == "defaite":
                 self.popup.dessiner_popup_defaite(self.ecran)
 
