@@ -45,30 +45,52 @@ class Joueur:
         # Liste des sons de changements de couleur
         self.sons_changement = [son_change_couleur1, son_change_couleur2, son_change_couleur3]
         
-        # Variable pour empêcher le spam des sons de changement de couleur
+        # variable pour empêcher le spam des sons de changement de couleur
         self.dernier_changement_couleur = 0
         self.delai_changement_couleur = 200  # millisecondes entre chaque son
         
-        # Appliquer les volumes initiaux
+        # Appliquer les parametres de volumes
         self.maj_volume_effets()
 
-        # Chargement des images
+        # Chargement des spritesheets
+        self.spritesheets = dict()
         self.images = dict()
         couleurs = ["gris", "rouge", "bleu", "vert"]
+        
+        # Dimensions d'un sprite dans le spritesheet (768x590 divisé par 4 colonnes x 3 lignes)
+        self.sprite_largeur = 192  # 768 ÷ 4
+        self.sprite_hauteur = 196  # 590 ÷ 3
+        
         for couleur in couleurs:
+            # Charger le spritesheet
+            chemin = "img/joueur_" + couleur + ".png"
+            spritesheet = pygame.image.load(chemin)
+            self.spritesheets[couleur] = spritesheet
+            
+            # Extraire les frames du spritesheet
             frames = []
             
-            chemin_base = "img/joueur_" + couleur + ".png"
-            image_res = pygame.image.load(chemin_base)
-            image_res = pygame.transform.scale(image_res, (self.largeur, self.hauteur))
-            frames.append(image_res)
-
-            for i in range(1, 4):
-                chemin = "img/joueur_" + couleur + "_saut" + str(i) + ".png"
-                image = pygame.image.load(chemin)
-                image = pygame.transform.scale(image, (self.largeur, self.hauteur))
-                frames.append(image)
-
+            positions = [
+                #repos
+                (0, 0),
+                
+                # saut
+                (2, 2),  # debut du saut
+                (3, 2)   # milieu du saut
+            ]
+            
+            for col, ligne in positions:
+                x_sprite = col * self.sprite_largeur
+                y_sprite = ligne * self.sprite_hauteur
+                
+                #extraire le sprite
+                sprite = spritesheet.subsurface(
+                    pygame.Rect(x_sprite, y_sprite, self.sprite_largeur, self.sprite_hauteur)
+                )
+                
+                sprite = pygame.transform.scale(sprite, (self.largeur, self.hauteur))
+                frames.append(sprite)
+            
             self.images[couleur] = frames
 
         self.frame_index = 0
@@ -116,7 +138,7 @@ class Joueur:
                 self.son_saut.play()
                 self.demarrer_animation("saut")
 
-        # Gravité
+        # Gravite
         self.vitesse_y += GRAVITE
         
         # Calcul nouvelles positions
@@ -159,7 +181,7 @@ class Joueur:
             self.y = nouveau_y
             self.au_sol = False
         
-        # chute (on quitte le sol sans avoir sauté)
+        # chute
         if self.etait_au_sol and not self.au_sol and self.type_animation != "saut":
             self.demarrer_animation("chute")
     
@@ -188,10 +210,8 @@ class Joueur:
                 temps_actuel = pygame.time.get_ticks()
                 if temps_actuel - self.dernier_changement_couleur >= self.delai_changement_couleur:
                     self.couleur = nouvelle_couleur
-                    # Arrêter tous les sons de changement en cours
                     for son in self.sons_changement:
                         son.stop()
-                    # Jouer un nouveau son
                     son_change_aleatoire = random.choice(self.sons_changement)
                     son_change_aleatoire.play()
                     self.dernier_changement_couleur = temps_actuel
@@ -235,13 +255,13 @@ class Joueur:
                 if self.frame_index < len(self.images[self.couleur]) - 1:
                     self.frame_index += 1
                 else:
-                    # Fin de l’animation de saut
+                    # Fin de l'animation de saut
                     self.animation_terminee = True
         
         if not self.au_sol and self.animation_terminee:
             self.frame_index = len(self.images[self.couleur]) - 1
         
-        # Quand le joueur touche le sol, on remet à l’état initial
+        # Quand le joueur touche le sol, on remet à l'état initial
         if self.au_sol and not self.en_animation:
             self.frame_index = 0
     
