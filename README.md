@@ -1,4 +1,4 @@
-# ColorMage ✨
+![logo](img/logo.png)
 
 **ColorMage** est un jeu prototype développé en **Python** avec **Pygame**.
 

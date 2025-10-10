@@ -8,9 +8,8 @@ class Menu:
     """Menu du jeu"""
 
     def __init__(self):
-        self.font_1 = pygame.font.SysFont(None, 150)
-        self.font_2 = pygame.font.SysFont(None, 50)
-        self.font_3 = pygame.font.SysFont(None, 40)
+        self.font_1 = pygame.font.SysFont(None, 50)
+        self.font_2 = pygame.font.SysFont(None, 40)
         
         self.image_fond = pygame.image.load("img/fond_menu1.png")
         self.image_fond = pygame.transform.scale(self.image_fond, (LARGEUR_ECRAN, HAUTEUR_ECRAN))
@@ -37,12 +36,8 @@ class Menu:
         ecran.blit(self.image_fond, (0, 0))
         
         # version du jeu
-        version_txt = self.font_3.render(VERSION_JEU, True, (255, 255, 255))
+        version_txt = self.font_2.render(VERSION_JEU, True, (255, 255, 255))
         ecran.blit(version_txt, (LARGEUR_ECRAN - version_txt.get_width() - 20, HAUTEUR_ECRAN - version_txt.get_height() - 20))
-        
-        # titre du jeu
-        titre_txt = self.font_1.render("ColorMage", True, (255, 255, 255))
-        ecran.blit(titre_txt, (LARGEUR_ECRAN // 2 - titre_txt.get_width() // 2, HAUTEUR_ECRAN // 2 - 220))
         
         boutons = [self.bouton_jouer, self.bouton_parametres, self.bouton_quitter]
 
@@ -60,9 +55,9 @@ class Menu:
             pygame.draw.rect(ecran, COULEUR_BORDURE, rect, 3)
 
         # Textes des boutons
-        jouer_txt = self.font_2.render("Jouer", True, (255, 255, 255))
-        parametres_txt = self.font_2.render("Paramètres", True, (255, 255, 255))
-        quitter_txt = self.font_2.render("Quitter", True, (255, 255, 255))
+        jouer_txt = self.font_1.render("Jouer", True, (255, 255, 255))
+        parametres_txt = self.font_1.render("Paramètres", True, (255, 255, 255))
+        quitter_txt = self.font_1.render("Quitter", True, (255, 255, 255))
         
         ecran.blit(jouer_txt, (LARGEUR_ECRAN // 2 - jouer_txt.get_width() // 2, HAUTEUR_ECRAN // 2 - 70))
         ecran.blit(parametres_txt, (LARGEUR_ECRAN // 2 - parametres_txt.get_width() // 2, HAUTEUR_ECRAN // 2 + 70))
