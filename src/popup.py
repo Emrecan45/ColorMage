@@ -2,6 +2,7 @@ import pygame
 import os
 from config import LARGEUR_ECRAN, HAUTEUR_ECRAN
 from config_manager import ConfigManager
+from chronometre import Chronometre
 
 class Popup:
     """Gère l'affichage des popups de victoire et de défaite"""
@@ -107,13 +108,7 @@ class Popup:
         
         #afficher le temps
         if temps_ms > 0:
-            secondes_totales = temps_ms // 1000
-            millisecondes = (temps_ms % 1000) // 10
-            
-            if millisecondes < 10:
-                temps_texte = "Temps: " + str(secondes_totales) + ":0" + str(millisecondes)
-            else:
-                temps_texte = "Temps: " + str(secondes_totales) + ":" + str(millisecondes)
+            temps_texte = Chronometre.formater_temps(self, temps_ms)
             font_temps = pygame.font.Font(None, 40)
             temps_surface = font_temps.render(temps_texte, True, (0, 100, 0))
             temps_x = self.popup_rect.x + (self.popup_rect.width - temps_surface.get_width()) // 2

@@ -7,6 +7,7 @@ class Chronometre:
         self.temps_debut = 0
         self.temps_pause_total = 0
         self.temps_pause_debut = 0
+        self.temps_final = 0
         self.actif = False
         self.en_pause = False
         self.font = pygame.font.SysFont(None, 48)
@@ -15,11 +16,14 @@ class Chronometre:
         """Démarre le chronomètre"""
         self.temps_debut = pygame.time.get_ticks()
         self.temps_pause_total = 0
+        self.temps_final = 0
         self.actif = True
         self.en_pause = False
     
     def arreter(self):
         """Arrête le chronomètre"""
+        if self.actif:
+            self.temps_final = self.obtenir_temps()
         self.actif = False
         self.en_pause = False
     
@@ -39,7 +43,7 @@ class Chronometre:
     def obtenir_temps(self):
         """Retourne le temps écoulé en millisecondes"""
         if not self.actif:
-            return 0
+            return self.temps_final
         
         temps_actuel = pygame.time.get_ticks()
         if self.en_pause:
