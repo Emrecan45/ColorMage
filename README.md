@@ -21,9 +21,6 @@ Le joueur doit résoudre des parcours en changeant sa propre couleur pour pouvoi
     python3 -m venv venv 
     source venv/bin/activate
     pip install pygame
-    ```
-5.  Lancer le jeu :
-    ```bash
     python3 src/ColorMage.py
     ```
 
@@ -32,7 +29,7 @@ Le joueur doit résoudre des parcours en changeant sa propre couleur pour pouvoi
     git clone https://github.com/Emrecan45/ColorMage.git
     cd ColorMage
     pip install pygame
-    python3 src/ColorMage.py
+    python src/ColorMage.py
     ```
 
 ## 📷 Screenshots
@@ -44,6 +41,7 @@ Le joueur doit résoudre des parcours en changeant sa propre couleur pour pouvoi
 ## 🧠 Objectifs
 
 **ColorMage** explore une mécanique de jeu innovante où couleur et stratégie sont essentielles. Le but est de créer un jeu amusant et stimulant, avec une difficulté progressive.
+
 
 
 
