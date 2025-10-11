@@ -108,7 +108,7 @@ class Popup:
         
         #afficher le temps
         if temps_ms > 0:
-            temps_texte = Chronometre.formater_temps(self, temps_ms)
+            temps_texte = "Temps : " + str(Chronometre.formater_temps(self, temps_ms))
             font_temps = pygame.font.Font(None, 40)
             temps_surface = font_temps.render(temps_texte, True, (0, 100, 0))
             temps_x = self.popup_rect.x + (self.popup_rect.width - temps_surface.get_width()) // 2
