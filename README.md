@@ -31,6 +31,14 @@ Le joueur doit résoudre des parcours en changeant sa propre couleur pour pouvoi
     pip install pygame
     python src/ColorMage.py
     ```
+    
+- **Sur macOS :**
+    ```zsh
+    git clone https://github.com/Emrecan45/ColorMage.git
+    cd ColorMage
+    python3 -m pip install pygame
+    python3 src/game.py
+    ```
 
 ## 📷 Screenshots
 
@@ -41,6 +49,7 @@ Le joueur doit résoudre des parcours en changeant sa propre couleur pour pouvoi
 ## 🧠 Objectifs
 
 **ColorMage** explore une mécanique de jeu innovante où couleur et stratégie sont essentielles. Le but est de créer un jeu amusant et stimulant, avec une difficulté progressive.
+
 
 
 
