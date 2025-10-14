@@ -15,15 +15,10 @@ class Popup:
         self.son_select = pygame.mixer.Sound(os.path.join("audio", "select.mp3"))
         
         self.largeur_popup = 600
-        self.hauteur_popup = 400
+        self.hauteur_popup = 450
         
         # Rectangle du popup
-        self.popup_rect = pygame.Rect(
-            (LARGEUR_ECRAN - self.largeur_popup) // 2,
-            (HAUTEUR_ECRAN - self.hauteur_popup) // 2,
-            self.largeur_popup,
-            self.hauteur_popup
-        )
+        self.popup_rect = pygame.Rect((LARGEUR_ECRAN - self.largeur_popup) // 2, (HAUTEUR_ECRAN - self.hauteur_popup) // 2, self.largeur_popup, self.hauteur_popup)
         
         # Créer les boutons (positionnés verticalement)
         self.bouton_suivant = pygame.Rect(0, 0, 260, 60)
@@ -92,8 +87,15 @@ class Popup:
             return "quitter"
         return None
 
-    def dessiner_popup_victoire(self, ecran, niveau_actuel, temps_ms=0):
-        """Dessine le popup de victoire avec le temps"""
+    def dessiner_popup_victoire(self, ecran, niveau_actuel, temps_ms=0, est_record=False):
+        """Dessine le popup de victoire avec le temps et indication de record
+        
+        Args:
+            ecran: Surface pygame
+            niveau_actuel: Numéro du niveau
+            temps_ms: Temps réalisé en millisecondes
+            est_record: True si c'est un nouveau record
+        """
         self.maj_volume()
         
         # Fond du popup
@@ -108,34 +110,41 @@ class Popup:
         
         #afficher le temps
         if temps_ms > 0:
-            temps_texte = Chronometre.formater_temps(self, temps_ms)
+            temps_texte = "Temps : " + Chronometre.formater_temps(self, temps_ms)
             font_temps = pygame.font.Font(None, 40)
-            temps_surface = font_temps.render(temps_texte, True, (0, 100, 0))
+            temps_surface = font_temps.render(temps_texte, True, (0, 0, 0))
             temps_x = self.popup_rect.x + (self.popup_rect.width - temps_surface.get_width()) // 2
             temps_y = self.popup_rect.y + 100
             ecran.blit(temps_surface, (temps_x, temps_y))
+        
+        # Afficher "Nouveau record !" si c'est le cas
+        if est_record:
+            record_surface = self.font.render("Nouveau record !", True, (0, 180, 0))
+            record_x = self.popup_rect.x + (self.popup_rect.width - record_surface.get_width()) // 2
+            record_y = self.popup_rect.y + 145
+            ecran.blit(record_surface, (record_x, record_y))
 
         # Liste des boutons avec leurs textes
         boutons = []
         
+        # Ajuster les positions des boutons selon s'il y a un record ou non
+        if est_record:
+            # Décaler les boutons vers le bas si record affiché
+            premier_bouton_y = 220
+        else:
+            premier_bouton_y = 180
+        
         # Ajouter le bouton "Niveau suivant" seulement s'il existe
         if self.niveau_existe(niveau_actuel + 1):
+            self.bouton_suivant.center = (self.popup_rect.centerx, self.popup_rect.top + premier_bouton_y)
             boutons.append((self.bouton_suivant, "Niveau suivant"))
-        
-        # Ajuster la position du bouton recommencer selon s'il y a un bouton suivant
-        if self.niveau_existe(niveau_actuel + 1):
-            self.bouton_recommencer.center = (self.popup_rect.centerx, self.popup_rect.top + 250)
+            self.bouton_recommencer.center = (self.popup_rect.centerx, self.popup_rect.top + premier_bouton_y + 90)
+            self.bouton_quitter.center = (self.popup_rect.centerx, self.popup_rect.top + premier_bouton_y + 180)
         else:
-            self.bouton_recommencer.center = (self.popup_rect.centerx, self.popup_rect.top + 200)
+            self.bouton_recommencer.center = (self.popup_rect.centerx, self.popup_rect.top + premier_bouton_y)
+            self.bouton_quitter.center = (self.popup_rect.centerx, self.popup_rect.top + premier_bouton_y + 90)
         
         boutons.append((self.bouton_recommencer, "Recommencer"))
-        
-        # Ajuster la position du bouton quitter
-        if self.niveau_existe(niveau_actuel + 1):
-            self.bouton_quitter.center = (self.popup_rect.centerx, self.popup_rect.top + 340)
-        else:
-            self.bouton_quitter.center = (self.popup_rect.centerx, self.popup_rect.top + 290)
-        
         boutons.append((self.bouton_quitter, "Quitter"))
 
         # Dessiner les boutons
@@ -170,8 +179,8 @@ class Popup:
         ecran.blit(titre_surface, (titre_x, titre_y))
 
         # Ajuster les positions pour 2 boutons
-        self.bouton_recommencer.center = (self.popup_rect.centerx, self.popup_rect.top + 160)
-        self.bouton_quitter.center = (self.popup_rect.centerx, self.popup_rect.top + 250)
+        self.bouton_recommencer.center = (self.popup_rect.centerx, self.popup_rect.top + 210)
+        self.bouton_quitter.center = (self.popup_rect.centerx, self.popup_rect.top + 300)
 
         # Liste des boutons avec leurs textes
         boutons = [
