@@ -10,7 +10,7 @@ from menu import Menu
 from parametres import Parametres
 from config_manager import ConfigManager
 from menu_niveaux import MenuNiveaux
-from chronometre import Chronometre  # Nouvelle import
+from chronometre import Chronometre
 
 class Game:
     """Classe principale gérant le jeu"""
@@ -68,6 +68,7 @@ class Game:
         # Popups
         self.popup = Popup()
         self.popup_actif = None
+        self.est_record = False
     
     def gerer_evenements(self):
         """Gère les événements pygame"""
@@ -117,8 +118,11 @@ class Game:
                             self.niveau.charger_niveau(resultat, self.ecran)
                             self.joueur.reset()
                             self.joueur.maj_controles()
-                            # Démarrer le chronomètre
+                            # Démarrer le chronomètre et charger le meilleur temps
                             self.chrono.demarrer()
+                            meilleur_temps = self.gestionnaire_config.obtenir_meilleur_temps(resultat)
+                            self.chrono.definir_meilleur_temps(meilleur_temps)
+                            self.est_record = False
                             self.etat = "jeu"
 
                 elif self.etat == "jeu":
@@ -132,6 +136,14 @@ class Game:
                         # Reprendre le chronomètre
                         if action == "continuer":
                             self.chrono.reprendre()
+                        elif action == "recommencer":
+                            self.niveau.reset(self.niveau_actuel, self.ecran)
+                            self.joueur.reset()
+                            self.joueur.maj_controles()
+                            self.chrono.demarrer()
+                            meilleur_temps = self.gestionnaire_config.obtenir_meilleur_temps(self.niveau_actuel)
+                            self.chrono.definir_meilleur_temps(meilleur_temps)
+                            self.est_record = False
                         elif action == "quitter":
                             self.chrono.arreter()
                             self.etat = "selection"
@@ -148,6 +160,14 @@ class Game:
                             # Reprendre le chronomètre
                             if action == "continuer":
                                 self.chrono.reprendre()
+                            elif action == "recommencer":
+                                self.niveau.reset(self.niveau_actuel, self.ecran)
+                                self.joueur.reset()
+                                self.joueur.maj_controles()
+                                self.chrono.demarrer()
+                                meilleur_temps = self.gestionnaire_config.obtenir_meilleur_temps(self.niveau_actuel)
+                                self.chrono.definir_meilleur_temps(meilleur_temps)
+                                self.est_record = False
                             elif action == "quitter":
                                 self.chrono.arreter()
                                 self.etat = "selection"
@@ -161,15 +181,22 @@ class Game:
             self.joueur.reset()
             self.joueur.maj_controles()
             self.chrono.demarrer()
+            meilleur_temps = self.gestionnaire_config.obtenir_meilleur_temps(self.niveau_actuel)
+            self.chrono.definir_meilleur_temps(meilleur_temps)
+            self.est_record = False
             self.etat = "jeu"
         elif action == "rejouer":
             self.niveau.reset(self.niveau_actuel, self.ecran)
             self.joueur.reset()
             self.joueur.maj_controles()
             self.chrono.demarrer()
+            meilleur_temps = self.gestionnaire_config.obtenir_meilleur_temps(self.niveau_actuel)
+            self.chrono.definir_meilleur_temps(meilleur_temps)
+            self.est_record = False
             self.etat = "jeu"
         elif action == "quitter":
             self.chrono.arreter()
+            self.est_record = False
             self.etat = "selection"
     
     def maj(self):
@@ -189,6 +216,11 @@ class Game:
             if resultat == "victoire":
                 self.popup_actif = "victoire"
                 self.chrono.arreter()
+                
+                # Sauvegarder le temps et vérifier si c'est un record
+                temps_final = self.chrono.obtenir_temps()
+                self.est_record = self.gestionnaire_config.maj_meilleur_temps(self.niveau_actuel, temps_final)
+                
                 # Débloquer le niveau suivant si c'etait pas deja le cas
                 niveau_max = self.gestionnaire_config.obtenir_niveau_actuel()
                 if self.niveau_actuel == niveau_max:
@@ -198,6 +230,7 @@ class Game:
             elif resultat == "mort":
                 self.popup_actif = "defaite"
                 self.chrono.arreter()
+                self.est_record = False
 
     def afficher(self):
         """Dessine tous les éléments"""
@@ -217,7 +250,7 @@ class Game:
             # Afficher le popup s'il y en a un
             if self.popup_actif == "victoire":
                 temps_final = self.chrono.obtenir_temps()
-                self.popup.dessiner_popup_victoire(self.ecran, self.niveau_actuel, temps_final)
+                self.popup.dessiner_popup_victoire(self.ecran, self.niveau_actuel, temps_final, self.est_record)
             elif self.popup_actif == "defaite":
                 self.popup.dessiner_popup_defaite(self.ecran)
 

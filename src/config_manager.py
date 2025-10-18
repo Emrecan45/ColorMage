@@ -26,6 +26,7 @@ class ConfigManager:
         self.controles = self.config.get("controles", {})
         self.volumes = self.config.get("volumes", {})
         self.niveau_actuel = self.config.get("niveau_actuel", 1)
+        self.meilleurs_temps = self.config.get("meilleurs_temps", {})
     
     def charger_config(self):
         """Charge la configuration depuis le fichier ou crée un fichier par défaut"""
@@ -40,7 +41,8 @@ class ConfigManager:
                 "musique": 50,
                 "effets": 50
             },
-            "niveau_actuel": 1
+            "niveau_actuel": 1,
+            "meilleurs_temps": {}
         }
         
         # Si le fichier existe, le charger
@@ -53,6 +55,8 @@ class ConfigManager:
                     config["controles"] = config_defaut["controles"]
                 if "volumes" not in config:
                     config["volumes"] = config_defaut["volumes"]
+                if "meilleurs_temps" not in config:
+                    config["meilleurs_temps"] = {}
                 
                 # Vérifier que toutes les touches nécessaires sont présentes
                 for cle in config_defaut["controles"]:
@@ -85,7 +89,8 @@ class ConfigManager:
             config = {
                 "controles": self.controles,
                 "volumes": self.volumes,
-                "niveau_actuel": self.niveau_actuel
+                "niveau_actuel": self.niveau_actuel,
+                "meilleurs_temps": self.meilleurs_temps
             }
         with open(self.chemin_config, "w", encoding="utf-8") as f:
             json.dump(config, f, ensure_ascii=False)
@@ -93,6 +98,7 @@ class ConfigManager:
         self.controles = config.get("controles", {})
         self.volumes = config.get("volumes", {})
         self.niveau_actuel = config.get("niveau_actuel", 1)
+        self.meilleurs_temps = config.get("meilleurs_temps", {})
         
     def obtenir_controles(self):
         """Retourne les touches actuelles en relisant le fichier"""
@@ -114,6 +120,19 @@ class ConfigManager:
         """Retourne le niveau actuel du joueur"""
         self.config = self.charger_config()
         return self.config.get("niveau_actuel", 1)
+    
+    def obtenir_meilleur_temps(self, niveau):
+        """Retourne le meilleur temps pour un niveau donné (en ms)
+        
+        Args:
+            niveau: Numéro du niveau
+            
+        Returns:
+            int: Meilleur temps en milisecondes, ou None si aucun temps enregistré
+        """
+        self.config = self.charger_config()
+        self.meilleurs_temps = self.config.get("meilleurs_temps", {})
+        return self.meilleurs_temps.get(str(niveau), None)
         
     def maj_controle(self, action, touche):
         """Met à jour une touche spécifique et sauvegarde"""
@@ -134,3 +153,26 @@ class ConfigManager:
         """Met à jour le niveau actuel du joueur"""
         self.niveau_actuel = int(niveau)
         self.sauvegarder_config()
+    
+    def maj_meilleur_temps(self, niveau, temps_ms):
+        """Met à jour le meilleur temps pour un niveau si c'est un record
+        
+        Args:
+            niveau: Numéro du niveau
+            temps_ms: Temps réalisé en millisecondes
+            
+        Returns:
+            bool: True si c'est un nouveau record, False sinon
+        """
+        self.config = self.charger_config()
+        self.meilleurs_temps = self.config.get("meilleurs_temps", {})
+        
+        niveau_str = str(niveau)
+        ancien_temps = self.meilleurs_temps.get(niveau_str, None)
+        
+        # Si pas de temps enregistré ou nouveau temps meilleur
+        if ancien_temps is None or temps_ms < ancien_temps:
+            self.meilleurs_temps[niveau_str] = temps_ms
+            self.sauvegarder_config()
+            return True
+        return False
