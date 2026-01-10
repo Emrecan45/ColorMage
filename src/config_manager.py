@@ -2,6 +2,8 @@ import json
 import os
 import locale
 
+from datetime import datetime
+
 class ConfigManager:
     """Gère la configuration utilisateur (touches, volumes, etc.)"""
     
@@ -40,7 +42,9 @@ class ConfigManager:
                 "musique": 50,
                 "effets": 50
             },
-            "niveau_actuel": 1
+            "niveau_actuel": 1,
+            "meilleurs_temps": {},
+            "pseudo": "Mage"
         }
         
         # Si le fichier existe, le charger
@@ -85,7 +89,11 @@ class ConfigManager:
             config = {
                 "controles": self.controles,
                 "volumes": self.volumes,
-                "niveau_actuel": self.niveau_actuel
+                "niveau_actuel": self.niveau_actuel,
+                "meilleurs_temps": self.meilleurs_temps,
+                "pseudo": self.config.get("pseudo", "Joueur"),
+                "tenue_profil": self.config.get("tenue_profil", 0),
+                "cibles_eliminees": self.config.get("cibles_eliminees", 0)
             }
         with open(self.chemin_config, "w", encoding="utf-8") as f:
             json.dump(config, f, ensure_ascii=False)
@@ -134,3 +142,75 @@ class ConfigManager:
         """Met à jour le niveau actuel du joueur"""
         self.niveau_actuel = int(niveau)
         self.sauvegarder_config()
+    
+    def maj_meilleur_temps(self, niveau, temps_ms):
+        """Met à jour le meilleur temps pour un niveau si c'est un record
+        
+        Args:
+            niveau: Numéro du niveau
+            temps_ms: Temps réalisé en millisecondes
+            
+        Returns:
+            bool: True si c'est un nouveau record, False sinon
+        """
+        self.config = self.charger_config()
+        self.meilleurs_temps = self.config.get("meilleurs_temps", {})
+        
+        niveau_str = str(niveau)
+        ancien_temps = self.meilleurs_temps.get(niveau_str, None)
+        
+        # Si pas de temps enregistré ou nouveau temps meilleur
+        if ancien_temps is None or temps_ms < ancien_temps:
+            self.meilleurs_temps[niveau_str] = temps_ms
+            self.sauvegarder_config()
+            return True
+        return False
+
+    def reinitialiser_sauvegarde(self):
+        """Réinitialise UNIQUEMENT la progression (pas les contrôles/volumes, sauf pseudo)"""
+        # Sauvegarder le pseudo, les contrôles et volumes
+        pseudo_actuel = self.config.get("pseudo", "Joueur")
+        controles_actuels = self.config.get("controles", {"gauche": "left", "droite": "right", "sauter": "up"})
+        volumes_actuels = self.config.get("volumes", {"musique": 50, "effets": 50})
+        
+        # Reset UNIQUEMENT la progression
+        self.config["niveau_actuel"] = 1
+        self.config["meilleurs_temps"] = {}
+        self.config["tenue_profil"] = 0  # Reset la tenue du profil
+        
+        # Restaurer les paramètres et le pseudo
+        self.config["pseudo"] = pseudo_actuel
+        self.config["controles"] = controles_actuels
+        self.config["volumes"] = volumes_actuels
+        
+        self.niveau_actuel = 1
+        self.meilleurs_temps = {}
+        self.pseudo = pseudo_actuel  # Restaurer aussi dans la variable de classe
+        
+        # Sauvegarder la nouvelle configuration
+        self.sauvegarder_config()
+    
+    def reinitialiser_parametres(self):
+        """Réinitialise uniquement les paramètres (contrôles et volumes)"""
+        self.controles = {
+            "gauche": "left",
+            "droite": "right",
+            "sauter": "up"
+        }
+        self.volumes = {
+            "musique": 50,
+            "effets": 50
+        }
+        self.config["controles"] = self.controles
+        self.config["volumes"] = self.volumes
+        self.sauvegarder_config()
+    
+    def obtenir_pseudo(self):
+        """Retourne le pseudo du joueur"""
+        return self.config.get("pseudo", "Joueur")
+    
+    def sauvegarder_pseudo(self, pseudo):
+        """Sauvegarde le pseudo du joueur"""
+        self.config["pseudo"] = pseudo
+        self.sauvegarder_config()
+
