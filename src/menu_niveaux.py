@@ -1,108 +1,895 @@
 import pygame
 import os
+import math
+import random
 from config import LARGEUR_ECRAN, HAUTEUR_ECRAN, VERSION_JEU, COULEUR_BOUTON, COULEUR_SURVOL, COULEUR_BORDURE
 from config_manager import ConfigManager
 
+
 class MenuNiveaux:
-    """Menu de sélection des niveaux"""
+    """Menu de sélection des niveaux avec système de planètes et univers"""
 
     def __init__(self):
         self.font_1 = pygame.font.SysFont(None, 80)
         self.font_2 = pygame.font.SysFont(None, 50)
         self.font_3 = pygame.font.SysFont(None, 40)
-        
-        self.image_fond = pygame.image.load("img/fond_menu2.png")
-        self.image_fond = pygame.transform.scale(self.image_fond, (LARGEUR_ECRAN, HAUTEUR_ECRAN))
+        self.font_petit = pygame.font.SysFont(None, 30)
         
         self.gestionnaire_config = ConfigManager()
         self.config = self.gestionnaire_config.charger_config()
         self.niveau_max_debloque = self.config["niveau_actuel"]
-        self.nombre_niveaux = 20
+        self.niveaux_par_planete = 5
         
-        self.boutons_niveaux = []
-        for i in range(self.nombre_niveaux):
-            largeur = LARGEUR_ECRAN // 6 + (i % 10) * 100
-            hauteur = HAUTEUR_ECRAN // 4 + (i // 10) * 100
-            self.boutons_niveaux.append(pygame.Rect(largeur, hauteur, 80, 80))
+        # Système d'univers
+        self.univers_actuel = 0
+        self.univers = [
+            {
+                "nom": "Royaume Nord",
+                "planetes": [
+                    {"nom": "Terra", "couleur": (100, 180, 100), "x": LARGEUR_ECRAN // 5, "y": HAUTEUR_ECRAN // 2, "rayon": 70, "anneaux": False},
+                    {"nom": "Pyros", "couleur": (200, 80, 60), "x": LARGEUR_ECRAN // 2, "y": HAUTEUR_ECRAN // 3, "rayon": 60, "anneaux": False},
+                    {"nom": "Aquaris", "couleur": (60, 120, 200), "x": LARGEUR_ECRAN * 3 // 4, "y": HAUTEUR_ECRAN * 2 // 3, "rayon": 80, "anneaux": True},
+                    {"nom": "Nebula", "couleur": (150, 80, 180), "x": LARGEUR_ECRAN * 4 // 5, "y": HAUTEUR_ECRAN // 4, "rayon": 55, "anneaux": False},
+                ]
+            },
+            {
+                "nom": "Royaume Sud",
+                "planetes": [
+                    {"nom": "Cryon", "couleur": (150, 220, 255), "x": LARGEUR_ECRAN // 4, "y": HAUTEUR_ECRAN // 3, "rayon": 65, "anneaux": False},
+                    {"nom": "Solara", "couleur": (255, 180, 50), "x": LARGEUR_ECRAN // 2, "y": HAUTEUR_ECRAN * 2 // 3 - 40, "rayon": 75, "anneaux": False},
+                    {"nom": "Vortex", "couleur": (180, 180, 200), "x": LARGEUR_ECRAN * 3 // 4, "y": HAUTEUR_ECRAN // 3, "rayon": 55, "anneaux": True},
+                    {"nom": "Obscura", "couleur": (60, 40, 80), "x": LARGEUR_ECRAN * 4 // 5, "y": HAUTEUR_ECRAN * 3 // 4, "rayon": 70, "anneaux": False},
+                ]
+            }
+        ]
         
-        self.bouton_retour = pygame.Rect(LARGEUR_ECRAN // 2 - 125, HAUTEUR_ECRAN - 100, 250, 50)
+        # Calculer le nombre total de niveaux et planètes
+        self.nombre_planetes_par_univers = 4
+        self.nombre_niveaux = len(self.univers) * self.nombre_planetes_par_univers * self.niveaux_par_planete
+        
+        # Référence aux planètes de l'univers actuel
+        self.planetes = self.univers[self.univers_actuel]["planetes"]
+        
+        # Système de caméra pour le swipe entre univers
+        self.camera_x = self.univers_actuel * LARGEUR_ECRAN  # Position actuelle de la caméra
+        self.camera_cible_x = self.camera_x  # Position cible (pour l'animation)
+        self.camera_vitesse = 0.08  # Vitesse d'interpolation (0-1, plus c'est haut plus c'est rapide)
+        self.transition_univers = False  # True pendant l'animation de swipe
+        
+        # Charger l'image du mage pour le menu
+        self.image_mage = pygame.image.load("img/joueur_gris.png")
+        sprite_largeur = 192
+        sprite_hauteur = 196
+        self.mage_sprite = self.image_mage.subsurface(pygame.Rect(0, 0, sprite_largeur, sprite_hauteur))
+        self.mage_sprite = pygame.transform.scale(self.mage_sprite, (60, 60))
+        self.mage_sprite_flip = pygame.transform.flip(self.mage_sprite, True, False)
+        
+        # Charger les frames de marche du mage
+        self.mage_walk_frames = []
+        positions_marche = [(0, 0), (2, 1), (3, 1), (0, 2)]
+        for col, ligne in positions_marche:
+            x_sprite = col * sprite_largeur
+            y_sprite = ligne * sprite_hauteur
+            sprite = self.image_mage.subsurface(pygame.Rect(x_sprite, y_sprite, sprite_largeur, sprite_hauteur))
+            sprite = pygame.transform.scale(sprite, (60, 60))
+            self.mage_walk_frames.append(sprite)
+        
+        # État du menu : "galaxie" ou "planete"
+        self.etat_menu = "galaxie"
+        self.planete_selectionnee = 0
+        self.zoom_animation = 0  # 0 = pas de zoom, 1 = zoom complet
+        self.zoom_en_cours = False
+        self.zoom_direction = 0  # 1 = zoom in, -1 = zoom out
+        self.vitesse_zoom = 0.04
+        
+        # Position du mage sur la planète
+        self.mage_niveau_actuel = 1
+        self.mage_x = 0
+        self.mage_y = 0
+        self.mage_cible_x = 0
+        self.mage_cible_y = 0
+        self.mage_en_mouvement = False
+        self.mage_vitesse = 3
+        self.mage_direction = 1  # 1 = droite, -1 = gauche
+        self.niveau_cible = None
+        
+        # Animation de marche
+        self.mage_frame_index = 0
+        self.mage_anim_timer = 0
+        self.mage_anim_delay = 100
+        
+        # Animation du portail
+        self.portail_actif = False
+        self.portail_animation = 0
+        self.portail_x = 0
+        self.portail_y = 0
+        self.mage_visible = True
+        self.teleportation_en_cours = False
+        self.niveau_a_lancer = None
+        
+        # Chemin de plaques pour la marche
+        self.chemin_plaques = []  # Liste des indices de plaques à parcourir
+        self.plaque_courante_index = 0  # Index dans le chemin
+        
+        # Pour savoir si on revient d'un niveau
+        self.retour_niveau = False
+        self.niveau_retour = None
+        
+        # Flèches de navigation entre univers
+        self.fleche_droite_rect = pygame.Rect(LARGEUR_ECRAN - 120, HAUTEUR_ECRAN // 2 - 40, 80, 80)
+        self.fleche_gauche_rect = pygame.Rect(40, HAUTEUR_ECRAN // 2 - 40, 80, 80)
+        
+        # Étoiles en arrière-plan
+        self.etoiles = []
+        for _ in range(150):
+            x = random.randint(0, LARGEUR_ECRAN)
+            y = random.randint(0, HAUTEUR_ECRAN)
+            taille = random.randint(1, 3)
+            brillance = random.randint(100, 255)
+            vitesse_scintillement = random.uniform(0.02, 0.08)
+            self.etoiles.append([x, y, taille, brillance, vitesse_scintillement, random.uniform(0, 2 * math.pi)])
+        
+        # Positions des plaques de niveaux sur la planète (vue zoomée)
+        self.plaques_positions = []
+        self.generer_plaques_positions()
+        
+        # Bouton retour aligné avec les autres pages (centré, même hauteur)
+        self.bouton_retour = pygame.Rect(LARGEUR_ECRAN // 2 - 125, HAUTEUR_ECRAN // 2 + 270, 250, 50)
         
         self.image_cadenas = pygame.image.load("img/cadena.png")
-        self.image_cadenas = pygame.transform.scale(self.image_cadenas, (40, 40))
+        self.image_cadenas = pygame.transform.scale(self.image_cadenas, (30, 30))
     
         # son des clics
         self.son_select = pygame.mixer.Sound(os.path.join("audio", "select.mp3"))
+        # Sons de portail (changement de couleur) pour clic sur planète
+        self.sons_portail = [
+            pygame.mixer.Sound(os.path.join("audio", "color_change1.mp3")),
+            pygame.mixer.Sound(os.path.join("audio", "color_change2.mp3")),
+            pygame.mixer.Sound(os.path.join("audio", "color_change3.mp3"))
+        ]
         self.maj_volume()
+        
+        # Timer global pour les animations
+        self.temps_global = 0
+    
+    def generer_plaques_positions(self):
+        """Génère les positions des plaques de niveaux sur une planète"""
+        self.plaques_positions = []
+        centre_x = LARGEUR_ECRAN // 2
+        base_y = HAUTEUR_ECRAN - 150
+        
+        # Créer un chemin sinueux pour les plaques
+        for i in range(self.niveaux_par_planete):
+            x = centre_x - 250 + i * 130
+            y = base_y - abs(math.sin(i * 0.8)) * 50 - i * 15
+            self.plaques_positions.append((x, y))
     
     def maj_volume(self):
-        """Met à jour le volume du son de sélection"""
+        """Met à jour le volume des sons"""
         volumes = self.gestionnaire_config.obtenir_volumes()
-        self.son_select.set_volume(volumes.get("effets", 50) / 100)
+        volume = volumes.get("effets", 50) / 100
+        self.son_select.set_volume(volume)
+        for son in self.sons_portail:
+            son.set_volume(volume)
+    
+    def dessiner_etoiles(self, ecran):
+        """Dessine les étoiles scintillantes"""
+        for etoile in self.etoiles:
+            x, y, taille, brillance_base, vitesse, phase = etoile
+            # Scintillement
+            brillance = int(brillance_base * (0.5 + 0.5 * math.sin(self.temps_global * vitesse + phase)))
+            brillance = max(50, min(255, brillance))
+            pygame.draw.circle(ecran, (brillance, brillance, brillance), (x, y), taille)
+    
+    def dessiner_planete(self, ecran, planete, echelle=1.0, pos_x=None, pos_y=None):
+        """Dessine une planète avec des effets visuels"""
+        x = pos_x if pos_x else planete["x"]
+        y = pos_y if pos_y else planete["y"]
+        rayon = int(planete["rayon"] * echelle)
+        couleur = planete["couleur"]
         
+        # Ombre de la planète
+        ombre_surface = pygame.Surface((rayon * 2 + 20, rayon * 2 + 20), pygame.SRCALPHA)
+        pygame.draw.circle(ombre_surface, (0, 0, 0, 80), (rayon + 10, rayon + 10), rayon + 5)
+        ecran.blit(ombre_surface, (x - rayon - 10, y - rayon - 5))
+        
+        # Corps de la planète (dégradé simulé avec plusieurs cercles)
+        for i in range(5):
+            r = max(0, min(255, couleur[0] + i * 15 - 30))
+            g = max(0, min(255, couleur[1] + i * 15 - 30))
+            b = max(0, min(255, couleur[2] + i * 15 - 30))
+            rayon_courant = rayon - i * (rayon // 8)
+            offset_x = -i * 2
+            offset_y = -i * 2
+            pygame.draw.circle(ecran, (r, g, b), (x + offset_x, y + offset_y), max(1, rayon_courant))
+        
+        # Reflet lumineux
+        reflet_surface = pygame.Surface((rayon * 2, rayon * 2), pygame.SRCALPHA)
+        pygame.draw.circle(reflet_surface, (255, 255, 255, 40), (rayon // 2, rayon // 2), rayon // 3)
+        ecran.blit(reflet_surface, (x - rayon, y - rayon))
+        
+        # Anneaux si la planète en a
+        if planete["anneaux"]:
+            anneau_surface = pygame.Surface((rayon * 4, rayon * 2), pygame.SRCALPHA)
+            pygame.draw.ellipse(anneau_surface, (*couleur[:3], 100), (0, rayon // 2, rayon * 4, rayon))
+            pygame.draw.ellipse(anneau_surface, (0, 0, 0, 0), (rayon // 2, rayon // 2 + rayon // 4, rayon * 3, rayon // 2))
+            ecran.blit(anneau_surface, (x - rayon * 2, y - rayon))
+        
+        # Cratères/détails
+        random.seed(hash(planete["nom"]))  # Même cratères pour chaque planète
+        for _ in range(3):
+            cx = x + random.randint(-rayon // 2, rayon // 2)
+            cy = y + random.randint(-rayon // 2, rayon // 2)
+            cr = random.randint(rayon // 10, rayon // 5)
+            couleur_cratere = (max(0, couleur[0] - 40), max(0, couleur[1] - 40), max(0, couleur[2] - 40))
+            pygame.draw.circle(ecran, couleur_cratere, (cx, cy), cr)
+        random.seed()  # Reset seed
+        
+        return pygame.Rect(x - rayon, y - rayon, rayon * 2, rayon * 2)
+    
+    def dessiner_portail(self, ecran, x, y, taille):
+        """Dessine un portail de téléportation jaune/doré"""
+        # Effet de rotation et pulsation
+        pulse = 1 + 0.2 * math.sin(self.portail_animation * 0.3)
+        rayon = int(taille * pulse)
+        
+        # Cercles concentriques pour l'effet de portail
+        for i in range(5):
+            alpha = 180 - i * 35
+            r = rayon - i * (rayon // 6)
+            if r > 0:
+                # Couleur jaune/dorée avec variation
+                teinte = 200 + int(55 * math.sin(self.portail_animation * 0.2 + i))
+                surface = pygame.Surface((r * 2 + 10, r * 2 + 10), pygame.SRCALPHA)
+                pygame.draw.circle(surface, (255, teinte, 50, alpha), (r + 5, r + 5), r)
+                ecran.blit(surface, (x - r - 5, y - r - 5))
+        
+        # Particules tourbillonnantes
+        for i in range(8):
+            angle = self.portail_animation * 0.15 + i * (math.pi / 4)
+            dist = rayon * 0.7
+            px = x + int(math.cos(angle) * dist)
+            py = y + int(math.sin(angle) * dist)
+            particle_size = 3 + int(2 * math.sin(self.portail_animation * 0.4 + i))
+            pygame.draw.circle(ecran, (255, 255, 150), (px, py), particle_size)
+        
+        # Centre brillant
+        pygame.draw.circle(ecran, (255, 255, 200), (x, y), rayon // 4)
+    
+    def dessiner_plaque_niveau(self, ecran, x, y, numero, est_debloque, est_survole, planete):
+        """Dessine une plaque de niveau au sol"""
+        largeur = 70
+        hauteur = 40
+        
+        # Couleur selon l'état
+        if est_debloque:
+            # Utiliser la couleur de la planète pour les plaques débloquées
+            couleur_base = planete["couleur"]
+            if est_survole:
+                couleur = (min(255, couleur_base[0] + 40), min(255, couleur_base[1] + 40), min(255, couleur_base[2] + 40))
+                bordure = (min(255, couleur_base[0] + 80), min(255, couleur_base[1] + 80), min(255, couleur_base[2] + 80))
+            else:
+                couleur = couleur_base
+                bordure = (min(255, couleur_base[0] + 30), min(255, couleur_base[1] + 30), min(255, couleur_base[2] + 30))
+        else:
+            if est_survole:
+                couleur = (100, 100, 100)
+                bordure = (150, 150, 150)
+            else:
+                couleur = (70, 70, 70)
+                bordure = (100, 100, 100)
+        
+        # Effet de perspective (trapèze)
+        points = [
+            (x - largeur // 2 + 5, y - hauteur // 2),
+            (x + largeur // 2 - 5, y - hauteur // 2),
+            (x + largeur // 2, y + hauteur // 2),
+            (x - largeur // 2, y + hauteur // 2)
+        ]
+        pygame.draw.polygon(ecran, couleur, points)
+        pygame.draw.polygon(ecran, bordure, points, 3)
+        
+        # Lueur si débloqué et survolé
+        if est_debloque and est_survole:
+            lueur = pygame.Surface((largeur + 20, hauteur + 20), pygame.SRCALPHA)
+            pygame.draw.ellipse(lueur, (100, 255, 100, 50), (0, 0, largeur + 20, hauteur + 20))
+            ecran.blit(lueur, (x - largeur // 2 - 10, y - hauteur // 2 - 10))
+        
+        # Numéro ou cadenas
+        if est_debloque:
+            texte = self.font_2.render(str(numero), True, (255, 255, 255))
+            ecran.blit(texte, (x - texte.get_width() // 2, y - texte.get_height() // 2))
+        else:
+            ecran.blit(self.image_cadenas, (x - 15, y - 15))
+        
+        return pygame.Rect(x - largeur // 2, y - hauteur // 2, largeur, hauteur)
+    
+    def dessiner_sol_planete(self, ecran, planete):
+        """Dessine le sol de la planète en vue zoomée"""
+        couleur = planete["couleur"]
+        
+        # Sol courbé
+        points_sol = [(0, HAUTEUR_ECRAN)]
+        for x in range(0, LARGEUR_ECRAN + 50, 50):
+            y = HAUTEUR_ECRAN - 100 + int(30 * math.sin(x * 0.005))
+            points_sol.append((x, y))
+        points_sol.append((LARGEUR_ECRAN, HAUTEUR_ECRAN))
+        
+        # Couleur du sol (plus foncée que la planète)
+        couleur_sol = (max(0, couleur[0] - 30), max(0, couleur[1] - 30), max(0, couleur[2] - 30))
+        pygame.draw.polygon(ecran, couleur_sol, points_sol)
+        
+        # Ligne de surface
+        couleur_surface = (min(255, couleur[0] + 20), min(255, couleur[1] + 20), min(255, couleur[2] + 20))
+        pygame.draw.lines(ecran, couleur_surface, False, points_sol[1:-1], 3)
+        
+        # Quelques détails (rochers, herbe stylisée)
+        random.seed(hash(planete["nom"]) + 42)
+        for _ in range(10):
+            rx = random.randint(50, LARGEUR_ECRAN - 50)
+            ry = HAUTEUR_ECRAN - 100 + int(30 * math.sin(rx * 0.005)) - random.randint(5, 20)
+            rw = random.randint(20, 40)
+            rh = random.randint(10, 25)
+            couleur_detail = (max(0, couleur[0] - 50), max(0, couleur[1] - 50), max(0, couleur[2] - 50))
+            pygame.draw.ellipse(ecran, couleur_detail, (rx, ry, rw, rh))
+        random.seed()
+    
+    def afficher_galaxie(self, ecran):
+        """Affiche la vue galaxie avec les planètes et effet de swipe entre univers"""
+        # Fond étoilé
+        ecran.fill((10, 10, 30))
+        self.dessiner_etoiles(ecran)
+        
+        mouse_pos = pygame.mouse.get_pos()
+        
+        # Dessiner tous les univers visibles (actuel + voisins si en transition)
+        for univers_idx, univers in enumerate(self.univers):
+            # Position X de base de cet univers
+            univers_base_x = univers_idx * LARGEUR_ECRAN
+            # Décalage par rapport à la caméra
+            offset_univers = univers_base_x - self.camera_x
+            
+            # Ne dessiner que si l'univers est visible à l'écran (optimisation)
+            if offset_univers < -LARGEUR_ECRAN or offset_univers > LARGEUR_ECRAN:
+                continue
+            
+            # Titre de l'univers
+            titre = self.font_1.render(univers["nom"], True, (255, 255, 255))
+            titre_x = LARGEUR_ECRAN // 2 - titre.get_width() // 2 + offset_univers
+            ecran.blit(titre, (titre_x, 30))
+            
+            # Dessiner les planètes de cet univers
+            planetes_univers = univers["planetes"]
+            
+            for i, planete in enumerate(planetes_univers):
+                # Position X avec décalage de caméra
+                planete_x = planete["x"] + offset_univers
+                
+                # Ne dessiner que si la planète est visible
+                if planete_x < -100 or planete_x > LARGEUR_ECRAN + 100:
+                    continue
+                
+                # Calculer le numéro de niveau global
+                premier_niveau = univers_idx * self.nombre_planetes_par_univers * self.niveaux_par_planete + i * self.niveaux_par_planete + 1
+                planete_debloquee = premier_niveau <= self.niveau_max_debloque
+                
+                # Animation de flottement
+                offset_y = int(8 * math.sin(self.temps_global * 0.03 + i * 1.5 + univers_idx * 2))
+                
+                # Échelle si survolé (seulement si c'est l'univers actuel et pas en transition)
+                rect = pygame.Rect(planete_x - planete["rayon"], planete["y"] - planete["rayon"] + offset_y,
+                                 planete["rayon"] * 2, planete["rayon"] * 2)
+                
+                est_survole = (rect.collidepoint(mouse_pos) and planete_debloquee and 
+                              univers_idx == self.univers_actuel and not self.transition_univers)
+                echelle = 1.1 if est_survole else 1.0
+                
+                # Dessiner la planète (grisée si verrouillée)
+                if planete_debloquee:
+                    self.dessiner_planete(ecran, planete, echelle, planete_x, planete["y"] + offset_y)
+                else:
+                    # Version grisée
+                    planete_grise = planete.copy()
+                    c = planete["couleur"]
+                    gris = (c[0] + c[1] + c[2]) // 3
+                    planete_grise["couleur"] = (gris // 2, gris // 2, gris // 2)
+                    self.dessiner_planete(ecran, planete_grise, echelle, planete_x, planete["y"] + offset_y)
+                    # Cadenas
+                    ecran.blit(self.image_cadenas, (planete_x - 15, planete["y"] + offset_y - 15))
+                
+                # Nom de la planète
+                nom = self.font_petit.render(planete["nom"], True, (255, 255, 255) if planete_debloquee else (150, 150, 150))
+                ecran.blit(nom, (planete_x - nom.get_width() // 2, planete["y"] + planete["rayon"] + 20 + offset_y))
+                
+                # Niveaux disponibles
+                niveaux_texte = f"Niveaux {premier_niveau}-{premier_niveau + self.niveaux_par_planete - 1}"
+                niveaux_surface = self.font_petit.render(niveaux_texte, True, (200, 200, 200) if planete_debloquee else (100, 100, 100))
+                ecran.blit(niveaux_surface, (planete_x - niveaux_surface.get_width() // 2, planete["y"] + planete["rayon"] + 45 + offset_y))
+        
+        # Dessiner les flèches de navigation entre univers
+        self.dessiner_fleches_univers(ecran, mouse_pos)
+        
+        # Bouton retour
+        self.dessiner_bouton_retour(ecran)
+        
+        # Version
+        version_txt = self.font_3.render(VERSION_JEU, True, (255, 255, 255))
+        ecran.blit(version_txt, (LARGEUR_ECRAN - version_txt.get_width() - 20, HAUTEUR_ECRAN - version_txt.get_height() - 20))
+    
+    def dessiner_fleches_univers(self, ecran, mouse_pos):
+        """Dessine les flèches de navigation entre univers avec animation"""
+        # Ne pas afficher les flèches pendant la transition
+        if self.transition_univers:
+            return
+        
+        # Animation de flottement
+        offset_y = int(6 * math.sin(self.temps_global * 0.04))
+        
+        # Flèche droite (si univers suivant existe)
+        if self.univers_actuel < len(self.univers) - 1:
+            est_survole = self.fleche_droite_rect.collidepoint(mouse_pos)
+            nom_univers_suivant = self.univers[self.univers_actuel + 1]["nom"]
+            self.dessiner_fleche(ecran, self.fleche_droite_rect.centerx, self.fleche_droite_rect.centery + offset_y, 
+                               "droite", est_survole, nom_univers_suivant)
+        
+        # Flèche gauche (si univers précédent existe)
+        if self.univers_actuel > 0:
+            est_survole = self.fleche_gauche_rect.collidepoint(mouse_pos)
+            nom_univers_precedent = self.univers[self.univers_actuel - 1]["nom"]
+            self.dessiner_fleche(ecran, self.fleche_gauche_rect.centerx, self.fleche_gauche_rect.centery + offset_y, 
+                               "gauche", est_survole, nom_univers_precedent)
+    
+    def dessiner_fleche(self, ecran, x, y, direction, est_survole, nom_univers=""):
+        """Dessine une flèche stylisée avec effets"""
+        taille = 50 if est_survole else 42
+        
+        # Couleur selon l'état
+        if est_survole:
+            # Effet de pulsation pour la couleur
+            pulse = 0.7 + 0.3 * math.sin(self.temps_global * 0.1)
+            couleur = (255, 255, int(150 + 105 * pulse))  # Jaune-blanc pulsant
+            bordure_couleur = (255, 220, 100)
+        else:
+            couleur = (200, 200, 220)
+            bordure_couleur = (150, 150, 180)
+        
+        # Effet de lueur étoilée si survolé (petites étoiles autour)
+        if est_survole:
+            for i in range(5):
+                angle = self.temps_global * 0.05 + i * (2 * math.pi / 5)
+                rayon_etoile = 55 + 12 * math.sin(self.temps_global * 0.08 + i)
+                ex = x + int(rayon_etoile * math.cos(angle))
+                ey = y + int(rayon_etoile * math.sin(angle))
+                taille_etoile = 3 + int(2 * math.sin(self.temps_global * 0.1 + i))
+                brillance = int(150 + 105 * math.sin(self.temps_global * 0.15 + i))
+                pygame.draw.circle(ecran, (brillance, brillance, int(brillance * 0.7)), (ex, ey), taille_etoile)
+        
+        # Points du triangle
+        if direction == "droite":
+            points = [
+                (x - taille // 2, y - taille // 2),
+                (x + taille // 2, y),
+                (x - taille // 2, y + taille // 2)
+            ]
+        else:  # gauche
+            points = [
+                (x + taille // 2, y - taille // 2),
+                (x - taille // 2, y),
+                (x + taille // 2, y + taille // 2)
+            ]
+        
+        # Dessiner le triangle avec bordure
+        pygame.draw.polygon(ecran, couleur, points)
+        pygame.draw.polygon(ecran, bordure_couleur, points, 3)
+        
+        # Afficher le nom de l'univers destination à côté si survolé
+        if est_survole and nom_univers:
+            texte = self.font_petit.render(nom_univers, True, (255, 255, 200))
+            # Positionner le texte vers l'intérieur de l'écran
+            if direction == "droite":
+                texte_x = x - taille - texte.get_width() - 15
+            else:
+                texte_x = x + taille + 15
+            texte_y = y - texte.get_height() // 2
+            # Fond semi-transparent pour le texte
+            fond = pygame.Surface((texte.get_width() + 10, texte.get_height() + 6), pygame.SRCALPHA)
+            fond.fill((0, 0, 30, 180))
+            ecran.blit(fond, (texte_x - 5, texte_y - 3))
+            ecran.blit(texte, (texte_x, texte_y))
+    
+    def afficher_planete(self, ecran):
+        """Affiche la vue planète avec les niveaux"""
+        planete = self.planetes[self.planete_selectionnee]
+        
+        # Fond avec dégradé (ciel de la planète)
+        couleur = planete["couleur"]
+        for y in range(HAUTEUR_ECRAN):
+            ratio = y / HAUTEUR_ECRAN
+            r = int(10 + ratio * couleur[0] * 0.3)
+            g = int(10 + ratio * couleur[1] * 0.3)
+            b = int(30 + ratio * couleur[2] * 0.3)
+            pygame.draw.line(ecran, (r, g, b), (0, y), (LARGEUR_ECRAN, y))
+        
+        # Étoiles (moins visibles mais animées)
+        for etoile in self.etoiles[:50]:
+            x, y, taille, brillance_base, vitesse, phase = etoile
+            if y < HAUTEUR_ECRAN * 0.6:
+                # Scintillement animé même dans la vue planète
+                brillance = int(brillance_base * 0.3 * (0.5 + 0.5 * math.sin(self.temps_global * vitesse + phase)))
+                brillance = max(30, min(128, brillance))
+                pygame.draw.circle(ecran, (brillance, brillance, brillance), (x, y), taille)
+        
+        # Sol de la planète
+        self.dessiner_sol_planete(ecran, planete)
+        
+        # Titre
+        titre = self.font_1.render(planete["nom"], True, (255, 255, 255))
+        ecran.blit(titre, (LARGEUR_ECRAN // 2 - titre.get_width() // 2, 30))
+        
+        # Dessiner les plaques de niveaux
+        mouse_pos = pygame.mouse.get_pos()
+        premier_niveau = self.univers_actuel * self.nombre_planetes_par_univers * self.niveaux_par_planete + self.planete_selectionnee * self.niveaux_par_planete + 1
+        
+        for i, (px, py) in enumerate(self.plaques_positions):
+            numero = premier_niveau + i
+            est_debloque = numero <= self.niveau_max_debloque
+            rect = pygame.Rect(px - 35, py - 20, 70, 40)
+            est_survole = rect.collidepoint(mouse_pos)
+            self.dessiner_plaque_niveau(ecran, px, py, numero, est_debloque, est_survole, planete)
+        
+        # Dessiner le portail si actif
+        if self.portail_actif:
+            self.dessiner_portail(ecran, self.portail_x, self.portail_y - 30, 40)
+        
+        # Dessiner le mage
+        if self.mage_visible:
+            # Choisir le bon sprite (animation de marche ou repos)
+            if self.mage_en_mouvement:
+                sprite = self.mage_walk_frames[self.mage_frame_index % len(self.mage_walk_frames)]
+                if self.mage_direction < 0:
+                    sprite = pygame.transform.flip(sprite, True, False)
+            else:
+                sprite = self.mage_sprite if self.mage_direction >= 0 else self.mage_sprite_flip
+            
+            ecran.blit(sprite, (self.mage_x - 30, self.mage_y - 55))
+        
+        # Bouton retour
+        self.dessiner_bouton_retour(ecran, "Retour")
+    
+    def dessiner_bouton_retour(self, ecran, texte="Retour"):
+        """Dessine le bouton retour"""
+        mouse_pos = pygame.mouse.get_pos()
+        est_survole = self.bouton_retour.collidepoint(mouse_pos)
+        
+        couleur = COULEUR_SURVOL if est_survole else COULEUR_BOUTON
+        pygame.draw.rect(ecran, couleur, self.bouton_retour, border_radius=10)
+        pygame.draw.rect(ecran, COULEUR_BORDURE, self.bouton_retour, 3, border_radius=10)
+        
+        texte_surface = self.font_2.render(texte, True, (255, 255, 255))
+        ecran.blit(texte_surface, (self.bouton_retour.centerx - texte_surface.get_width() // 2,
+                                    self.bouton_retour.centery - texte_surface.get_height() // 2))
+    
+    def afficher_transition_zoom(self, ecran):
+        """Affiche la transition de zoom vers une planète"""
+        planete = self.planetes[self.planete_selectionnee]
+        
+        # Interpoler entre les deux vues
+        t = self.zoom_animation
+        
+        # Fond qui s'éclaircit progressivement
+        ecran.fill((int(10 + t * 20), int(10 + t * 20), int(30 + t * 20)))
+        
+        if t < 0.5:
+            # Première moitié : zoom sur la planète
+            self.dessiner_etoiles(ecran)
+            echelle = 1 + t * 10
+            self.dessiner_planete(ecran, planete, echelle, LARGEUR_ECRAN // 2, HAUTEUR_ECRAN // 2)
+        else:
+            # Deuxième moitié : fondu vers la vue planète
+            alpha = int((t - 0.5) * 2 * 255)
+            self.afficher_planete(ecran)
+    
     def afficher_selection(self, ecran):
-        # Mettre à jour le volume à chaque affichage
+        """Affiche le menu de sélection des niveaux"""
         self.maj_volume()
+        self.temps_global += 1
         
         self.config = self.gestionnaire_config.charger_config()
         self.niveau_max_debloque = self.config["niveau_actuel"]
         
-        # fond
-        ecran.blit(self.image_fond, (0, 0))
+        # Mettre à jour les animations
+        self.maj_animations()
         
-        titre_txt = self.font_1.render("Niveaux", True, (255, 255, 255))
-        ecran.blit(titre_txt, (LARGEUR_ECRAN // 2 - titre_txt.get_width() // 2, 50))
-        
-        for i in range(len(self.boutons_niveaux)):
-            bouton = self.boutons_niveaux[i]
-            niveau_numero = i + 1
-            
-            if niveau_numero <= self.niveau_max_debloque :
-                est_debloque = True
-            else :
-                est_debloque = False
-            
-            if est_debloque:
-                if bouton.collidepoint(pygame.mouse.get_pos()):
-                    couleur_bouton = (0, 120, 0)  # Vert plus clair au survol de la souris
-                else:
-                    couleur_bouton = (0, 80, 0)   # Vert foncé normal
-            else:
-                if bouton.collidepoint(pygame.mouse.get_pos()):
-                    couleur_bouton = COULEUR_SURVOL  # Gris plus clair au survol dela souris
-                else:
-                    couleur_bouton = COULEUR_BOUTON  # Gris foncé normal
-            
-            pygame.draw.rect(ecran, couleur_bouton, bouton)
-            pygame.draw.rect(ecran, COULEUR_BORDURE, bouton, 3)
-            
-            if est_debloque:
-                numero_txt = self.font_1.render(str(niveau_numero), True, (255, 255, 255))
-                ecran.blit(numero_txt, (bouton.centerx - numero_txt.get_width() // 2, bouton.centery - numero_txt.get_height() // 2))
-            else:
-                ecran.blit(self.image_cadenas, (bouton.centerx - 20, bouton.centery - 20))
-        if self.bouton_retour.collidepoint(pygame.mouse.get_pos()):
-            pygame.draw.rect(ecran, COULEUR_SURVOL, self.bouton_retour)
+        # Afficher selon l'état
+        if self.zoom_en_cours:
+            self.afficher_transition_zoom(ecran)
+        elif self.etat_menu == "galaxie":
+            self.afficher_galaxie(ecran)
         else:
-            pygame.draw.rect(ecran, COULEUR_BOUTON, self.bouton_retour)
-        pygame.draw.rect(ecran, COULEUR_BORDURE, self.bouton_retour, 3)
-        retour_txt = self.font_2.render("Retour", True, (255, 255, 255))
-        ecran.blit(retour_txt, (LARGEUR_ECRAN // 2 - retour_txt.get_width() // 2, HAUTEUR_ECRAN - 90))
+            self.afficher_planete(ecran)
         
-        version_txt = self.font_3.render(VERSION_JEU, True, (255, 255, 255))
-        ecran.blit(version_txt, (LARGEUR_ECRAN - version_txt.get_width() - 20, HAUTEUR_ECRAN - version_txt.get_height() - 20))
+        pygame.display.flip()
+    
+    def maj_animations(self):
+        """Met à jour toutes les animations"""
+        # Animation de zoom
+        if self.zoom_en_cours:
+            self.zoom_animation += self.zoom_direction * self.vitesse_zoom
+            if self.zoom_animation >= 1:
+                self.zoom_animation = 1
+                self.zoom_en_cours = False
+                self.etat_menu = "planete"
+                self.initialiser_position_mage()
+            elif self.zoom_animation <= 0:
+                self.zoom_animation = 0
+                self.zoom_en_cours = False
+                self.etat_menu = "galaxie"
+        
+        # Animation du mage qui marche
+        if self.mage_en_mouvement:
+            self.mage_anim_timer += 16  # ~60fps
+            if self.mage_anim_timer >= self.mage_anim_delay:
+                self.mage_anim_timer = 0
+                self.mage_frame_index = (self.mage_frame_index + 1) % len(self.mage_walk_frames)
+            
+            # Déplacer le mage vers la cible actuelle
+            dx = self.mage_cible_x - self.mage_x
+            dy = self.mage_cible_y - self.mage_y
+            distance = math.sqrt(dx * dx + dy * dy)
+            
+            if distance < self.mage_vitesse:
+                self.mage_x = self.mage_cible_x
+                self.mage_y = self.mage_cible_y
+                
+                # Vérifier s'il y a encore des plaques dans le chemin
+                if self.chemin_plaques and self.plaque_courante_index < len(self.chemin_plaques) - 1:
+                    # Passer à la plaque suivante
+                    self.plaque_courante_index += 1
+                    next_plaque = self.chemin_plaques[self.plaque_courante_index]
+                    self.mage_cible_x, self.mage_cible_y = self.plaques_positions[next_plaque]
+                    # Mettre à jour la direction
+                    new_dx = self.mage_cible_x - self.mage_x
+                    self.mage_direction = 1 if new_dx > 0 else -1
+                else:
+                    # Arrivé à destination finale
+                    self.mage_en_mouvement = False
+                    self.chemin_plaques = []
+                    self.plaque_courante_index = 0
+                    # Activer le portail de téléportation
+                    self.portail_actif = True
+                    self.portail_x = self.mage_x
+                    self.portail_y = self.mage_y
+                    self.portail_animation = 0
+                    self.teleportation_en_cours = True
+            else:
+                self.mage_x += (dx / distance) * self.mage_vitesse
+                self.mage_y += (dy / distance) * self.mage_vitesse
+                self.mage_direction = 1 if dx > 0 else -1
+        
+        # Animation du portail
+        if self.portail_actif:
+            self.portail_animation += 1
+            
+            # Séquence de téléportation
+            if self.teleportation_en_cours:
+                if self.portail_animation == 30:
+                    # Le mage disparaît dans le portail
+                    self.mage_visible = False
+                elif self.portail_animation >= 60:
+                    # Fin de l'animation, lancer le niveau
+                    self.portail_actif = False
+                    self.teleportation_en_cours = False
+                    self.niveau_a_lancer = self.niveau_cible
+            else:
+                # Portail d'arrivée (quand on revient d'un niveau)
+                if self.portail_animation >= 40:
+                    self.mage_visible = True
+                if self.portail_animation >= 60:
+                    self.portail_actif = False
+        
+        # Animation de transition entre univers (interpolation de la caméra)
+        if self.transition_univers:
+            # Interpolation douce (easing)
+            diff = self.camera_cible_x - self.camera_x
+            self.camera_x += diff * self.camera_vitesse
+            
+            # Vérifier si on est arrivé (assez proche de la cible)
+            if abs(diff) < 1:
+                self.camera_x = self.camera_cible_x
+                self.transition_univers = False
+                self.univers_actuel = int(self.camera_x / LARGEUR_ECRAN)
+                self.planetes = self.univers[self.univers_actuel]["planetes"]
+    
+    def initialiser_position_mage(self):
+        """Place le mage sur sa position initiale"""
+        # Trouver le niveau actuel du joueur sur cette planète
+        premier_niveau = self.univers_actuel * self.nombre_planetes_par_univers * self.niveaux_par_planete + self.planete_selectionnee * self.niveaux_par_planete + 1
+        niveau_local = min(self.niveau_max_debloque - premier_niveau + 1, self.niveaux_par_planete) - 1
+        niveau_local = max(0, niveau_local)
+        
+        self.mage_niveau_actuel = niveau_local
+        self.mage_x, self.mage_y = self.plaques_positions[niveau_local]
+        self.mage_visible = True
+        
+        # Animation d'arrivée avec portail
+        self.portail_actif = True
+        self.portail_x = self.mage_x
+        self.portail_y = self.mage_y
+        self.portail_animation = 0
+        self.mage_visible = False
+        self.teleportation_en_cours = False  # C'est une arrivée, pas un départ
     
     def gerer_clic(self, pos):
-        for i in range(len(self.boutons_niveaux)):
-            if self.boutons_niveaux[i].collidepoint(pos):
-                self.son_select.play()
-                niveau_numero = i + 1
-                if niveau_numero <= self.niveau_max_debloque:
-                    return niveau_numero
-                else:
-                    return None
+        """Gère les clics selon l'état du menu"""
+        # Ignorer les clics pendant les animations
+        if self.zoom_en_cours or self.mage_en_mouvement or self.teleportation_en_cours or self.transition_univers:
+            return None
         
+        # Bouton retour
         if self.bouton_retour.collidepoint(pos):
-            self.son_select.play()
-            return 0
+            if self.etat_menu == "planete":
+                # Retour à la galaxie avec son de portail
+                random.choice(self.sons_portail).play()
+                self.zoom_en_cours = True
+                self.zoom_direction = -1
+                return None
+            else:
+                self.son_select.play()
+                return 0  # Retour au menu principal
         
+        if self.etat_menu == "galaxie":
+            return self.gerer_clic_galaxie(pos)
+        else:
+            return self.gerer_clic_planete(pos)
+    
+    def gerer_clic_galaxie(self, pos):
+        """Gère les clics sur la vue galaxie"""
+        # Vérifier les flèches de navigation entre univers
+        if self.univers_actuel < len(self.univers) - 1 and self.fleche_droite_rect.collidepoint(pos):
+            self.son_select.play()
+            self.changer_univers(1)
+            return None
+        
+        if self.univers_actuel > 0 and self.fleche_gauche_rect.collidepoint(pos):
+            self.son_select.play()
+            self.changer_univers(-1)
+            return None
+        
+        # Vérifier les clics sur les planètes de l'univers actuel
+        planetes_univers = self.univers[self.univers_actuel]["planetes"]
+        # Calculer l'offset de la caméra pour l'univers actuel
+        offset_univers = self.univers_actuel * LARGEUR_ECRAN - self.camera_x
+        
+        for i, planete in enumerate(planetes_univers):
+            # Calculer le numéro de niveau global
+            premier_niveau = self.univers_actuel * self.nombre_planetes_par_univers * self.niveaux_par_planete + i * self.niveaux_par_planete + 1
+            planete_debloquee = premier_niveau <= self.niveau_max_debloque
+            
+            if not planete_debloquee:
+                continue
+            
+            # Vérifier si on clique sur la planète (avec offset de caméra)
+            planete_x = planete["x"] + offset_univers
+            offset_y = int(8 * math.sin(self.temps_global * 0.03 + i * 1.5))
+            distance = math.sqrt((pos[0] - planete_x) ** 2 + (pos[1] - planete["y"] - offset_y) ** 2)
+            
+            if distance <= planete["rayon"]:
+                random.choice(self.sons_portail).play()
+                self.planete_selectionnee = i
+                self.planetes = planetes_univers  # Mettre à jour la référence
+                
+                # Initialiser immédiatement la position du mage pour éviter le flash
+                premier_niveau_planete = self.univers_actuel * self.nombre_planetes_par_univers * self.niveaux_par_planete + self.planete_selectionnee * self.niveaux_par_planete + 1
+                niveau_local = min(self.niveau_max_debloque - premier_niveau_planete + 1, self.niveaux_par_planete) - 1
+                niveau_local = max(0, niveau_local)
+                
+                self.mage_niveau_actuel = niveau_local
+                self.mage_x, self.mage_y = self.plaques_positions[niveau_local]
+                self.mage_visible = False  # Caché jusqu'à l'animation de portail
+                
+                # Démarrer l'animation de zoom
+                self.zoom_en_cours = True
+                self.zoom_direction = 1
+                self.zoom_animation = 0
+                return None
+        
+        return None
+    
+    def changer_univers(self, direction):
+        """Change d'univers avec animation de swipe"""
+        nouvel_univers = self.univers_actuel + direction
+        if 0 <= nouvel_univers < len(self.univers):
+            self.transition_univers = True
+            self.camera_cible_x = nouvel_univers * LARGEUR_ECRAN
+    
+    def gerer_clic_planete(self, pos):
+        """Gère les clics sur la vue planète"""
+        # Calcul du premier niveau de cette planète (global)
+        premier_niveau = self.univers_actuel * self.nombre_planetes_par_univers * self.niveaux_par_planete + self.planete_selectionnee * self.niveaux_par_planete + 1
+        
+        for i, (px, py) in enumerate(self.plaques_positions):
+            numero = premier_niveau + i
+            est_debloque = numero <= self.niveau_max_debloque
+            
+            rect = pygame.Rect(px - 35, py - 20, 70, 40)
+            if rect.collidepoint(pos) and est_debloque:
+                self.son_select.play()
+                
+                # Si le mage est déjà sur cette plaque, lancer directement
+                if i == self.mage_niveau_actuel:
+                    self.niveau_cible = numero
+                    self.portail_actif = True
+                    self.portail_x = self.mage_x
+                    self.portail_y = self.mage_y
+                    self.portail_animation = 0
+                    self.teleportation_en_cours = True
+                else:
+                    # Construire le chemin de plaques à parcourir
+                    self.chemin_plaques = self.construire_chemin(self.mage_niveau_actuel, i)
+                    self.plaque_courante_index = 0
+                    
+                    # Démarrer vers la première plaque du chemin
+                    if self.chemin_plaques:
+                        first_plaque = self.chemin_plaques[0]
+                        self.mage_cible_x, self.mage_cible_y = self.plaques_positions[first_plaque]
+                        # Mettre à jour la direction initiale
+                        dx = self.mage_cible_x - self.mage_x
+                        self.mage_direction = 1 if dx > 0 else -1
+                    
+                    self.mage_en_mouvement = True
+                    self.mage_niveau_actuel = i
+                    self.niveau_cible = numero
+                
+                return None
+        
+        return None
+    
+    def construire_chemin(self, depart, arrivee):
+        """Construit le chemin de plaques entre deux positions"""
+        chemin = []
+        if depart < arrivee:
+            # Aller vers la droite (plaques croissantes)
+            for i in range(depart + 1, arrivee + 1):
+                chemin.append(i)
+        else:
+            # Aller vers la gauche (plaques décroissantes)
+            for i in range(depart - 1, arrivee - 1, -1):
+                chemin.append(i)
+        return chemin
+    
+    def preparer_retour_niveau(self, numero_niveau):
+        """Prépare l'animation de retour depuis un niveau"""
+        # Calculer l'univers, la planète et la plaque
+        niveaux_par_univers = self.nombre_planetes_par_univers * self.niveaux_par_planete
+        univers_index = (numero_niveau - 1) // niveaux_par_univers
+        niveau_dans_univers = (numero_niveau - 1) % niveaux_par_univers
+        planete_index = niveau_dans_univers // self.niveaux_par_planete
+        plaque_index = niveau_dans_univers % self.niveaux_par_planete
+        
+        self.univers_actuel = univers_index
+        self.planetes = self.univers[self.univers_actuel]["planetes"]
+        self.planete_selectionnee = planete_index
+        self.mage_niveau_actuel = plaque_index
+        self.mage_x, self.mage_y = self.plaques_positions[plaque_index]
+        
+        # Mettre à jour la position de la caméra pour l'univers
+        self.camera_x = univers_index * LARGEUR_ECRAN
+        self.camera_cible_x = self.camera_x
+        
+        # Activer l'animation de portail d'arrivée
+        self.portail_actif = True
+        self.portail_x = self.mage_x
+        self.portail_y = self.mage_y
+        self.portail_animation = 0
+        self.mage_visible = False
+        self.teleportation_en_cours = False  # C'est une arrivée
+        self.retour_niveau = True
+        self.etat_menu = "planete"
+    
+    def verifier_niveau_a_lancer(self):
+        """Vérifie si un niveau doit être lancé (appelé chaque frame)"""
+        if self.niveau_a_lancer is not None:
+            niveau = self.niveau_a_lancer
+            self.niveau_a_lancer = None
+            return niveau
         return None

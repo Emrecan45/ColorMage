@@ -25,6 +25,7 @@ class Pause:
         
         # Police
         self.font = pygame.font.Font(None, 48)
+        self.font_niveau = pygame.font.Font(None, 35)  #afficher le niveau
         
         # Dimensions du popup
         self.largeur_popup = 600
@@ -55,8 +56,13 @@ class Pause:
         """Dessine le bouton de pause en haut à droite"""
         ecran.blit(self.image_pause, (self.bouton_x, self.bouton_y))
     
-    def dessiner_popup(self, ecran):
-        """Dessine le popup de pause avec tous les boutons"""
+    def dessiner_popup(self, ecran, numero_niveau=None):
+        """Dessine le popup de pause avec tous les boutons
+        
+        Args:
+            ecran: Surface pygame
+            numero_niveau: Numéro du niveau actuel
+        """
         # Fond du popup
         pygame.draw.rect(ecran, (255, 255, 255), self.popup_rect)
         pygame.draw.rect(ecran, (0, 0, 0), self.popup_rect, 4)
@@ -64,9 +70,24 @@ class Pause:
         # Titre
         titre_surface = self.font.render("Pause", True, (0, 0, 0))
         titre_x = self.popup_rect.x + (self.popup_rect.width - titre_surface.get_width()) // 2
-        titre_y = self.popup_rect.y + 80
+        titre_y = self.popup_rect.y + 50
         ecran.blit(titre_surface, (titre_x, titre_y))
         
+        # Afficher le niveau actuel sous le titre
+        if numero_niveau:
+            planete = ((numero_niveau - 1) // 5) + 1 
+            noms_planetes = ["Terra", "Pyros", "Aquaris", "Nebula", "Cryon", "Solara", "Vortex", "Obscura"]
+            if planete <= len(noms_planetes):
+                nom_planete = noms_planetes[planete - 1]
+            else:
+                nom_planete = "Planète " + str(planete)
+
+            niveau_texte = "Planète " + nom_planete + " - Niv. " + str(numero_niveau)
+            niveau_surface = self.font_niveau.render(niveau_texte, True, (100, 100, 100))
+            niveau_x = self.popup_rect.x + (self.popup_rect.width - niveau_surface.get_width()) // 2
+            niveau_y = self.popup_rect.y + 100
+            ecran.blit(niveau_surface, (niveau_x, niveau_y))
+
         # Liste des boutons avec leurs textes
         boutons = [
             (self.bouton_continuer, "Continuer"),
@@ -78,12 +99,12 @@ class Pause:
         for rect, texte in boutons:
             # Effet de survol
             if rect.collidepoint(pygame.mouse.get_pos()):
-                pygame.draw.rect(ecran, (200, 200, 200), rect)
+                pygame.draw.rect(ecran, (200, 200, 200), rect, border_radius=10)
             else:
-                pygame.draw.rect(ecran, (230, 230, 230), rect)
+                pygame.draw.rect(ecran, (230, 230, 230), rect, border_radius=10)
             
             # Bordure
-            pygame.draw.rect(ecran, (0, 0, 0), rect, 3)
+            pygame.draw.rect(ecran, (0, 0, 0), rect, 3, border_radius=10)
             
             # Texte du bouton
             texte_surface = self.font.render(texte, True, (0, 0, 0))
@@ -152,8 +173,8 @@ class Pause:
             self.dessiner_bouton(ecran)
             chrono.dessiner(ecran)
             
-            # Dessiner le popup de pause
-            self.dessiner_popup(ecran)
+            # Dessiner le popup de pause avec le numéro de niveau
+            self.dessiner_popup(ecran, numero_niveau)
             
             pygame.display.flip()
         
