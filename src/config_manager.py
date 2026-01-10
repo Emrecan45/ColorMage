@@ -124,6 +124,19 @@ class ConfigManager:
         """Retourne le niveau actuel du joueur"""
         self.config = self.charger_config()
         return self.config.get("niveau_actuel", 1)
+
+    def obtenir_meilleur_temps(self, niveau):
+        """Retourne le meilleur temps (en ms) sauvegardé pour un niveau
+
+        Args:
+            niveau: numéro du niveau (int)
+
+        Returns:
+            int ou None: meilleur temps en millisecondes si présent, sinon None
+        """
+        self.config = self.charger_config()
+        self.meilleurs_temps = self.config.get("meilleurs_temps", {})
+        return self.meilleurs_temps.get(str(niveau), None)
         
     def maj_controle(self, action, touche):
         """Met à jour une touche spécifique et sauvegarde"""

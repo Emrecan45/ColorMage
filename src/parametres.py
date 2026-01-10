@@ -280,6 +280,8 @@ class Parametres:
         
         elif evenement.type == pygame.MOUSEBUTTONUP:
             # Fin du glissement
+            if self.jauge_active == "effets":
+                self.son_select.play()
             self.jauge_active = None
         
         elif evenement.type == pygame.MOUSEMOTION:
