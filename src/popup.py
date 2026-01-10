@@ -1,5 +1,6 @@
 import pygame
 import os
+import random
 from config import LARGEUR_ECRAN, HAUTEUR_ECRAN
 from config_manager import ConfigManager
 from chronometre import Chronometre
@@ -9,10 +10,29 @@ class Popup:
 
     def __init__(self):
         self.font = pygame.font.Font(None, 48)
+        self.font_niveau = pygame.font.Font(None, 35)  # Pour afficher le niveau
         
         # son des clics
         self.gestionnaire_config = ConfigManager()
         self.son_select = pygame.mixer.Sound(os.path.join("audio", "select.mp3"))
+        
+        # Sons de portail (changement de couleur) pour clic sur nouvelle planète
+        self.sons_portail = [
+            pygame.mixer.Sound(os.path.join("audio", "color_change1.mp3")),
+            pygame.mixer.Sound(os.path.join("audio", "color_change2.mp3")),
+            pygame.mixer.Sound(os.path.join("audio", "color_change3.mp3"))
+        ]
+        
+        # Configuration des planètes (doit correspondre à menu_niveaux)
+        self.niveaux_par_planete = 5
+        self.planetes_par_univers = 4
+        self.niveaux_par_univers = self.niveaux_par_planete * self.planetes_par_univers  # 20 niveaux par univers
+        
+        # Noms des univers et planètes (doit correspondre à menu_niveaux)
+        self.univers = [
+            {"nom": "Royaume Nord", "planetes": ["Terra", "Pyros", "Aquaris", "Nebula"]},
+            {"nom": "Royaume Sud", "planetes": ["Cryon", "Solara", "Vortex", "Obscura"]}
+        ]
         
         self.largeur_popup = 600
         self.hauteur_popup = 450
@@ -33,7 +53,10 @@ class Popup:
     def maj_volume(self):
         """Met à jour le volume du son de sélection"""
         volumes = self.gestionnaire_config.obtenir_volumes()
-        self.son_select.set_volume(volumes.get("effets", 50) / 100)
+        volume = volumes.get("effets", 50) / 100
+        self.son_select.set_volume(volume)
+        for son in self.sons_portail:
+            son.set_volume(volume)
 
     def niveau_existe(self, numero_niveau):
         """Vérifie si un fichier de niveau existe"""
@@ -45,6 +68,23 @@ class Popup:
         except:
             return False
 
+    def est_dernier_niveau_planete(self, niveau):
+        """Vérifie si c'est le dernier niveau d'une planète"""
+        return niveau % self.niveaux_par_planete == 0
+    
+    def est_dernier_niveau_univers(self, niveau):
+        """Vérifie si c'est le dernier niveau d'un univers"""
+        return niveau % self.niveaux_par_univers == 0
+    
+    def obtenir_univers_actuel(self, niveau):
+        """Retourne l'index de l'univers pour un niveau donné"""
+        return (niveau - 1) // self.niveaux_par_univers
+    
+    def obtenir_planete_dans_univers(self, niveau):
+        """Retourne l'index de la planète dans son univers pour un niveau donné"""
+        niveau_dans_univers = (niveau - 1) % self.niveaux_par_univers
+        return niveau_dans_univers // self.niveaux_par_planete
+    
     def gerer_clic_victoire(self, pos, niveau_actuel):
         """Gère les clics pour le popup de victoire
         
@@ -53,13 +93,22 @@ class Popup:
             niveau_actuel: Numéro du niveau actuel
             
         Returns:
-            str: "suivant", "rejouer", "quitter" ou None
+            str: "suivant", "planete_suivante", "univers_suivant", "rejouer", "quitter" ou None
         """
         # Vérifier si le niveau suivant existe pour activer le bouton
         if self.niveau_existe(niveau_actuel + 1):
             if self.bouton_suivant.collidepoint(pos):
-                self.son_select.play()
-                return "suivant"
+                # Si c'est le dernier niveau de l'univers
+                if self.est_dernier_niveau_univers(niveau_actuel):
+                    random.choice(self.sons_portail).play()
+                    return "univers_suivant"
+                # Si c'est le dernier niveau de la planète
+                elif self.est_dernier_niveau_planete(niveau_actuel):
+                    random.choice(self.sons_portail).play()
+                    return "planete_suivante"
+                else:
+                    self.son_select.play()
+                    return "suivant"
         
         if self.bouton_recommencer.collidepoint(pos):
             self.son_select.play()
@@ -105,8 +154,20 @@ class Popup:
         # Titre
         titre_surface = self.font.render("Bravo ! Niveau terminé", True, (0, 0, 0))
         titre_x = self.popup_rect.x + (self.popup_rect.width - titre_surface.get_width()) // 2
-        titre_y = self.popup_rect.y + 50
+        titre_y = self.popup_rect.y + 40
         ecran.blit(titre_surface, (titre_x, titre_y))
+        
+        # Afficher le niveau actuel sous le titre
+        planete = ((niveau_actuel - 1) // 5) + 1
+        niveau_planete = ((niveau_actuel - 1) % 5) + 1
+        noms_planetes = ["Terra", "Ignis", "Aqua", "Ventus"]
+        nom_planete = noms_planetes[planete - 1] if planete <= len(noms_planetes) else f"Planète {planete}"
+        
+        niveau_texte = f"Planète {nom_planete} - Niv. {niveau_actuel}"
+        niveau_surface = self.font_niveau.render(niveau_texte, True, (100, 100, 100))
+        niveau_x = self.popup_rect.x + (self.popup_rect.width - niveau_surface.get_width()) // 2
+        niveau_y = self.popup_rect.y + 80
+        ecran.blit(niveau_surface, (niveau_x, niveau_y))
         
         #afficher le temps
         if temps_ms > 0:
@@ -114,7 +175,7 @@ class Popup:
             font_temps = pygame.font.Font(None, 40)
             temps_surface = font_temps.render(temps_texte, True, (0, 0, 0))
             temps_x = self.popup_rect.x + (self.popup_rect.width - temps_surface.get_width()) // 2
-            temps_y = self.popup_rect.y + 100
+            temps_y = self.popup_rect.y + 120
             ecran.blit(temps_surface, (temps_x, temps_y))
         
         # Afficher "Nouveau record !" si c'est le cas
@@ -134,29 +195,87 @@ class Popup:
         else:
             premier_bouton_y = 180
         
-        # Ajouter le bouton "Niveau suivant" seulement s'il existe
+        # Ajouter le bouton "Niveau suivant" ou nom de la planète/univers suivant seulement s'il existe
+        texte_bouton_suivant = "Niveau suivant"
+        couleur_planete = None
+        
         if self.niveau_existe(niveau_actuel + 1):
             self.bouton_suivant.center = (self.popup_rect.centerx, self.popup_rect.top + premier_bouton_y)
-            boutons.append((self.bouton_suivant, "Niveau suivant"))
+            
+            # Vérifier si c'est le dernier niveau de l'univers
+            if self.est_dernier_niveau_univers(niveau_actuel):
+                univers_actuel_idx = self.obtenir_univers_actuel(niveau_actuel)
+                univers_suivant_idx = univers_actuel_idx + 1
+                
+                if univers_suivant_idx < len(self.univers):
+                    nom_univers = self.univers[univers_suivant_idx]["nom"]
+                    texte_bouton_suivant = nom_univers
+                    couleur_planete = (180, 100, 220)  # Couleur violette pour les univers
+                else:
+                    texte_bouton_suivant = "Suivant"
+                    couleur_planete = (60, 180, 60)
+            # Changer le texte si c'est le dernier niveau de la planète
+            elif self.est_dernier_niveau_planete(niveau_actuel):
+                # Calculer l'univers et la planète actuels
+                univers_idx = self.obtenir_univers_actuel(niveau_actuel)
+                planete_dans_univers = self.obtenir_planete_dans_univers(niveau_actuel)
+                planete_suivante_idx = planete_dans_univers + 1
+                
+                if univers_idx < len(self.univers) and planete_suivante_idx < len(self.univers[univers_idx]["planetes"]):
+                    nom_planete = self.univers[univers_idx]["planetes"][planete_suivante_idx]
+                    texte_bouton_suivant = nom_planete
+                    
+                    # Couleurs des planètes par univers
+                    couleurs_planetes = {
+                        # Royaume Nord
+                        "Terra": (100, 180, 100),
+                        "Pyros": (200, 80, 60),
+                        "Aquaris": (60, 120, 200),
+                        "Nebula": (150, 80, 180),
+                        # Royaume Sud
+                        "Cryon": (150, 220, 255),
+                        "Solara": (255, 180, 50),
+                        "Vortex": (180, 180, 200),
+                        "Obscura": (60, 40, 80)
+                    }
+                    couleur_planete = couleurs_planetes.get(nom_planete, (60, 180, 60))
+                else:
+                    texte_bouton_suivant = "Suivant"
+                    couleur_planete = (60, 180, 60)
+            
+            boutons.append((self.bouton_suivant, texte_bouton_suivant, couleur_planete))
             self.bouton_recommencer.center = (self.popup_rect.centerx, self.popup_rect.top + premier_bouton_y + 90)
             self.bouton_quitter.center = (self.popup_rect.centerx, self.popup_rect.top + premier_bouton_y + 180)
         else:
             self.bouton_recommencer.center = (self.popup_rect.centerx, self.popup_rect.top + premier_bouton_y)
             self.bouton_quitter.center = (self.popup_rect.centerx, self.popup_rect.top + premier_bouton_y + 90)
         
-        boutons.append((self.bouton_recommencer, "Recommencer"))
-        boutons.append((self.bouton_quitter, "Quitter"))
+        boutons.append((self.bouton_recommencer, "Recommencer", None))
+        boutons.append((self.bouton_quitter, "Quitter", None))
 
         # Dessiner les boutons
-        for rect, texte in boutons:
-            # Effet de survol
-            if rect.collidepoint(pygame.mouse.get_pos()):
-                pygame.draw.rect(ecran, (200, 200, 200), rect)
+        for item in boutons:
+            if len(item) == 3:
+                rect, texte, couleur_planete = item
             else:
-                pygame.draw.rect(ecran, (230, 230, 230), rect)
+                rect, texte = item
+                couleur_planete = None
+
+            if couleur_planete:
+                if rect.collidepoint(pygame.mouse.get_pos()):
+                    couleur_survol = tuple(min(255, c + 30) for c in couleur_planete)
+                    pygame.draw.rect(ecran, couleur_survol, rect, border_radius=10)
+                else:
+                    pygame.draw.rect(ecran, couleur_planete, rect, border_radius=10)
+            else:
+                # Effet de survol
+                if rect.collidepoint(pygame.mouse.get_pos()):
+                    pygame.draw.rect(ecran, (200, 200, 200), rect, border_radius=10)
+                else:
+                    pygame.draw.rect(ecran, (230, 230, 230), rect, border_radius=10)
 
             # Bordure du bouton
-            pygame.draw.rect(ecran, (0, 0, 0), rect, 3)
+            pygame.draw.rect(ecran, (0, 0, 0), rect, 3, border_radius=10)
 
             # Texte du bouton
             texte_surface = self.font.render(texte, True, (0, 0, 0))
@@ -164,8 +283,13 @@ class Popup:
             texte_y = rect.y + (rect.height - texte_surface.get_height()) // 2
             ecran.blit(texte_surface, (texte_x, texte_y))
 
-    def dessiner_popup_defaite(self, ecran):
-        """Dessine le popup de défaite"""
+    def dessiner_popup_defaite(self, ecran, niveau_actuel=None):
+        """Dessine le popup de défaite
+        
+        Args:
+            ecran: Surface pygame
+            niveau_actuel: Numéro du niveau actuel
+        """
         self.maj_volume()
         
         # Fond du popup
@@ -175,8 +299,21 @@ class Popup:
         # Titre
         titre_surface = self.font.render("Game Over ! Vous êtes mort", True, (0, 0, 0))
         titre_x = self.popup_rect.x + (self.popup_rect.width - titre_surface.get_width()) // 2
-        titre_y = self.popup_rect.y + 80
+        titre_y = self.popup_rect.y + 60
         ecran.blit(titre_surface, (titre_x, titre_y))
+        
+        # Afficher le niveau actuel sous le titre
+        if niveau_actuel:
+            planete = ((niveau_actuel - 1) // 5) + 1
+            niveau_planete = ((niveau_actuel - 1) % 5) + 1
+            noms_planetes = ["Terra", "Ignis", "Aqua", "Ventus"]
+            nom_planete = noms_planetes[planete - 1] if planete <= len(noms_planetes) else f"Planète {planete}"
+            
+            niveau_texte = f"Planète {nom_planete} - Niv. {niveau_actuel}"
+            niveau_surface = self.font_niveau.render(niveau_texte, True, (100, 100, 100))
+            niveau_x = self.popup_rect.x + (self.popup_rect.width - niveau_surface.get_width()) // 2
+            niveau_y = self.popup_rect.y + 110
+            ecran.blit(niveau_surface, (niveau_x, niveau_y))
 
         # Ajuster les positions pour 2 boutons
         self.bouton_recommencer.center = (self.popup_rect.centerx, self.popup_rect.top + 210)
@@ -192,15 +329,130 @@ class Popup:
         for rect, texte in boutons:
             # Effet de survol
             if rect.collidepoint(pygame.mouse.get_pos()):
-                pygame.draw.rect(ecran, (200, 200, 200), rect)
+                pygame.draw.rect(ecran, (200, 200, 200), rect, border_radius=10)
             else:
-                pygame.draw.rect(ecran, (230, 230, 230), rect)
+                pygame.draw.rect(ecran, (230, 230, 230), rect, border_radius=10)
 
             # Bordure
-            pygame.draw.rect(ecran, (0, 0, 0), rect, 3)
+            pygame.draw.rect(ecran, (0, 0, 0), rect, 3, border_radius=10)
 
             # Texte du bouton
             texte_surface = self.font.render(texte, True, (0, 0, 0))
             texte_x = rect.x + (rect.width - texte_surface.get_width()) // 2
             texte_y = rect.y + (rect.height - texte_surface.get_height()) // 2
             ecran.blit(texte_surface, (texte_x, texte_y))
+
+    def afficher_popup_confirmation_reset(self, ecran, parametres=None, type_reset="sauvegarde"):
+        """Affiche un popup de confirmation pour la réinitialisation
+        
+        Args:
+            ecran: Surface pygame
+            parametres: Objet Parametres ou Profil pour redessiner le fond
+            type_reset: "sauvegarde" ou "parametres"
+        
+        Returns:
+            str: "confirmer", "annuler" ou None
+        """
+        import sys
+        # Dimensions du popup de confirmation (plus grand)
+        largeur_popup = 600
+        hauteur_popup = 350
+        popup_rect = pygame.Rect((LARGEUR_ECRAN - largeur_popup) // 2, (HAUTEUR_ECRAN - hauteur_popup) // 2, largeur_popup, hauteur_popup)
+        
+        # Boutons de confirmation (plus bas)
+        bouton_confirmer = pygame.Rect(0, 0, 200, 55)
+        bouton_confirmer.center = (popup_rect.centerx - 110, popup_rect.top + 270)
+        
+        bouton_annuler = pygame.Rect(0, 0, 200, 55)
+        bouton_annuler.center = (popup_rect.centerx + 110, popup_rect.top + 270)
+        
+        # Messages selon le type de reset
+        if type_reset == "parametres":
+            lignes = [
+                "Voulez-vous vraiment réinitialiser",
+                "les paramètres ?",
+                "",
+                "Cette action est irréversible."
+            ]
+        else:
+            lignes = [
+                "Voulez-vous vraiment réinitialiser",
+                "votre sauvegarde ?",
+                "",
+                "Cette action est irréversible."
+            ]
+        
+        # Mettre à jour le volume du son
+        self.maj_volume()
+        
+        while True:
+            for evenement in pygame.event.get():
+                if evenement.type == pygame.QUIT:
+                    pygame.quit()
+                    sys.exit()
+                elif evenement.type == pygame.KEYDOWN and evenement.key == pygame.K_ESCAPE:
+                    return "annuler"
+                elif evenement.type == pygame.MOUSEBUTTONDOWN:
+                    if bouton_confirmer.collidepoint(evenement.pos):
+                        self.son_select.play()
+                        return "confirmer"
+                    elif bouton_annuler.collidepoint(evenement.pos):
+                        self.son_select.play()
+                        return "annuler"
+            
+            # Redessiner le fond (paramètres ou profil)
+            if parametres:
+                # Vérifier si c'est un objet Profil ou Parametres
+                if hasattr(parametres, 'afficher_profil'):
+                    parametres.afficher_profil(ecran)
+                else:
+                    parametres.afficher_parametres(ecran)
+            
+            # Dessiner le fond légèrement grisé
+            overlay = pygame.Surface((LARGEUR_ECRAN, HAUTEUR_ECRAN))
+            overlay.set_alpha(160)
+            overlay.fill((0, 0, 0))
+            ecran.blit(overlay, (0, 0))
+            
+            # Dessiner le popup
+            pygame.draw.rect(ecran, (60, 60, 80), popup_rect, border_radius=15)
+            pygame.draw.rect(ecran, (255, 255, 255), popup_rect, 3, border_radius=15)
+            
+            # Titre
+            titre = pygame.font.Font(None, 40).render("Confirmation", True, (255, 255, 255))
+            ecran.blit(titre, (popup_rect.centerx - titre.get_width() // 2, popup_rect.top + 30))
+            
+            # Message
+            font_message = pygame.font.Font(None, 30)
+            
+            for i, ligne in enumerate(lignes):
+                text = font_message.render(ligne, True, (255, 255, 255))
+                ecran.blit(text, (popup_rect.centerx - text.get_width() // 2, popup_rect.top + 110 + i * 35))
+            
+            # Boutons
+            souris_pos = pygame.mouse.get_pos()
+            
+            # Bouton confirmer (rouge)
+            if bouton_confirmer.collidepoint(souris_pos):
+                pygame.draw.rect(ecran, (180, 60, 60), bouton_confirmer, border_radius=10)
+            else:
+                pygame.draw.rect(ecran, (150, 40, 40), bouton_confirmer, border_radius=10)
+            pygame.draw.rect(ecran, (255, 255, 255), bouton_confirmer, 2, border_radius=10)
+            
+            # Bouton annuler (vert)
+            if bouton_annuler.collidepoint(souris_pos):
+                pygame.draw.rect(ecran, (60, 180, 60), bouton_annuler, border_radius=10)
+            else:
+                pygame.draw.rect(ecran, (40, 150, 40), bouton_annuler, border_radius=10)
+            pygame.draw.rect(ecran, (255, 255, 255), bouton_annuler, 2, border_radius=10)
+            
+            # Textes des boutons
+            confirmer_text = pygame.font.Font(None, 36).render("Confirmer", True, (255, 255, 255))
+            annuler_text = pygame.font.Font(None, 36).render("Annuler", True, (255, 255, 255))
+            
+            ecran.blit(confirmer_text, (bouton_confirmer.centerx - confirmer_text.get_width() // 2, 
+                                      bouton_confirmer.centery - confirmer_text.get_height() // 2))
+            ecran.blit(annuler_text, (bouton_annuler.centerx - annuler_text.get_width() // 2, 
+                                    bouton_annuler.centery - annuler_text.get_height() // 2))
+            
+            pygame.display.flip()
