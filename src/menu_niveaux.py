@@ -416,6 +416,13 @@ class MenuNiveaux:
         version_txt = self.font_3.render(VERSION_JEU, True, (255, 255, 255))
         ecran.blit(version_txt, (LARGEUR_ECRAN - version_txt.get_width() - 20, HAUTEUR_ECRAN - version_txt.get_height() - 20))
     
+    def univers_est_complete(self, index_univers):
+        """Vérifie si tous les niveaux d'un univers sont terminés"""
+        # Calculer le dernier niveau de l'univers
+        dernier_niveau_univers = (index_univers + 1) * self.nombre_planetes_par_univers * self.niveaux_par_planete
+        # L'univers est complété si le joueur a débloqué le niveau suivant (donc terminé tous les niveaux de cet univers)
+        return self.niveau_max_debloque > dernier_niveau_univers
+    
     def dessiner_fleches_univers(self, ecran, mouse_pos):
         """Dessine les flèches de navigation entre univers avec animation"""
         # Ne pas afficher les flèches pendant la transition
@@ -427,24 +434,29 @@ class MenuNiveaux:
         
         # Flèche droite (si univers suivant existe)
         if self.univers_actuel < len(self.univers) - 1:
+            univers_debloque = self.univers_est_complete(self.univers_actuel)
             est_survole = self.fleche_droite_rect.collidepoint(mouse_pos)
             nom_univers_suivant = self.univers[self.univers_actuel + 1]["nom"]
             self.dessiner_fleche(ecran, self.fleche_droite_rect.centerx, self.fleche_droite_rect.centery + offset_y, 
-                               "droite", est_survole, nom_univers_suivant)
+                               "droite", est_survole, nom_univers_suivant, univers_debloque)
         
         # Flèche gauche (si univers précédent existe)
         if self.univers_actuel > 0:
             est_survole = self.fleche_gauche_rect.collidepoint(mouse_pos)
             nom_univers_precedent = self.univers[self.univers_actuel - 1]["nom"]
             self.dessiner_fleche(ecran, self.fleche_gauche_rect.centerx, self.fleche_gauche_rect.centery + offset_y, 
-                               "gauche", est_survole, nom_univers_precedent)
+                               "gauche", est_survole, nom_univers_precedent, True)
     
-    def dessiner_fleche(self, ecran, x, y, direction, est_survole, nom_univers=""):
+    def dessiner_fleche(self, ecran, x, y, direction, est_survole, nom_univers="", est_debloque=True):
         """Dessine une flèche stylisée avec effets"""
-        taille = 50 if est_survole else 42
+        taille = 50 if (est_survole and est_debloque) else 42
         
         # Couleur selon l'état
-        if est_survole:
+        if not est_debloque:
+            # Gris si verrouillé
+            couleur = (80, 80, 90)
+            bordure_couleur = (50, 50, 60)
+        elif est_survole:
             # Effet de pulsation pour la couleur
             pulse = 0.7 + 0.3 * math.sin(self.temps_global * 0.1)
             couleur = (255, 255, int(150 + 105 * pulse))  # Jaune-blanc pulsant
@@ -453,8 +465,8 @@ class MenuNiveaux:
             couleur = (200, 200, 220)
             bordure_couleur = (150, 150, 180)
         
-        # Effet de lueur étoilée si survolé (petites étoiles autour)
-        if est_survole:
+        # Effet de lueur étoilée si survolé et débloqué (petites étoiles autour)
+        if est_survole and est_debloque:
             for i in range(5):
                 angle = self.temps_global * 0.05 + i * (2 * math.pi / 5)
                 rayon_etoile = 55 + 12 * math.sin(self.temps_global * 0.08 + i)
@@ -482,7 +494,15 @@ class MenuNiveaux:
         pygame.draw.polygon(ecran, couleur, points)
         pygame.draw.polygon(ecran, bordure_couleur, points, 3)
         
-        # Afficher le nom de l'univers destination à côté si survolé
+        # Dessiner le cadenas si verrouillé (centré sur le triangle)
+        if not est_debloque:
+            cadenas_largeur = self.image_cadenas.get_width()
+            cadenas_hauteur = self.image_cadenas.get_height()
+            cadenas_x = x - cadenas_largeur // 2
+            cadenas_y = y - cadenas_hauteur // 2
+            ecran.blit(self.image_cadenas, (cadenas_x, cadenas_y))
+        
+        # Afficher le nom de l'univers destination à côté si survolé (même si verrouillé)
         if est_survole and nom_univers:
             texte = self.font_petit.render(nom_univers, True, (255, 255, 200))
             # Positionner le texte vers l'intérieur de l'écran
@@ -746,8 +766,10 @@ class MenuNiveaux:
         """Gère les clics sur la vue galaxie"""
         # Vérifier les flèches de navigation entre univers
         if self.univers_actuel < len(self.univers) - 1 and self.fleche_droite_rect.collidepoint(pos):
-            self.son_select.play()
-            self.changer_univers(1)
+            # Vérifier si l'univers est débloqué
+            if self.univers_est_complete(self.univers_actuel):
+                self.son_select.play()
+                self.changer_univers(1)
             return None
         
         if self.univers_actuel > 0 and self.fleche_gauche_rect.collidepoint(pos):

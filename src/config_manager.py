@@ -28,6 +28,7 @@ class ConfigManager:
         self.controles = self.config.get("controles", {})
         self.volumes = self.config.get("volumes", {})
         self.niveau_actuel = self.config.get("niveau_actuel", 1)
+        self.meilleurs_temps = self.config.get("meilleurs_temps", {})
     
     def charger_config(self):
         """Charge la configuration depuis le fichier ou crée un fichier par défaut"""
@@ -101,6 +102,7 @@ class ConfigManager:
         self.controles = config.get("controles", {})
         self.volumes = config.get("volumes", {})
         self.niveau_actuel = config.get("niveau_actuel", 1)
+        self.meilleurs_temps = config.get("meilleurs_temps", {})
         
     def obtenir_controles(self):
         """Retourne les touches actuelles en relisant le fichier"""
