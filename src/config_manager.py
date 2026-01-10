@@ -2,6 +2,8 @@ import json
 import os
 import locale
 
+from datetime import datetime
+
 class ConfigManager:
     """Gère la configuration utilisateur (touches, volumes, etc.)"""
     
@@ -26,7 +28,6 @@ class ConfigManager:
         self.controles = self.config.get("controles", {})
         self.volumes = self.config.get("volumes", {})
         self.niveau_actuel = self.config.get("niveau_actuel", 1)
-        self.meilleurs_temps = self.config.get("meilleurs_temps", {})
     
     def charger_config(self):
         """Charge la configuration depuis le fichier ou crée un fichier par défaut"""
@@ -42,7 +43,8 @@ class ConfigManager:
                 "effets": 50
             },
             "niveau_actuel": 1,
-            "meilleurs_temps": {}
+            "meilleurs_temps": {},
+            "pseudo": "Mage"
         }
         
         # Si le fichier existe, le charger
@@ -55,8 +57,6 @@ class ConfigManager:
                     config["controles"] = config_defaut["controles"]
                 if "volumes" not in config:
                     config["volumes"] = config_defaut["volumes"]
-                if "meilleurs_temps" not in config:
-                    config["meilleurs_temps"] = {}
                 
                 # Vérifier que toutes les touches nécessaires sont présentes
                 for cle in config_defaut["controles"]:
@@ -90,7 +90,10 @@ class ConfigManager:
                 "controles": self.controles,
                 "volumes": self.volumes,
                 "niveau_actuel": self.niveau_actuel,
-                "meilleurs_temps": self.meilleurs_temps
+                "meilleurs_temps": self.meilleurs_temps,
+                "pseudo": self.config.get("pseudo", "Joueur"),
+                "tenue_profil": self.config.get("tenue_profil", 0),
+                "cibles_eliminees": self.config.get("cibles_eliminees", 0)
             }
         with open(self.chemin_config, "w", encoding="utf-8") as f:
             json.dump(config, f, ensure_ascii=False)
@@ -98,7 +101,6 @@ class ConfigManager:
         self.controles = config.get("controles", {})
         self.volumes = config.get("volumes", {})
         self.niveau_actuel = config.get("niveau_actuel", 1)
-        self.meilleurs_temps = config.get("meilleurs_temps", {})
         
     def obtenir_controles(self):
         """Retourne les touches actuelles en relisant le fichier"""
@@ -120,19 +122,6 @@ class ConfigManager:
         """Retourne le niveau actuel du joueur"""
         self.config = self.charger_config()
         return self.config.get("niveau_actuel", 1)
-    
-    def obtenir_meilleur_temps(self, niveau):
-        """Retourne le meilleur temps pour un niveau donné (en ms)
-        
-        Args:
-            niveau: Numéro du niveau
-            
-        Returns:
-            int: Meilleur temps en milisecondes, ou None si aucun temps enregistré
-        """
-        self.config = self.charger_config()
-        self.meilleurs_temps = self.config.get("meilleurs_temps", {})
-        return self.meilleurs_temps.get(str(niveau), None)
         
     def maj_controle(self, action, touche):
         """Met à jour une touche spécifique et sauvegarde"""
@@ -176,3 +165,51 @@ class ConfigManager:
             self.sauvegarder_config()
             return True
         return False
+
+    def reinitialiser_sauvegarde(self):
+        """Réinitialise UNIQUEMENT la progression (pas les contrôles/volumes, sauf pseudo)"""
+        # Sauvegarder le pseudo, les contrôles et volumes
+        pseudo_actuel = self.config.get("pseudo", "Joueur")
+        controles_actuels = self.config.get("controles", {"gauche": "left", "droite": "right", "sauter": "up"})
+        volumes_actuels = self.config.get("volumes", {"musique": 50, "effets": 50})
+        
+        # Reset UNIQUEMENT la progression
+        self.config["niveau_actuel"] = 1
+        self.config["meilleurs_temps"] = {}
+        self.config["tenue_profil"] = 0  # Reset la tenue du profil
+        
+        # Restaurer les paramètres et le pseudo
+        self.config["pseudo"] = pseudo_actuel
+        self.config["controles"] = controles_actuels
+        self.config["volumes"] = volumes_actuels
+        
+        self.niveau_actuel = 1
+        self.meilleurs_temps = {}
+        self.pseudo = pseudo_actuel  # Restaurer aussi dans la variable de classe
+        
+        # Sauvegarder la nouvelle configuration
+        self.sauvegarder_config()
+    
+    def reinitialiser_parametres(self):
+        """Réinitialise uniquement les paramètres (contrôles et volumes)"""
+        self.controles = {
+            "gauche": "left",
+            "droite": "right",
+            "sauter": "up"
+        }
+        self.volumes = {
+            "musique": 50,
+            "effets": 50
+        }
+        self.config["controles"] = self.controles
+        self.config["volumes"] = self.volumes
+        self.sauvegarder_config()
+    
+    def obtenir_pseudo(self):
+        """Retourne le pseudo du joueur"""
+        return self.config.get("pseudo", "Joueur")
+    
+    def sauvegarder_pseudo(self, pseudo):
+        """Sauvegarde le pseudo du joueur"""
+        self.config["pseudo"] = pseudo
+        self.sauvegarder_config()

@@ -2,6 +2,8 @@ import pygame
 import sys
 import json
 import os
+import random
+import math
 from config import LARGEUR_ECRAN, HAUTEUR_ECRAN, VERSION_JEU, COULEUR_BOUTON, COULEUR_SURVOL, COULEUR_BORDURE
 from config_manager import ConfigManager
 
@@ -28,8 +30,18 @@ class Parametres:
         self.font_2 = pygame.font.SysFont(None, 50)
         self.font_3 = pygame.font.SysFont(None, 40)
  
-        self.image_fond = pygame.image.load("img/fond_menu2.png")
-        self.image_fond = pygame.transform.scale(self.image_fond, (LARGEUR_ECRAN, HAUTEUR_ECRAN))
+        # Générer les étoiles
+        self.etoiles = []
+        for _ in range(150):
+            x = random.randint(0, LARGEUR_ECRAN)
+            y = random.randint(0, HAUTEUR_ECRAN)
+            taille = random.randint(1, 3)
+            brillance = random.randint(100, 255)
+            vitesse_scintillement = random.uniform(0.02, 0.08)
+            self.etoiles.append([x, y, taille, brillance, vitesse_scintillement, random.uniform(0, 2 * math.pi)])
+        
+        # Timer pour l'animation
+        self.temps_global = 0
 
         # droite
         self.droite_field = pygame.Rect(LARGEUR_ECRAN // 3 + 150, HAUTEUR_ECRAN // 2 - 30, 90, 50)
@@ -46,7 +58,8 @@ class Parametres:
         # Variable pour savoir quel champ est actuellement en cours d'attribution
         self.champ_actif = None  # Peut être "droite", "gauche", "sauter" ou None
 
-        self.bouton_retour = pygame.Rect(LARGEUR_ECRAN // 2 - 125, HAUTEUR_ECRAN // 2 + 200, 250, 50)
+        self.bouton_reset_param = pygame.Rect(LARGEUR_ECRAN // 2 - 125, HAUTEUR_ECRAN // 2 + 200, 250, 50)
+        self.bouton_retour = pygame.Rect(LARGEUR_ECRAN // 2 - 125, HAUTEUR_ECRAN // 2 + 270, 250, 50)
         self.jauge_musique = pygame.Rect(LARGEUR_ECRAN // 2 + 35, HAUTEUR_ECRAN // 2 + 0, 250, 15)
         self.jauge_general = pygame.Rect(LARGEUR_ECRAN // 2 + 35, HAUTEUR_ECRAN // 2 + 110, 250, 15)
         
@@ -56,12 +69,25 @@ class Parametres:
         
         # Variable pour savoir si on est en train de glisser une jauge
         self.jauge_active = None
+    
+    def dessiner_etoiles(self, ecran):
+        """Dessine les étoiles scintillantes"""
+        for etoile in self.etoiles:
+            x, y, taille, brillance_base, vitesse, phase = etoile
+            # Scintillement
+            brillance = int(brillance_base * (0.5 + 0.5 * math.sin(self.temps_global * vitesse + phase)))
+            brillance = max(50, min(255, brillance))
+            pygame.draw.circle(ecran, (brillance, brillance, brillance), (x, y), taille)
 
     def afficher_parametres(self, ecran):
         """Affiche le menu et retourne l'action choisie"""
         
-        # fond
-        ecran.blit(self.image_fond, (0, 0))
+        # Incrémenter le timer pour l'animation
+        self.temps_global += 1
+        
+        # Fond étoilé au lieu de l'image
+        ecran.fill((10, 10, 30))
+        self.dessiner_etoiles(ecran)
         
         # version du jeu
         version_txt = self.font_3.render(VERSION_JEU, True, (255, 255, 255))
@@ -106,13 +132,13 @@ class Parametres:
         ecran.blit(droite_txt, (LARGEUR_ECRAN // 3 + 50 - droite_txt.get_width() // 2, HAUTEUR_ECRAN // 2 - 30))
         # Couleur du champ selon l'état
         if self.champ_actif == "droite":
-            pygame.draw.rect(ecran, (255, 0, 0), self.droite_field)
+            pygame.draw.rect(ecran, (255, 0, 0), self.droite_field, border_radius=5)
         else:
             if self.droite_field.collidepoint(pygame.mouse.get_pos()):
-                pygame.draw.rect(ecran, COULEUR_SURVOL, self.droite_field)
+                pygame.draw.rect(ecran, COULEUR_SURVOL, self.droite_field, border_radius=5)
             else:
-                pygame.draw.rect(ecran, COULEUR_BOUTON, self.droite_field)
-        pygame.draw.rect(ecran, COULEUR_BORDURE, self.droite_field, 3)
+                pygame.draw.rect(ecran, COULEUR_BOUTON, self.droite_field, border_radius=5)
+        pygame.draw.rect(ecran, COULEUR_BORDURE, self.droite_field, 3, border_radius=5)
         # Texte dans le champ
         if self.champ_actif == "droite":
             droite_assign_txt = self.font_3.render("...", True, (255, 255, 255))
@@ -127,13 +153,13 @@ class Parametres:
         ecran.blit(gauche_txt, (LARGEUR_ECRAN // 3 + 50 - gauche_txt.get_width() // 2, HAUTEUR_ECRAN // 2 + 30))
         # Couleur du champ selon l'état
         if self.champ_actif == "gauche":
-            pygame.draw.rect(ecran, (255, 0, 0), self.gauche_field)
+            pygame.draw.rect(ecran, (255, 0, 0), self.gauche_field, border_radius=5)
         else:
             if self.gauche_field.collidepoint(pygame.mouse.get_pos()):
-                pygame.draw.rect(ecran, COULEUR_SURVOL, self.gauche_field)
+                pygame.draw.rect(ecran, COULEUR_SURVOL, self.gauche_field, border_radius=5)
             else:
-                pygame.draw.rect(ecran, COULEUR_BOUTON, self.gauche_field)
-        pygame.draw.rect(ecran, COULEUR_BORDURE, self.gauche_field, 3)
+                pygame.draw.rect(ecran, COULEUR_BOUTON, self.gauche_field, border_radius=5)
+        pygame.draw.rect(ecran, COULEUR_BORDURE, self.gauche_field, 3, border_radius=5)
         # Texte dans le champ
         if self.champ_actif == "gauche":
             gauche_assign_txt = self.font_3.render("...", True, (255, 255, 255))
@@ -148,13 +174,13 @@ class Parametres:
         ecran.blit(sauter_txt, (LARGEUR_ECRAN // 3 + 50 - sauter_txt.get_width() // 2, HAUTEUR_ECRAN // 2 + 100))
         # Couleur du champ selon l'état
         if self.champ_actif == "sauter":
-                pygame.draw.rect(ecran, (255, 0, 0), self.sauter_field)
+                pygame.draw.rect(ecran, (255, 0, 0), self.sauter_field, border_radius=5)
         else:
             if self.sauter_field.collidepoint(pygame.mouse.get_pos()):
-                pygame.draw.rect(ecran, COULEUR_SURVOL, self.sauter_field)
+                pygame.draw.rect(ecran, COULEUR_SURVOL, self.sauter_field, border_radius=5)
             else:
-                pygame.draw.rect(ecran, COULEUR_BOUTON, self.sauter_field)
-        pygame.draw.rect(ecran, COULEUR_BORDURE, self.sauter_field, 3)
+                pygame.draw.rect(ecran, COULEUR_BOUTON, self.sauter_field, border_radius=5)
+        pygame.draw.rect(ecran, COULEUR_BORDURE, self.sauter_field, 3, border_radius=5)
         # Texte dans le champ
         if self.champ_actif == "sauter":
             sauter_assign_txt = self.font_3.render("...", True, (255, 255, 255))
@@ -166,14 +192,27 @@ class Parametres:
         
         
         # -------bouton retour
-        if self.bouton_retour.collidepoint(pygame.mouse.get_pos()):
-            pygame.draw.rect(ecran, COULEUR_SURVOL, self.bouton_retour)
+        # -------bouton réinitialiser
+        if self.bouton_reset_param.collidepoint(pygame.mouse.get_pos()):
+            pygame.draw.rect(ecran, (150, 50, 50), self.bouton_reset_param, border_radius=10)
         else:
-            pygame.draw.rect(ecran, COULEUR_BOUTON, self.bouton_retour)
+            pygame.draw.rect(ecran, (120, 30, 30), self.bouton_reset_param, border_radius=10)
             
-        pygame.draw.rect(ecran, COULEUR_BORDURE, self.bouton_retour, 3)
+        pygame.draw.rect(ecran, COULEUR_BORDURE, self.bouton_reset_param, 3, border_radius=10)
+        reset_txt = self.font_2.render("Réinitialiser", True, (255, 255, 255))
+        ecran.blit(reset_txt, (self.bouton_reset_param.centerx - reset_txt.get_width() // 2, 
+                              self.bouton_reset_param.centery - reset_txt.get_height() // 2))
+        
+        # -------bouton retour
+        if self.bouton_retour.collidepoint(pygame.mouse.get_pos()):
+            pygame.draw.rect(ecran, COULEUR_SURVOL, self.bouton_retour, border_radius=10)
+        else:
+            pygame.draw.rect(ecran, COULEUR_BOUTON, self.bouton_retour, border_radius=10)
+            
+        pygame.draw.rect(ecran, COULEUR_BORDURE, self.bouton_retour, 3, border_radius=10)
         retour_txt = self.font_2.render("Retour", True, (255, 255, 255))
-        ecran.blit(retour_txt, (LARGEUR_ECRAN // 2 - retour_txt.get_width() // 2, HAUTEUR_ECRAN // 2 + 210))
+        ecran.blit(retour_txt, (self.bouton_retour.centerx - retour_txt.get_width() // 2,
+                               self.bouton_retour.centery - retour_txt.get_height() // 2))
           
         return None
 
@@ -224,6 +263,10 @@ class Parametres:
                 self.sauvegarder_controles()
                 self.champ_actif = None
                 return "quitter"
+            elif self.bouton_reset_param.collidepoint(evenement.pos):
+                self.son_select.play()
+                # Demander confirmation avant reset
+                return "demander_reset_param"
             
             # Gestion des jauges de volume (début du glissement)
             elif self.jauge_musique.collidepoint(evenement.pos):
