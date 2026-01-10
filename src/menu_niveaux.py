@@ -89,9 +89,16 @@ class MenuNiveaux:
         self.mage_cible_x = 0
         self.mage_cible_y = 0
         self.mage_en_mouvement = False
-        self.mage_vitesse = 3
+        self.mage_vitesse = 8 
         self.mage_direction = 1  # 1 = droite, -1 = gauche
         self.niveau_cible = None
+        
+        # Animation de saut
+        self.mage_en_saut = False
+        self.mage_saut_progression = 0
+        self.mage_saut_start_x = 0
+        self.mage_saut_start_y = 0
+        self.mage_hauteur_saut = 80
         
         # Animation de marche
         self.mage_frame_index = 0
@@ -563,8 +570,23 @@ class MenuNiveaux:
         
         # Dessiner le mage
         if self.mage_visible:
-            # Choisir le bon sprite (animation de marche ou repos)
-            if self.mage_en_mouvement:
+            # Choisir le bon sprite
+            if self.mage_en_saut:
+                # Animation de saut
+                t = self.mage_saut_progression
+                if t < 0.15:
+                    # Début du saut
+                    sprite = self.mage_walk_frames[1]
+                elif t < 0.2:
+                    # Milieu du saut
+                    sprite = self.mage_walk_frames[2]
+                else:
+                    # Fin du saut
+                    sprite = self.mage_walk_frames[3]
+                
+                if self.mage_direction < 0:
+                    sprite = pygame.transform.flip(sprite, True, False)
+            elif self.mage_en_mouvement:
                 sprite = self.mage_walk_frames[self.mage_frame_index % len(self.mage_walk_frames)]
                 if self.mage_direction < 0:
                     sprite = pygame.transform.flip(sprite, True, False)
@@ -645,21 +667,16 @@ class MenuNiveaux:
                 self.zoom_en_cours = False
                 self.etat_menu = "galaxie"
         
-        # Animation du mage qui marche
-        if self.mage_en_mouvement:
-            self.mage_anim_timer += 16  # ~60fps
-            if self.mage_anim_timer >= self.mage_anim_delay:
-                self.mage_anim_timer = 0
-                self.mage_frame_index = (self.mage_frame_index + 1) % len(self.mage_walk_frames)
+        # Animation du mage qui saute
+        if self.mage_en_mouvement and self.mage_en_saut:
+            self.mage_saut_progression += 0.04  # Vitesse du saut
             
-            # Déplacer le mage vers la cible actuelle
-            dx = self.mage_cible_x - self.mage_x
-            dy = self.mage_cible_y - self.mage_y
-            distance = math.sqrt(dx * dx + dy * dy)
-            
-            if distance < self.mage_vitesse:
+            if self.mage_saut_progression >= 1.0:
+                # Saut terminé
+                self.mage_saut_progression = 1.0
                 self.mage_x = self.mage_cible_x
                 self.mage_y = self.mage_cible_y
+                self.mage_en_saut = False
                 
                 # Vérifier s'il y a encore des plaques dans le chemin
                 if self.chemin_plaques and self.plaque_courante_index < len(self.chemin_plaques) - 1:
@@ -670,6 +687,12 @@ class MenuNiveaux:
                     # Mettre à jour la direction
                     new_dx = self.mage_cible_x - self.mage_x
                     self.mage_direction = 1 if new_dx > 0 else -1
+                    
+                    # Démarrer un nouveau saut
+                    self.mage_en_saut = True
+                    self.mage_saut_progression = 0
+                    self.mage_saut_start_x = self.mage_x
+                    self.mage_saut_start_y = self.mage_y
                 else:
                     # Arrivé à destination finale
                     self.mage_en_mouvement = False
@@ -682,9 +705,12 @@ class MenuNiveaux:
                     self.portail_animation = 0
                     self.teleportation_en_cours = True
             else:
-                self.mage_x += (dx / distance) * self.mage_vitesse
-                self.mage_y += (dy / distance) * self.mage_vitesse
-                self.mage_direction = 1 if dx > 0 else -1
+                t = self.mage_saut_progression
+                self.mage_x = self.mage_saut_start_x + (self.mage_cible_x - self.mage_saut_start_x) * t
+                
+                # saut en arc de cercle
+                # https://stackoverflow.com/questions/3522032/how-to-make-a-character-jump-in-a-2d-game
+                self.mage_y = (self.mage_saut_start_y + (self.mage_cible_y - self.mage_saut_start_y) * t - self.mage_hauteur_saut * math.sin(math.pi * t))
         
         # Animation du portail
         if self.portail_actif:
@@ -857,6 +883,12 @@ class MenuNiveaux:
                         # Mettre à jour la direction initiale
                         dx = self.mage_cible_x - self.mage_x
                         self.mage_direction = 1 if dx > 0 else -1
+                        
+                        # initialiser le saut
+                        self.mage_en_saut = True
+                        self.mage_saut_progression = 0
+                        self.mage_saut_start_x = self.mage_x
+                        self.mage_saut_start_y = self.mage_y
                     
                     self.mage_en_mouvement = True
                     self.mage_niveau_actuel = i
