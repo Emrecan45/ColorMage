@@ -213,4 +213,3 @@ class ConfigManager:
         """Sauvegarde le pseudo du joueur"""
         self.config["pseudo"] = pseudo
         self.sauvegarder_config()
-

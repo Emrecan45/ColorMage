@@ -83,7 +83,7 @@ class Joueur:
                 # saut
                 (2, 1),  # debut du saut
                 (3, 1),  # milieu du saut
-                (0, 2)   # fin du saut
+                (1, 2)   # fin du saut
             ]
             
             for col, ligne in positions:
@@ -306,8 +306,7 @@ class Joueur:
                 if bloc == "porte":
                     bloc_rect = pygame.Rect(x * TAILLE_CELLULE, y * TAILLE_CELLULE, TAILLE_CELLULE, TAILLE_CELLULE)
                     if hitbox.colliderect(bloc_rect):
-                        self.son_victoire.play()
-                        return "victoire"
+                        return "teleportation"
                 
                 if bloc == "pic":
                     bloc_rect = pygame.Rect(x * TAILLE_CELLULE, y * TAILLE_CELLULE, TAILLE_CELLULE, TAILLE_CELLULE)
