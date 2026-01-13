@@ -13,6 +13,7 @@ from config_manager import ConfigManager
 from menu_niveaux import MenuNiveaux
 from chronometre import Chronometre
 from profil import Profil
+from intro import Intro
 
 class Game:
     """Classe principale gérant le jeu"""
@@ -23,6 +24,15 @@ class Game:
         
         # Charger la configuration
         self.gestionnaire_config = ConfigManager()
+        
+        # Créer l'écran
+        self.ecran = pygame.display.set_mode((LARGEUR_ECRAN, HAUTEUR_ECRAN)) 
+        pygame.display.set_caption("ColorMage")
+        
+        # Lancer l'intro
+        intro = Intro(self.ecran, self.gestionnaire_config)
+        resultat_intro = intro.lancer()
+        
         volumes = self.gestionnaire_config.obtenir_volumes()
         
         # Fond du jeu
@@ -37,8 +47,6 @@ class Game:
         pygame.mixer.music.set_volume(volume_musique)
         pygame.mixer.music.play(-1)  # (-1) = musique qui tourne a l'infini
         
-        self.ecran = pygame.display.set_mode((LARGEUR_ECRAN, HAUTEUR_ECRAN)) 
-        pygame.display.set_caption("ColorMage")
         self.horloge = pygame.time.Clock()
         
         # État du jeu : "menu" ou "jeu" ou "parametres" ou "selection"
