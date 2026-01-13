@@ -2,6 +2,7 @@ import pygame
 import sys
 import os
 import random
+import math
 from config import LARGEUR_ECRAN, HAUTEUR_ECRAN, FPS, TAILLE_CELLULE
 from joueur import Joueur
 from niveau import Niveau
@@ -35,9 +36,6 @@ class Game:
         
         volumes = self.gestionnaire_config.obtenir_volumes()
         
-        # Fond du jeu
-        self.fond_jeu = pygame.image.load("img/fond_jeu.png")
-        self.fond_jeu = pygame.transform.scale(self.fond_jeu, (LARGEUR_ECRAN, HAUTEUR_ECRAN))
         
         # Musique du jeu
         music_path = os.path.join("audio", "main_theme.mp3")
@@ -129,7 +127,7 @@ class Game:
                         self.chrono.pause()
                         
                         self.pause.son_select.play()
-                        action = self.pause.afficher_pause(self.ecran, self.joueur, self.niveau, self.niveau_actuel, self.chrono)
+                        action = self.pause.afficher_pause(self.ecran, self.joueur, self.niveau, self.niveau_actuel, self.chrono, draw_background=self.dessiner_fond_niveau)
                         
                         # Reprendre le chronomètre
                         if action == "continuer":
@@ -253,7 +251,7 @@ class Game:
                         self.chrono.pause()
                         
                         self.pause.son_select.play()
-                        action = self.pause.afficher_pause(self.ecran, self.joueur, self.niveau, self.niveau_actuel, self.chrono)
+                        action = self.pause.afficher_pause(self.ecran, self.joueur, self.niveau, self.niveau_actuel, self.chrono, draw_background=self.dessiner_fond_niveau)
                         
                         # Reprendre le chronomètre
                         if action == "continuer":
@@ -285,7 +283,7 @@ class Game:
                             self.chrono.pause()
                             
                             self.pause.son_select.play()
-                            action = self.pause.afficher_pause(self.ecran, self.joueur, self.niveau, self.niveau_actuel, self.chrono)
+                            action = self.pause.afficher_pause(self.ecran, self.joueur, self.niveau, self.niveau_actuel, self.chrono, draw_background=self.dessiner_fond_niveau)
                             
                             # Reprendre le chronomètre
                             if action == "continuer":
@@ -480,7 +478,7 @@ class Game:
             self.menu_niveaux.afficher_selection(self.ecran)
             
         elif self.etat == "jeu":
-            self.ecran.blit(self.fond_jeu, (0, 0))
+            self.dessiner_fond_niveau(self.ecran)
             self.niveau.dessiner(self.ecran, self.temps_global)
             
             # Dessiner le portail d'entrée si actif
@@ -514,9 +512,14 @@ class Game:
         
         pygame.display.flip()
     
+    def dessiner_fond_niveau(self, ecran):
+        """Dessine le fond du niveau basé sur la planète actuelle"""
+        info_planete = self.menu_niveaux.obtenir_info_planete(self.niveau_actuel)
+        couleur = info_planete.get("couleur", (100, 100, 100))
+        self.niveau.dessiner_fond(ecran, couleur, self.temps_global)
+    
     def dessiner_portail_jeu(self, x, y, type_portail="entree"):
         """Dessine un portail de téléportation jaune/doré dans le jeu"""
-        import math
         
         # Choisir l'animation selon le type de portail
         if type_portail == "sortie":

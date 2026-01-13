@@ -1,6 +1,8 @@
 import pygame
 import json
-from config import LARGEUR_GRILLE, HAUTEUR_GRILLE, TAILLE_CELLULE, COULEURS
+import random
+import math
+from config import LARGEUR_GRILLE, HAUTEUR_GRILLE, TAILLE_CELLULE, COULEURS, LARGEUR_ECRAN, HAUTEUR_ECRAN
 
 
 class Niveau:
@@ -13,6 +15,17 @@ class Niveau:
         self.image_pic = pygame.transform.scale(self.image_pic, (TAILLE_CELLULE, TAILLE_CELLULE))
         self.image_porte = pygame.image.load("img/porte.png")
         self.image_porte = pygame.transform.scale(self.image_porte, (TAILLE_CELLULE, TAILLE_CELLULE))
+
+        # stocker les infos des étoiles pour le fond
+        self.etoiles_fond = []
+        for _ in range(100):
+            x = random.randint(0, LARGEUR_ECRAN)
+            y = random.randint(0, int(HAUTEUR_ECRAN * 0.7))
+            taille = random.randint(1, 2)
+            brillance = random.randint(100, 255)
+            vitesse_scintillement = random.uniform(0.02, 0.08)
+            phase = random.uniform(0, 2 * math.pi)
+            self.etoiles_fond.append([x, y, taille, brillance, vitesse_scintillement, phase])
     
     def creer_grille_vide(self):
         """Crée une grille vide"""
@@ -97,6 +110,24 @@ class Niveau:
                         couleur = COULEURS[bloc]
                         pygame.draw.rect(ecran, couleur, (x * TAILLE_CELLULE, y * TAILLE_CELLULE, TAILLE_CELLULE, TAILLE_CELLULE))
                         pygame.draw.rect(ecran, (0, 0, 0), (x * TAILLE_CELLULE, y * TAILLE_CELLULE, TAILLE_CELLULE, TAILLE_CELLULE), 1)
+
+    def dessiner_fond(self, ecran, couleur_planete, temps_global=0):
+        """Dessine le fond pour le niveau basé sur la couleur de la planète.
+        """
+        # dégradé du ciel
+        for y in range(HAUTEUR_ECRAN):
+            ratio = y / HAUTEUR_ECRAN
+            r = int(10 + ratio * couleur_planete[0] * 0.3)
+            g = int(10 + ratio * couleur_planete[1] * 0.3)
+            b = int(30 + ratio * couleur_planete[2] * 0.3)
+            pygame.draw.line(ecran, (r, g, b), (0, y), (LARGEUR_ECRAN, y))
+
+        # dessiner les étoiles scintillantes
+        for etoile in self.etoiles_fond:
+            x, y, taille, brillance_base, vitesse, phase = etoile
+            brillance = int(brillance_base * 0.5 * (0.5 + 0.5 * math.sin(temps_global * vitesse + phase)))
+            brillance = max(30, min(180, brillance))
+            pygame.draw.circle(ecran, (brillance, brillance, brillance), (int(x), int(y)), taille)
     
     def dessiner_portail(self, ecran, x, y, taille, temps_global):
         """Dessine un portail de téléportation jaune"""

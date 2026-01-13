@@ -611,6 +611,25 @@ class MenuNiveaux:
         ecran.blit(texte_surface, (self.bouton_retour.centerx - texte_surface.get_width() // 2,
                                     self.bouton_retour.centery - texte_surface.get_height() // 2))
     
+    def obtenir_info_planete(self, numero_niveau):
+        """Retourne les informations de la planète pour un numéro de niveau donné"""
+        # Calculer l'univers et la planète du niveau
+        niveaux_par_univers = self.nombre_planetes_par_univers * self.niveaux_par_planete
+        univers_idx = (numero_niveau - 1) // niveaux_par_univers
+        niveau_dans_univers = (numero_niveau - 1) % niveaux_par_univers
+        planete_idx = niveau_dans_univers // self.niveaux_par_planete
+        
+        # renvoyer les infos de la planète
+        if univers_idx < len(self.univers):
+            univers = self.univers[univers_idx]
+            if planete_idx < len(univers["planetes"]):
+                planete = univers["planetes"][planete_idx]
+                return {
+                    "nom": planete["nom"],
+                    "couleur": planete["couleur"],
+                    "univers": univers["nom"]
+                }
+  
     def afficher_transition_zoom(self, ecran):
         """Affiche la transition de zoom vers une planète"""
         planete = self.planetes[self.planete_selectionnee]

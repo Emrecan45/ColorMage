@@ -129,7 +129,7 @@ class Pause:
             return "quitter"
         return None
     
-    def afficher_pause(self, ecran, joueur, niveau, numero_niveau, chrono=None):
+    def afficher_pause(self, ecran, joueur, niveau, numero_niveau, chrono=None, draw_background=None):
         """Affiche le menu de pause avec options
         
         Args:
@@ -167,9 +167,7 @@ class Pause:
                         en_pause = False
             
             # Redessiner le niveau et le joueur en arrière-plan
-            fond_jeu = pygame.image.load("img/fond_jeu.png")
-            fond_jeu = pygame.transform.scale(fond_jeu, (LARGEUR_ECRAN, HAUTEUR_ECRAN))
-            ecran.blit(fond_jeu, (0, 0))
+            draw_background(ecran)
             niveau.dessiner(ecran)
             joueur.dessiner(ecran)
             self.dessiner_bouton(ecran)
