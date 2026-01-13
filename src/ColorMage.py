@@ -92,11 +92,6 @@ class Game:
         self.portail_sortie_x = 0
         self.portail_sortie_y = 0
         
-        # Son de portail spawn
-        self.son_portail = pygame.mixer.Sound(os.path.join("audio", "select.mp3"))
-        volumes = self.gestionnaire_config.obtenir_volumes()
-        self.son_portail.set_volume(volumes.get("effets", 50) / 100)
-        
         # Timer global pour les animations
         self.temps_global = 0
     
@@ -125,8 +120,6 @@ class Game:
                     if self.etat == "jeu":
                         # En jeu, Échap met en pause
                         self.chrono.pause()
-                        
-                        self.pause.son_select.play()
                         action = self.pause.afficher_pause(self.ecran, self.joueur, self.niveau, self.niveau_actuel, self.chrono, draw_background=self.dessiner_fond_niveau)
                         
                         # Reprendre le chronomètre
@@ -140,13 +133,12 @@ class Game:
                             self.joueur_visible = False
                             
                             self.niveau.reset(self.niveau_actuel, self.ecran)
-                            self.joueur.reset()
+                            self.joueur.reset(self.niveau)
                             self.joueur.maj_controles()
                             self.chrono.demarrer()
                             meilleur_temps = self.gestionnaire_config.obtenir_meilleur_temps(self.niveau_actuel)
                             self.chrono.definir_meilleur_temps(meilleur_temps)
                             self.est_record = False
-                            self.son_portail.play()
                         elif action == "quitter":
                             self.chrono.arreter()
                             self.menu_niveaux.preparer_retour_niveau(self.niveau_actuel)
@@ -249,8 +241,6 @@ class Game:
                     if evenement.type == pygame.KEYDOWN and evenement.key == pygame.K_p:
                         # Mettre en pause le chronomètre
                         self.chrono.pause()
-                        
-                        self.pause.son_select.play()
                         action = self.pause.afficher_pause(self.ecran, self.joueur, self.niveau, self.niveau_actuel, self.chrono, draw_background=self.dessiner_fond_niveau)
                         
                         # Reprendre le chronomètre
@@ -264,13 +254,12 @@ class Game:
                             self.joueur_visible = False
                             
                             self.niveau.reset(self.niveau_actuel, self.ecran)
-                            self.joueur.reset()
+                            self.joueur.reset(self.niveau)
                             self.joueur.maj_controles()
                             self.chrono.demarrer()
                             meilleur_temps = self.gestionnaire_config.obtenir_meilleur_temps(self.niveau_actuel)
                             self.chrono.definir_meilleur_temps(meilleur_temps)
                             self.est_record = False
-                            self.son_portail.play()
                         elif action == "quitter":
                             self.chrono.arreter()
                             self.menu_niveaux.preparer_retour_niveau(self.niveau_actuel)
@@ -282,7 +271,6 @@ class Game:
                             # Mettre en pause le chronomètre
                             self.chrono.pause()
                             
-                            self.pause.son_select.play()
                             action = self.pause.afficher_pause(self.ecran, self.joueur, self.niveau, self.niveau_actuel, self.chrono, draw_background=self.dessiner_fond_niveau)
                             
                             # Reprendre le chronomètre
@@ -296,13 +284,12 @@ class Game:
                                 self.joueur_visible = False
                                 
                                 self.niveau.reset(self.niveau_actuel, self.ecran)
-                                self.joueur.reset()
+                                self.joueur.reset(self.niveau)
                                 self.joueur.maj_controles()
                                 self.chrono.demarrer()
                                 meilleur_temps = self.gestionnaire_config.obtenir_meilleur_temps(self.niveau_actuel)
                                 self.chrono.definir_meilleur_temps(meilleur_temps)
                                 self.est_record = False
-                                self.son_portail.play()
                             elif action == "quitter":
                                 self.chrono.arreter()
                                 self.menu_niveaux.preparer_retour_niveau(self.niveau_actuel)
@@ -315,7 +302,7 @@ class Game:
         self.niveau.reset(numero, self.ecran)
         self.joueur.maj_controles()
         self.niveau.charger_niveau(numero, self.ecran)
-        self.joueur.reset()
+        self.joueur.reset(self.niveau)
         self.joueur.maj_controles()
         # Démarrer le chronomètre et charger le meilleur temps
         self.chrono.demarrer()
@@ -333,7 +320,7 @@ class Game:
         if action == "suivant":
             self.niveau_actuel += 1
             self.niveau.reset(self.niveau_actuel, self.ecran)
-            self.joueur.reset()
+            self.joueur.reset(self.niveau)
             self.joueur.maj_controles()
             self.chrono.demarrer()
             meilleur_temps = self.gestionnaire_config.obtenir_meilleur_temps(self.niveau_actuel)
@@ -343,7 +330,6 @@ class Game:
             self.portail_entree_actif = True
             self.portail_entree_animation = 0
             self.joueur_visible = False
-            self.son_portail.play()
             self.etat = "jeu"
         elif action == "planete_suivante":
             # Aller à la planète suivante avec animation de zoom
@@ -378,7 +364,7 @@ class Game:
             self.etat = "selection"
         elif action == "rejouer":
             self.niveau.reset(self.niveau_actuel, self.ecran)
-            self.joueur.reset()
+            self.joueur.reset(self.niveau)
             self.joueur.maj_controles()
             self.chrono.demarrer()
             meilleur_temps = self.gestionnaire_config.obtenir_meilleur_temps(self.niveau_actuel)
@@ -387,10 +373,7 @@ class Game:
             self.portail_entree_actif = True
             self.portail_entree_animation = 0
             self.joueur_visible = False
-            self.son_portail.play()
             self.est_record = False
-            self.joueur_visible = True
-            self.portail_entree_actif = False
             self.etat = "jeu"
         elif action == "quitter":
             self.chrono.arreter()

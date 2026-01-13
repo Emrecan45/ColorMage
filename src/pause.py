@@ -18,6 +18,10 @@ class Pause:
         self.gestionnaire_config = ConfigManager()
         self.son_select = pygame.mixer.Sound(os.path.join("audio", "select.mp3"))
         
+        # Appliquer le volume d'effets sauvegardé
+        volumes = self.gestionnaire_config.obtenir_volumes()
+        self.son_select.set_volume(volumes.get("effets", 50) / 100)
+        
         # Coordonnées du bouton pause
         self.bouton_x = LARGEUR_ECRAN - self.largeur_bouton - self.marge
         self.bouton_y = self.marge
@@ -180,6 +184,6 @@ class Pause:
         
         # Exécuter l'action demandée
         if action == "recommencer":
-            joueur.reset()
             niveau.reset(numero_niveau, ecran)
+            joueur.reset(niveau)
         return action
