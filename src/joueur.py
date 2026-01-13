@@ -10,11 +10,17 @@ from config_manager import ConfigManager
 class Joueur:
     """Le mage qui change de couleur"""
 
-    def __init__(self, x, y, gestionnaire_config=None):
-        self.x_initial = x
-        self.y_initial = y - TAILLE_CELLULE 
-        self.x = x
-        self.y = y
+    def __init__(self, x=None, y=None, gestionnaire_config=None):
+        if x is None or y is None:
+            self.x_initial = 0
+            self.y_initial = 0
+            self.x = 0
+            self.y = 0
+        else:
+            self.x_initial = x
+            self.y_initial = y - TAILLE_CELLULE
+            self.x = x
+            self.y = y
         self.largeur = TAILLE_CELLULE * 2
         self.hauteur = TAILLE_CELLULE * 2
         self.couleur = "gris"
@@ -128,6 +134,15 @@ class Joueur:
     
     def reset(self, niveau=None):
         """Réinitialise le joueur à sa position de départ et sa couleur de base (gris)"""
+        if niveau is not None:
+            spawn_px = None
+            try:
+                spawn_px = niveau.obtenir_spawn_pixel()
+            except Exception:
+                spawn_px = None
+            if spawn_px is not None:
+                self.x_initial, self.y_initial = spawn_px
+
         self.x = self.x_initial
         self.y = self.y_initial
         self.couleur = "gris"

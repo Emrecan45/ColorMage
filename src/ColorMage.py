@@ -54,7 +54,7 @@ class Game:
         self.niveau = Niveau()
         
         # Joueur
-        self.joueur = Joueur(0, HAUTEUR_ECRAN - 2 * TAILLE_CELLULE, self.gestionnaire_config)
+        self.joueur = Joueur(None, None, self.gestionnaire_config)
         
         # Menu d'accueil
         self.menu = Menu()
@@ -297,7 +297,6 @@ class Game:
 
     def lancer_niveau(self, numero):
         """Lance un niveau avec l'animation de portail"""
-        self.joueur.reset()
         self.niveau_actuel = numero
         self.niveau.reset(numero, self.ecran)
         self.joueur.maj_controles()

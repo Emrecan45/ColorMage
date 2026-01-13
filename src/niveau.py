@@ -10,6 +10,7 @@ class Niveau:
     
     def __init__(self):
         self.grille = []
+        self.spawn_cell = None
         self.traversables = ["change_rouge", "change_bleu", "change_vert", "porte", "vide", "pic"]
         self.image_pic = pygame.image.load("img/pic.png")
         self.image_pic = pygame.transform.scale(self.image_pic, (TAILLE_CELLULE, TAILLE_CELLULE))
@@ -42,12 +43,27 @@ class Niveau:
         with open(chemin, "r", encoding="utf-8") as f:
             data = json.load(f)
         self.creer_grille_vide()
+        self.spawn_cell = None
         for type_bloc, positions in data.items():
-            for pos in positions:
-                x, y = pos
-                self.grille[y][x] = type_bloc
+            if type_bloc == "spawn":
+                x, y = positions
+                self.spawn_cell = (x, y)
+                self.grille[y][x] = "vide"
+            else:
+                for pos in positions:
+                    x, y = pos
+                    self.grille[y][x] = type_bloc
         
         return self.grille
+
+    def obtenir_spawn_pixel(self):
+        """Retourne la position de spawn en pixels (x_px, y_px) ou None si absent."""
+        if self.spawn_cell is None:
+            return None
+        x_cell, y_cell = self.spawn_cell
+        x_px = x_cell * TAILLE_CELLULE
+        y_px = y_cell * TAILLE_CELLULE - TAILLE_CELLULE # pour que le joueur soit au-dessus du sol
+        return (x_px, y_px)
     
     def charger_niveau(self, numero, ecran):
         """Charge le niveau correspondant au numéro"""
