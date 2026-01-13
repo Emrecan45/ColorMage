@@ -18,6 +18,10 @@ class Pause:
         self.gestionnaire_config = ConfigManager()
         self.son_select = pygame.mixer.Sound(os.path.join("audio", "select.mp3"))
         
+        # Appliquer le volume d'effets sauvegardé
+        volumes = self.gestionnaire_config.obtenir_volumes()
+        self.son_select.set_volume(volumes.get("effets", 50) / 100)
+        
         # Coordonnées du bouton pause
         self.bouton_x = LARGEUR_ECRAN - self.largeur_bouton - self.marge
         self.bouton_y = self.marge
@@ -129,7 +133,7 @@ class Pause:
             return "quitter"
         return None
     
-    def afficher_pause(self, ecran, joueur, niveau, numero_niveau, chrono=None):
+    def afficher_pause(self, ecran, joueur, niveau, numero_niveau, chrono=None, draw_background=None):
         """Affiche le menu de pause avec options
         
         Args:
@@ -154,20 +158,20 @@ class Pause:
                 
                 if event.type == pygame.MOUSEBUTTONDOWN:
                     action = self.gerer_clic(event.pos)
+                    self.maj_volume()
                     self.son_select.play()
                     if action:
                         en_pause = False
                 
                 if event.type == pygame.KEYDOWN:
                     if event.key == pygame.K_ESCAPE or event.key == pygame.K_p:
+                        self.maj_volume()
                         self.son_select.play()
                         action = "continuer"
                         en_pause = False
             
             # Redessiner le niveau et le joueur en arrière-plan
-            fond_jeu = pygame.image.load("img/fond_jeu.png")
-            fond_jeu = pygame.transform.scale(fond_jeu, (LARGEUR_ECRAN, HAUTEUR_ECRAN))
-            ecran.blit(fond_jeu, (0, 0))
+            draw_background(ecran)
             niveau.dessiner(ecran)
             joueur.dessiner(ecran)
             self.dessiner_bouton(ecran)
@@ -180,6 +184,6 @@ class Pause:
         
         # Exécuter l'action demandée
         if action == "recommencer":
-            joueur.reset()
             niveau.reset(numero_niveau, ecran)
+            joueur.reset(niveau)
         return action

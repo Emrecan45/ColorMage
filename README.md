@@ -14,26 +14,30 @@ Le joueur doit résoudre des parcours en changeant sa propre couleur pour pouvoi
 
 ## ⚙ Installation
 
+**Prérequis :** Python 3.8 ou supérieur
+
 - **Sur Linux :**
     ```bash
     git clone https://github.com/Emrecan45/ColorMage.git
     cd ColorMage
-    python3 -m venv venv 
+    python3 -m venv venv
     source venv/bin/activate
-    pip install pygame
-    ```
-5.  Lancer le jeu :
-    ```bash
-    python3 src/ColorMage.py
+    python -m pip install --upgrade pip
+    python -m pip install pygame opencv-python numpy
     ```
 
-- **Sur Windows :**
-    ```PowerShell
+- **Sur Windows (PowerShell) :**
+    ```powershell
     git clone https://github.com/Emrecan45/ColorMage.git
     cd ColorMage
-    pip install pygame
-    python3 src/ColorMage.py
+    python -m pip install --upgrade pip
+    python -m pip install pygame opencv-python numpy
     ```
+
+Lancer le jeu :
+```bash
+python src/ColorMage.py
+```
 
 ## 📷 Screenshots
 
