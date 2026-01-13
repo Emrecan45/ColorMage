@@ -154,12 +154,14 @@ class Pause:
                 
                 if event.type == pygame.MOUSEBUTTONDOWN:
                     action = self.gerer_clic(event.pos)
+                    self.maj_volume()
                     self.son_select.play()
                     if action:
                         en_pause = False
                 
                 if event.type == pygame.KEYDOWN:
                     if event.key == pygame.K_ESCAPE or event.key == pygame.K_p:
+                        self.maj_volume()
                         self.son_select.play()
                         action = "continuer"
                         en_pause = False

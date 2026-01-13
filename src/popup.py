@@ -107,14 +107,17 @@ class Popup:
                     random.choice(self.sons_portail).play()
                     return "planete_suivante"
                 else:
+                    self.maj_volume()
                     self.son_select.play()
                     return "suivant"
         
         if self.bouton_recommencer.collidepoint(pos):
+            self.maj_volume()
             self.son_select.play()
             return "rejouer"
 
         elif self.bouton_quitter.collidepoint(pos):
+            self.maj_volume()
             self.son_select.play()
             return "quitter"
         return None
@@ -129,9 +132,11 @@ class Popup:
             str: "rejouer", "quitter" ou None
         """
         if self.bouton_recommencer.collidepoint(pos):
+            self.maj_volume()
             self.son_select.play()
             return "rejouer"
         elif self.bouton_quitter.collidepoint(pos):
+            self.maj_volume()
             self.son_select.play()
             return "quitter"
         return None
@@ -210,7 +215,7 @@ class Popup:
                 if univers_suivant_idx < len(self.univers):
                     nom_univers = self.univers[univers_suivant_idx]["nom"]
                     texte_bouton_suivant = nom_univers
-                    couleur_planete = (180, 100, 220)  # Couleur violette pour les univers
+                    couleur_planete = (255, 215, 0)  # Couleur or pour univers
                 else:
                     texte_bouton_suivant = "Suivant"
                     couleur_planete = (60, 180, 60)

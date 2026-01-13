@@ -383,11 +383,13 @@ class Game:
             self.joueur.reset()
             self.joueur.maj_controles()
             self.chrono.demarrer()
+            meilleur_temps = self.gestionnaire_config.obtenir_meilleur_temps(self.niveau_actuel)
+            self.chrono.definir_meilleur_temps(meilleur_temps)
             # Activer l'animation de portail d'entrée
             self.portail_entree_actif = True
             self.portail_entree_animation = 0
             self.joueur_visible = False
-            self.son_portail.play()(meilleur_temps)
+            self.son_portail.play()
             self.est_record = False
             self.joueur_visible = True
             self.portail_entree_actif = False
