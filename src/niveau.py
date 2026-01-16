@@ -3,6 +3,7 @@ import json
 import random
 import math
 from config import LARGEUR_GRILLE, HAUTEUR_GRILLE, TAILLE_CELLULE, COULEURS, LARGEUR_ECRAN, HAUTEUR_ECRAN
+from enemies import Sorcier
 
 
 class Niveau:
@@ -11,6 +12,9 @@ class Niveau:
     def __init__(self):
         self.grille = []
         self.spawn_cell = None
+        # entités du niveau
+        self.sorciers = []
+        self.projectiles = []
         self.traversables = ["change_rouge", "change_bleu", "change_vert", "porte", "vide", "pic"]
         self.image_pic = pygame.image.load("img/pic.png")
         self.image_pic = pygame.transform.scale(self.image_pic, (TAILLE_CELLULE, TAILLE_CELLULE))
@@ -44,11 +48,52 @@ class Niveau:
             data = json.load(f)
         self.creer_grille_vide()
         self.spawn_cell = None
+        # reset
+        self.sorciers = []
+        self.projectiles = []
         for type_bloc, positions in data.items():
             if type_bloc == "spawn":
                 x, y = positions
                 self.spawn_cell = (x, y)
                 self.grille[y][x] = "vide"
+            elif type_bloc == "sorcier":
+                for item in positions:
+                    if type(item) == list or type(item) == tuple:
+                        # cas où la direction est fournie
+                        if len(item) >= 3:
+                            x = item[0]
+                            y = item[1]
+                            dirv = int(item[2])
+                            if len(item) >= 4:
+                                range_blocks = int(item[3])
+                            else:
+                                range_blocks = None
+                        else:
+                            x = item[0]
+                            y = item[1]
+                            dirv = 1
+                            range_blocks = None
+
+                    # créer sorcier à la position (pixels)
+                    px = x * TAILLE_CELLULE
+                    sorcier = Sorcier(px, 0, direction=(1 if dirv == 1 else -1), shoot_range_blocks=range_blocks)
+
+                    rect_w = sorcier.width - 2 * sorcier.marge_x
+                    cell_cx = x * TAILLE_CELLULE + TAILLE_CELLULE // 2
+                    new_rect_left = cell_cx - rect_w // 2
+                    sorcier.x = int(new_rect_left - sorcier.marge_x)
+
+                    cell_top_px = y * TAILLE_CELLULE
+                    rect_h = sorcier.height - sorcier.marge_y_haut - sorcier.marge_y_bas
+                    rect_top = cell_top_px - rect_h
+                    sorcier.y = int(rect_top - sorcier.marge_y_haut + 53)
+
+                    # mettre à jour la rect en fonction de la nouvelle position
+                    sorcier.rect.topleft = (int(sorcier.x + sorcier.marge_x), int(sorcier.y + sorcier.marge_y_haut))
+
+                    self.sorciers.append(sorcier)
+                    # laisser la case vide pour ne pas bloquer le joueur
+                    self.grille[y][x] = "vide"
             else:
                 for pos in positions:
                     x, y = pos
@@ -99,7 +144,7 @@ class Niveau:
         
         return False
     
-    def dessiner(self, ecran, temps_global=0):
+    def dessiner(self, ecran, temps_global=0, update_entities=True):
         """Dessine tous les blocs du niveau"""
         for y in range(HAUTEUR_GRILLE):
             for x in range(LARGEUR_GRILLE):
@@ -126,7 +171,26 @@ class Niveau:
                         couleur = COULEURS[bloc]
                         pygame.draw.rect(ecran, couleur, (x * TAILLE_CELLULE, y * TAILLE_CELLULE, TAILLE_CELLULE, TAILLE_CELLULE))
                         pygame.draw.rect(ecran, (0, 0, 0), (x * TAILLE_CELLULE, y * TAILLE_CELLULE, TAILLE_CELLULE, TAILLE_CELLULE), 1)
+        if update_entities:
+            for sorcier in list(self.sorciers):
+                proj = sorcier.update()
+                if proj is not None:
+                    self.projectiles.append(proj)
+                sorcier.dessiner(ecran)
 
+            proj_list = list(self.projectiles)
+            for proj in proj_list:
+                proj.update()
+                proj_alive = proj.alive
+                if not proj_alive:
+                    self.projectiles.remove(proj)
+                else:
+                    proj.dessiner(ecran)
+        else:
+            for sorcier in self.sorciers:
+                sorcier.dessiner(ecran)
+            for proj in self.projectiles:
+                proj.dessiner(ecran)
     def dessiner_fond(self, ecran, couleur_planete, temps_global=0):
         """Dessine le fond pour le niveau basé sur la couleur de la planète.
         """

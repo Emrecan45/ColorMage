@@ -27,7 +27,7 @@ class Joueur:
         
         #hitbox
         self.marge_x = 40
-        self.marge_y_haut = 40  
+        self.marge_y_haut = 10
         self.marge_y_bas = 2
         
         self.vitesse_x = 0

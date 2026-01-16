@@ -45,7 +45,8 @@ class ConfigManager:
             },
             "niveau_actuel": 1,
             "meilleurs_temps": {},
-            "pseudo": "Mage"
+            "pseudo": "Mage",
+            "nb_morts": 0,
         }
         
         # Si le fichier existe, le charger
@@ -94,7 +95,7 @@ class ConfigManager:
                 "meilleurs_temps": self.meilleurs_temps,
                 "pseudo": self.config.get("pseudo", "Joueur"),
                 "tenue_profil": self.config.get("tenue_profil", 0),
-                "cibles_eliminees": self.config.get("cibles_eliminees", 0)
+                "nb_morts": self.config.get("nb_morts", 0)
             }
         with open(self.chemin_config, "w", encoding="utf-8") as f:
             json.dump(config, f, ensure_ascii=False)
@@ -188,10 +189,11 @@ class ConfigManager:
         controles_actuels = self.config.get("controles", {"gauche": "left", "droite": "right", "sauter": "up"})
         volumes_actuels = self.config.get("volumes", {"musique": 50, "effets": 50})
         
-        # Reset UNIQUEMENT la progression
+        # Reset la progression
         self.config["niveau_actuel"] = 1
         self.config["meilleurs_temps"] = {}
         self.config["tenue_profil"] = 0  # Reset la tenue du profil
+        self.config["nb_morts"] = 0
         
         # Restaurer les paramètres et le pseudo
         self.config["pseudo"] = pseudo_actuel
