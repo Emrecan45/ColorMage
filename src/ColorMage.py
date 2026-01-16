@@ -437,6 +437,72 @@ class Game:
             # Stocke l'interaction du joueur
             resultat = self.joueur.interagir_avec_blocs(self.niveau)
 
+            # Vérifier collision projectiles -> joueur
+            player_hitbox = pygame.Rect(
+                self.joueur.x + self.joueur.marge_x,
+                self.joueur.y + self.joueur.marge_y_haut,
+                self.joueur.largeur - 2 * self.joueur.marge_x,
+                self.joueur.hauteur - self.joueur.marge_y_haut - self.joueur.marge_y_bas,
+            )
+            player_img = self.joueur.images[self.joueur.couleur][self.joueur.frame_index]
+            if self.joueur.direction == -1:
+                player_img = pygame.transform.flip(player_img, True, False)
+            player_mask = pygame.mask.from_surface(player_img)
+
+            proj_iter = list(self.niveau.projectiles)
+            # toucher un sorcier tue
+            sorcier_list = list(self.niveau.sorciers)
+            for sorcier in sorcier_list:
+                sor_rect = sorcier.rect
+                if player_hitbox.colliderect(sor_rect):
+                    self.joueur.son_mort.play()
+                    resultat = "mort"
+                    break
+
+            for proj in proj_iter:
+                rect = proj.rect
+
+                if not proj.collidable:
+                    continue
+
+                shrink_x = int(rect.width * 0.5)
+                shrink_y = int(rect.height * 0.5)
+                contracted_rect = rect.inflate(-shrink_x, -shrink_y)
+                if not contracted_rect.colliderect(player_hitbox):
+                    continue
+
+                proj_frame_index = proj.frame_index
+                proj_frames = proj.frames
+                proj_masks = proj.masks
+
+                collided = False
+                if player_mask is not None and proj_masks:
+                    mask_pair = proj_masks[proj_frame_index] if proj_frame_index < len(proj_masks) else (None, None)
+                    if mask_pair[0] is None:
+                        if proj_frames:
+                            pf = proj_frames[proj_frame_index]
+                            if proj.direction == -1:
+                                pf = pygame.transform.flip(pf, True, False)
+                            proj_mask = pygame.mask.from_surface(pf)
+                        else:
+                            proj_mask = None
+                    else:
+                        proj_mask = mask_pair[0] if proj.direction == 1 else mask_pair[1]
+
+                    if proj_mask is not None:
+                        offset = (int(self.joueur.x - proj.x), int(self.joueur.y - proj.y))
+                        if proj_mask.overlap(player_mask, offset) is not None:
+                            collided = True
+
+                if not collided and rect.colliderect(player_hitbox):
+                    collided = True
+
+                if collided:
+                    self.joueur.son_mort.play()
+                    proj.alive = False
+                    resultat = "mort"
+                    break
+
             # Cas de téléportation (quand on touche le portail jaune)
             if resultat == "teleportation":
                 # Démarrer l'animation de sortie
@@ -447,6 +513,13 @@ class Game:
 
             # Cas de défaite
             elif resultat == "mort":
+                # incrémenter le compteur de morts et sauvegarder
+                try:
+                    cfg = self.gestionnaire_config.charger_config()
+                    cfg["nb_morts"] = cfg.get("nb_morts", 0) + 1
+                    self.gestionnaire_config.sauvegarder_config(cfg)
+                except Exception:
+                    pass
                 self.popup_actif = "defaite"
                 self.chrono.arreter()
                 self.est_record = False

@@ -405,12 +405,12 @@ class Popup:
                         self.son_select.play()
                         return "annuler"
             
-            # Redessiner le fond (paramètres ou profil)
+            # Redessiner le fond (pour popup annuler ou confirmer)
             if parametres:
-                # Vérifier si c'est un objet Profil ou Parametres
-                if hasattr(parametres, 'afficher_profil'):
+                # Vérifier si c'est Profil ou Parametres
+                try:
                     parametres.afficher_profil(ecran)
-                else:
+                except Exception:
                     parametres.afficher_parametres(ecran)
             
             # Dessiner le fond légèrement grisé

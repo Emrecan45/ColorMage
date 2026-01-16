@@ -172,7 +172,7 @@ class Pause:
             
             # Redessiner le niveau et le joueur en arrière-plan
             draw_background(ecran)
-            niveau.dessiner(ecran)
+            niveau.dessiner(ecran, 0, update_entities=False)
             joueur.dessiner(ecran)
             self.dessiner_bouton(ecran)
             chrono.dessiner(ecran)

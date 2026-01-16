@@ -166,8 +166,12 @@ class Profil:
         
         # Calculer la planète correspondante
         planete = (niveau_max - 1) // 5 + 1
-        noms_planetes = ["Terra", "Pyros", "Aquaris", "Nebula"]
-        nom_planete = noms_planetes[min(planete - 1, 3)] if planete > 0 else "Terra"
+        noms_planetes = ["Terra", "Pyros", "Aquaris", "Nebula", "Cryon", "Solara", "Vortex", "Obscura"]
+        if planete > 0:
+            idx = min(planete - 1, len(noms_planetes) - 1)
+            nom_planete = noms_planetes[idx]
+        else:
+            nom_planete = "Terra"
         
         # Meilleurs temps
         meilleurs_temps = config.get("meilleurs_temps", {})
@@ -175,11 +179,13 @@ class Profil:
         # Temps total de jeu (somme des meilleurs temps)
         temps_total_ms = sum(meilleurs_temps.values()) if meilleurs_temps else 0
         
+        # nombre de morts
+        nb_morts = config.get("nb_morts", 0)
         return {
             "niveau_max": niveau_max,
             "planete": nom_planete,
             "temps_total_ms": temps_total_ms,
-            "cibles_eliminees": config.get("cibles_eliminees", 0)
+            "nb_morts": nb_morts
         }
     
     def formater_temps(self, temps_ms):
@@ -281,15 +287,15 @@ class Profil:
         temps_txt_y = self.zone_temps_total.y + self.zone_temps_total.height - temps_txt.get_height() - 12 + 6
         ecran.blit(temps_txt, (self.zone_temps_total.x + 15, temps_txt_y))
         
-        # Zone cibles éliminées - fond gris
+        # Zone nombre de morts - fond gris
         pygame.draw.rect(ecran, (80, 80, 90), self.zone_cibles, border_radius=10)
         pygame.draw.rect(ecran, COULEUR_BORDURE, self.zone_cibles, 3, border_radius=10)
-        cibles_label = self.font_3.render("Cibles éliminées", True, (200, 200, 200))
-        cibles_label_y = self.zone_cibles.y + 10
-        ecran.blit(cibles_label, (self.zone_cibles.x + 15, cibles_label_y))
-        cibles_txt = self.font_2.render(str(stats.get('cibles_eliminees', 0)), True, (255, 255, 255))
-        cibles_txt_y = self.zone_cibles.y + self.zone_cibles.height - cibles_txt.get_height() - 12 + 6
-        ecran.blit(cibles_txt, (self.zone_cibles.x + 15, cibles_txt_y))
+        morts_label = self.font_3.render("Nombre de morts", True, (200, 200, 200))
+        morts_label_y = self.zone_cibles.y + 10
+        ecran.blit(morts_label, (self.zone_cibles.x + 15, morts_label_y))
+        morts_txt = self.font_2.render(str(stats.get('nb_morts', 0)), True, (255, 255, 255))
+        morts_txt_y = self.zone_cibles.y + self.zone_cibles.height - morts_txt.get_height() - 12 + 6
+        ecran.blit(morts_txt, (self.zone_cibles.x + 15, morts_txt_y))
         
         # Bouton réinitialiser sauvegarde (en rouge, au dessus de retour)
         if self.bouton_reset_save.collidepoint(mouse_pos):
