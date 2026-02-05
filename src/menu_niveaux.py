@@ -52,8 +52,8 @@ class MenuNiveaux:
         
         # Système de caméra pour le swipe entre univers
         self.camera_x = self.univers_actuel * LARGEUR_ECRAN  # Position actuelle de la caméra
-        self.camera_cible_x = self.camera_x  # Position cible (pour l'animation)
-        self.camera_vitesse = 0.08  # Vitesse d'interpolation (0-1, plus c'est haut plus c'est rapide)
+        self.camera_cible_x = self.camera_x  # Position cible
+        self.camera_vitesse = 0.08  # Vitesse de déplacement de la caméra
         self.transition_univers = False  # True pendant l'animation de swipe
         
         # Charger l'image du mage pour le menu
@@ -63,6 +63,11 @@ class MenuNiveaux:
         self.mage_sprite = self.image_mage.subsurface(pygame.Rect(0, 0, sprite_largeur, sprite_hauteur))
         self.mage_sprite = pygame.transform.scale(self.mage_sprite, (60, 60))
         self.mage_sprite_flip = pygame.transform.flip(self.mage_sprite, True, False)
+        
+        # Charger l'icône de pièce
+        piece_sheet = pygame.image.load("img/piece.png")
+        piece_frame = piece_sheet.subsurface(pygame.Rect(0, 0, 16, 16))
+        self.icone_piece = pygame.transform.scale(piece_frame, (48, 48))
         
         # Charger les frames de marche du mage
         self.mage_walk_frames = []
@@ -154,7 +159,22 @@ class MenuNiveaux:
             pygame.mixer.Sound(os.path.join("audio", "color_change2.mp3")),
             pygame.mixer.Sound(os.path.join("audio", "color_change3.mp3"))
         ]
+        # Sons de téléportation pour entrer/sortir d'une planète
+        self.sons_teleport = []
+        for i in range(1, 7):
+            son = pygame.mixer.Sound(os.path.join("audio", "teleport" + str(i) + ".mp3"))
+            self.sons_teleport.append(son)
         self.maj_volume()
+        
+        # Charger l'icône du marché
+        self.icone_marche = pygame.image.load(os.path.join("img", "market.png"))
+        self.icone_marche = pygame.transform.scale(self.icone_marche, (48, 48))
+        
+        # Bouton Marché
+        self.bouton_marche = pygame.Rect(40, 25, 190, 55)
+        
+        # État du marché
+        self.musique_marche_active = False
         
         # Timer global pour les animations
         self.temps_global = 0
@@ -177,6 +197,8 @@ class MenuNiveaux:
         volume = volumes.get("effets", 50) / 100
         self.son_select.set_volume(volume)
         for son in self.sons_portail:
+            son.set_volume(volume)
+        for son in self.sons_teleport:
             son.set_volume(volume)
     
     def dessiner_etoiles(self, ecran):
@@ -422,6 +444,12 @@ class MenuNiveaux:
         # Version
         version_txt = self.font_3.render(VERSION_JEU, True, (255, 255, 255))
         ecran.blit(version_txt, (LARGEUR_ECRAN - version_txt.get_width() - 20, HAUTEUR_ECRAN - version_txt.get_height() - 20))
+        
+        # Compteur de pièces en haut à droite
+        self.dessiner_compteur_pieces(ecran)
+        
+        # Bouton Marché en haut à gauche
+        self.dessiner_bouton_marche(ecran)
     
     def univers_est_complete(self, index_univers):
         """Vérifie si tous les niveaux d'un univers sont terminés"""
@@ -597,6 +625,95 @@ class MenuNiveaux:
         
         # Bouton retour
         self.dessiner_bouton_retour(ecran, "Retour")
+        
+        # Compteur de pièces en haut à droite
+        self.dessiner_compteur_pieces(ecran)
+    
+    def dessiner_compteur_pieces(self, ecran):
+        """Dessine le compteur de pièces en haut à droite"""
+        total = self.gestionnaire_config.obtenir_pieces_total()
+        texte = self.font_2.render(str(total), True, (255, 255, 255))
+        marge_droite = 40
+        y_align = 30
+        x_texte = LARGEUR_ECRAN - marge_droite - texte.get_width()
+        x_icone = x_texte - 56
+        y_icone = y_align
+        y_texte = y_align + (48 - texte.get_height()) // 2
+        ecran.blit(self.icone_piece, (x_icone, y_icone))
+        ecran.blit(texte, (x_texte, y_texte))
+    
+    def dessiner_bouton_marche(self, ecran):
+        """Dessine le bouton Marché en haut à gauche"""
+        mouse_pos = pygame.mouse.get_pos()
+        est_survole = self.bouton_marche.collidepoint(mouse_pos)
+        couleur = COULEUR_SURVOL if est_survole else COULEUR_BOUTON
+        pygame.draw.rect(ecran, couleur, self.bouton_marche, border_radius=10)
+        pygame.draw.rect(ecran, COULEUR_BORDURE, self.bouton_marche, 3, border_radius=10)
+        texte_surface = self.font_3.render("Marché", True, (255, 255, 255))
+        # Texte + icône centrés dans le bouton
+        icone_w = self.icone_marche.get_width()
+        icone_h = self.icone_marche.get_height()
+        espacement = 8
+        largeur_totale = texte_surface.get_width() + espacement + icone_w
+        x_debut = self.bouton_marche.centerx - largeur_totale // 2
+        y_icone = self.bouton_marche.centery - icone_h // 2
+        y_texte = self.bouton_marche.centery - texte_surface.get_height() // 2
+        ecran.blit(texte_surface, (x_debut, y_texte))
+        ecran.blit(self.icone_marche, (x_debut + texte_surface.get_width() + espacement, y_icone))
+    
+    def afficher_marche(self, ecran):
+        """Affiche la page du marché"""
+        # Lancer la musique
+        if not self.musique_marche_active:
+            try:
+                pygame.mixer.music.stop()
+                pygame.mixer.music.load(os.path.join("audio", "market.wav"))
+                vol = self.gestionnaire_config.obtenir_volumes().get("musique", 50) / 100
+                pygame.mixer.music.set_volume(vol)
+                pygame.mixer.music.play(-1)
+            except Exception:
+                pass
+            self.musique_marche_active = True
+        
+        # Fond
+        ecran.fill((25, 18, 10))
+        self.dessiner_etoiles(ecran)
+        
+        # Titre (même emplacement que le titre de l'univers)
+        titre = self.font_1.render("Marché", True, (255, 215, 0))
+        ecran.blit(titre, (LARGEUR_ECRAN // 2 - titre.get_width() // 2, 30))
+        
+        # Message placeholder
+        msg = self.font_2.render("Le marchand arrive bientôt...", True, (200, 200, 200))
+        ecran.blit(msg, (LARGEUR_ECRAN // 2 - msg.get_width() // 2, HAUTEUR_ECRAN // 2 - msg.get_height() // 2))
+        
+        # Compteur de pièces en haut à droite
+        self.dessiner_compteur_pieces(ecran)
+        
+        # Bouton retour
+        self.dessiner_bouton_retour(ecran, "Retour")
+    
+    def quitter_marche(self):
+        """Quitte le marché et restaure la musique précédente"""
+        self.musique_marche_active = False
+        # Restaurer la musique selon l'état
+        try:
+            pygame.mixer.music.stop()
+            if self.etat_menu == "planete":
+                planete = self.planetes[self.planete_selectionnee]
+                nom_planete = planete["nom"].lower()
+                chemin_musique = os.path.join("audio", nom_planete + ".wav")
+                if os.path.exists(chemin_musique):
+                    pygame.mixer.music.load(chemin_musique)
+                else:
+                    pygame.mixer.music.load(os.path.join("audio", "main_theme.mp3"))
+            else:
+                pygame.mixer.music.load(os.path.join("audio", "main_theme.mp3"))
+            vol = self.gestionnaire_config.obtenir_volumes().get("musique", 50) / 100
+            pygame.mixer.music.set_volume(vol)
+            pygame.mixer.music.play(-1)
+        except Exception:
+            pass
     
     def dessiner_bouton_retour(self, ecran, texte="Retour"):
         """Dessine le bouton retour"""
@@ -664,6 +781,8 @@ class MenuNiveaux:
         # Afficher selon l'état
         if self.zoom_en_cours:
             self.afficher_transition_zoom(ecran)
+        elif self.etat_menu == "marche":
+            self.afficher_marche(ecran)
         elif self.etat_menu == "galaxie":
             self.afficher_galaxie(ecran)
         else:
@@ -790,11 +909,22 @@ class MenuNiveaux:
         if self.zoom_en_cours or self.mage_en_mouvement or self.teleportation_en_cours or self.transition_univers:
             return None
         
+        # Bouton Marché (uniquement depuis la galaxie)
+        if self.etat_menu == "galaxie" and self.bouton_marche.collidepoint(pos):
+            self.son_select.play()
+            return "marche"
+        
         # Bouton retour
         if self.bouton_retour.collidepoint(pos):
-            if self.etat_menu == "planete":
-                # Retour à la galaxie avec son de portail
-                random.choice(self.sons_portail).play()
+            if self.etat_menu == "marche":
+                # Retour depuis le marché
+                self.son_select.play()
+                self.quitter_marche()
+                self.etat_menu = "galaxie"
+                return None
+            elif self.etat_menu == "planete":
+                # Retour à la galaxie avec son de téléportation
+                random.choice(self.sons_teleport).play()
                 # Restaurer la musique principale
                 try:
                     pygame.mixer.music.stop()
@@ -850,7 +980,7 @@ class MenuNiveaux:
             distance = math.sqrt((pos[0] - planete_x) ** 2 + (pos[1] - planete["y"] - offset_y) ** 2)
             
             if distance <= planete["rayon"]:
-                random.choice(self.sons_portail).play()
+                random.choice(self.sons_teleport).play()
                 self.planete_selectionnee = i
                 self.planetes = planetes_univers  # Mettre à jour la référence
                 

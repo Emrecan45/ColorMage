@@ -506,6 +506,147 @@ class Squelette:
             self.current_mask = mask_pair[0]
 
 
+class Slime:
+    """Slime qui reste sur place avec animation ping-pong.
+    Vert = 1 PV, Violet = 3 PV.
+    Quand le joueur saute dessus : rebond + dégâts au slime.
+    """
+    def __init__(self, x, y, couleur="vert"):
+        self.x = x
+        self.y = y
+        self.couleur = couleur
+        self.alive = True
+
+        # PV selon la couleur
+        if couleur == "violet":
+            self.pv = 3
+        else:
+            self.pv = 1
+
+        # Charger la spritesheet
+        if couleur == "violet":
+            chemin = os.path.join("img", "slime_violet.png")
+        else:
+            chemin = os.path.join("img", "slime_vert.png")
+        self.spritesheet = pygame.image.load(chemin)
+
+        # Taille d'un sprite dans la spritesheet (96x72 = 4 colonnes x 3 lignes)
+        self.sprite_w = 24
+        self.sprite_h = 24
+
+        # Taille d'affichage (1 cellule)
+        self.taille_affichage = TAILLE_CELLULE
+
+        # Charger toutes les frames
+        self.toutes_frames = []
+        for ligne in range(3):
+            for col in range(4):
+                sx = col * self.sprite_w
+                sy = ligne * self.sprite_h
+                sprite = self.spritesheet.subsurface(pygame.Rect(sx, sy, self.sprite_w, self.sprite_h))
+                sprite = pygame.transform.scale(sprite, (self.taille_affichage, self.taille_affichage))
+                self.toutes_frames.append(sprite)
+
+        # Animation ping-pong : L1C1-4, L2C1-4, L3C1-2 puis inverse
+        # Indices : 0,1,2,3, 4,5,6,7, 8,9 puis 9,8, 7,6,5,4, 3,2,1,0
+        self.sequence_aller = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
+        self.sequence_retour = [9, 8, 7, 6, 5, 4, 3, 2, 1, 0]
+        self.sequence_complete = self.sequence_aller + self.sequence_retour
+        self.frame_index = 0
+        self.last_anim_time = pygame.time.get_ticks()
+        self.anim_delay = 120
+
+        # Frame de mort : L3 C3 (index 10)
+        self.frame_mort = self.toutes_frames[10]
+
+        # État de mort (animation)
+        self.en_train_de_mourir = False
+        self.mort_timer = 0
+        self.mort_duree = 300  # ms
+
+        # Hitbox
+        self.rect = pygame.Rect(self.x, self.y, self.taille_affichage, self.taille_affichage)
+
+    def update(self):
+        now = pygame.time.get_ticks()
+
+        if self.en_train_de_mourir:
+            if now - self.mort_timer >= self.mort_duree:
+                self.alive = False
+            return
+
+        # Animation ping-pong
+        if now - self.last_anim_time >= self.anim_delay:
+            self.last_anim_time = now
+            self.frame_index = (self.frame_index + 1) % len(self.sequence_complete)
+
+        self.rect.topleft = (int(self.x), int(self.y))
+
+    def recevoir_degats(self):
+        """Appelée quand le joueur saute sur le slime. Retourne True si le slime meurt."""
+        self.pv -= 1
+        if self.pv <= 0:
+            self.en_train_de_mourir = True
+            self.mort_timer = pygame.time.get_ticks()
+            return True
+        return False
+
+    def dessiner(self, ecran):
+        if self.en_train_de_mourir:
+            ecran.blit(self.frame_mort, (int(self.x), int(self.y)))
+            return
+
+        idx = self.sequence_complete[self.frame_index]
+        frame = self.toutes_frames[idx]
+        ecran.blit(frame, (int(self.x), int(self.y)))
+
+
+class Piece:
+    """Pièce collectable qui tourne sur elle-même."""
+    def __init__(self, x, y):
+        self.x = x
+        self.y = y
+        self.alive = True
+
+        # Charger la spritesheet (192x16 = 12 frames de 16x16)
+        chemin = os.path.join("img", "piece.png")
+        self.spritesheet = pygame.image.load(chemin)
+        self.sprite_w = 16
+        self.sprite_h = 16
+        nb_frames = self.spritesheet.get_width() // self.sprite_w
+
+        # Taille d'affichage
+        self.taille_affichage = int(TAILLE_CELLULE * 0.7)
+
+        # Charger les frames
+        self.frames = []
+        for i in range(nb_frames):
+            sx = i * self.sprite_w
+            sprite = self.spritesheet.subsurface(pygame.Rect(sx, 0, self.sprite_w, self.sprite_h))
+            sprite = pygame.transform.scale(sprite, (self.taille_affichage, self.taille_affichage))
+            self.frames.append(sprite)
+
+        self.frame_index = 0
+        self.last_anim_time = pygame.time.get_ticks()
+        self.anim_delay = 80
+
+        # Hitbox centrée dans la cellule
+        offset = (TAILLE_CELLULE - self.taille_affichage) // 2
+        self.draw_x = self.x + offset
+        self.draw_y = self.y + offset
+        self.rect = pygame.Rect(self.draw_x, self.draw_y, self.taille_affichage, self.taille_affichage)
+
+    def update(self):
+        now = pygame.time.get_ticks()
+        if now - self.last_anim_time >= self.anim_delay:
+            self.last_anim_time = now
+            self.frame_index = (self.frame_index + 1) % len(self.frames)
+
+    def dessiner(self, ecran):
+        frame = self.frames[self.frame_index]
+        ecran.blit(frame, (int(self.draw_x), int(self.draw_y)))
+
+
 def mettre_a_jour_groupes(elems):
     for elem in list(elems):
         elem.update()

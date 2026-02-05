@@ -166,7 +166,6 @@ class Pause:
                 if event.type == pygame.KEYDOWN:
                     if event.key == pygame.K_ESCAPE or event.key == pygame.K_p:
                         self.maj_volume()
-                        self.son_select.play()
                         action = "continuer"
                         en_pause = False
             

@@ -5,6 +5,9 @@ import math
 from config import LARGEUR_GRILLE, HAUTEUR_GRILLE, TAILLE_CELLULE, COULEURS, LARGEUR_ECRAN, HAUTEUR_ECRAN
 from enemies import Sorcier
 from enemies import Squelette
+from enemies import Slime
+from enemies import Piece
+from config_manager import ConfigManager
 
 
 class Niveau:
@@ -13,10 +16,14 @@ class Niveau:
     def __init__(self):
         self.grille = []
         self.spawn_cell = None
+        self.numero_niveau = 1
+        self.gestionnaire_config = ConfigManager()
         # entités du niveau
         self.sorciers = []
         self.squelettes = []
         self.projectiles = []
+        self.slimes = []
+        self.pieces = []
         self.traversables = ["change_rouge", "change_bleu", "change_vert", "porte", "vide", "pic"]
         self.image_pic = pygame.image.load("img/pic.png")
         self.image_pic = pygame.transform.scale(self.image_pic, (TAILLE_CELLULE, TAILLE_CELLULE))
@@ -45,6 +52,7 @@ class Niveau:
     
     def charger_depuis_json(self, numero):
         """Charge un niveau depuis un fichier JSON"""
+        self.numero_niveau = numero
         chemin = "niveaux/niveau_" + str(numero) + ".json"
         with open(chemin, "r", encoding="utf-8") as f:
             data = json.load(f)
@@ -54,6 +62,8 @@ class Niveau:
         self.sorciers = []
         self.projectiles = []
         self.squelettes = []
+        self.slimes = []
+        self.pieces = []
         for type_bloc, positions in data.items():
             if type_bloc == "spawn":
                 x, y = positions
@@ -149,6 +159,40 @@ class Niveau:
                     squelette.origin_x = squelette.x
 
                     self.squelettes.append(squelette)
+                    self.grille[y][x] = "vide"
+            elif type_bloc == "slime_vert" or type_bloc == "slime_violet":
+                if type_bloc == "slime_vert":
+                    couleur_slime = "vert"
+                else:
+                    couleur_slime = "violet"
+                for pos in positions:
+                    x = pos[0]
+                    y = pos[1]
+                    px = x * TAILLE_CELLULE
+                    py = y * TAILLE_CELLULE
+                    slime = Slime(px, py, couleur=couleur_slime)
+                    self.slimes.append(slime)
+                    self.grille[y][x] = "vide"
+            elif type_bloc == "piece":
+                pieces_deja = self.gestionnaire_config.obtenir_pieces_collectees(numero)
+                for pos in positions:
+                    x = pos[0]
+                    y = pos[1]
+                    # Vérifier si cette pièce a déjà été collectée
+                    deja_collectee = False
+                    for p in pieces_deja:
+                        if p[0] == x and p[1] == y:
+                            deja_collectee = True
+                            break
+                    if deja_collectee:
+                        self.grille[y][x] = "vide"
+                        continue
+                    px = x * TAILLE_CELLULE
+                    py = y * TAILLE_CELLULE
+                    piece = Piece(px, py)
+                    piece.cell_x = x
+                    piece.cell_y = y
+                    self.pieces.append(piece)
                     self.grille[y][x] = "vide"
             else:
                 for pos in positions:
@@ -246,11 +290,29 @@ class Niveau:
                     self.projectiles.remove(proj)
                 else:
                     proj.dessiner(ecran)
+
+            for slime in list(self.slimes):
+                slime.update()
+                if not slime.alive:
+                    self.slimes.remove(slime)
+                else:
+                    slime.dessiner(ecran)
+
+            for piece in list(self.pieces):
+                piece.update()
+                if not piece.alive:
+                    self.pieces.remove(piece)
+                else:
+                    piece.dessiner(ecran)
         else:
             for sorcier in self.sorciers:
                 sorcier.dessiner(ecran)
             for proj in self.projectiles:
                 proj.dessiner(ecran)
+            for slime in self.slimes:
+                slime.dessiner(ecran)
+            for piece in self.pieces:
+                piece.dessiner(ecran)
     def dessiner_fond(self, ecran, couleur_planete, temps_global=0):
         """Dessine le fond pour le niveau basé sur la couleur de la planète.
         """
