@@ -173,6 +173,17 @@ class Pause:
             # Redessiner le niveau et le joueur en arrière-plan
             draw_background(ecran)
             niveau.dessiner(ecran, 0, update_entities=False)
+            # Dessiner les squelettes sans les mettre à jour
+            try:
+                squelettes = niveau.squelettes
+            except AttributeError:
+                squelettes = []
+            else:
+                for s in squelettes:
+                    try:
+                        s.dessiner(ecran)
+                    except Exception:
+                        pass
             joueur.dessiner(ecran)
             self.dessiner_bouton(ecran)
             chrono.dessiner(ecran)

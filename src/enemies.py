@@ -21,7 +21,7 @@ class Projectile:
         path = os.path.join("img", "ennemy.png")
         self.spritesheet = pygame.image.load(path)
         self.sprite_w = 192
-        self.sprite_h = 196
+        self.sprite_h = 192
 
         self.frames = []
         self.collision_boxes = []
@@ -46,7 +46,10 @@ class Projectile:
 
         self.x = x
         self.y = y
-        first_box = self.collision_boxes[0] if self.collision_boxes else pygame.Rect(0, 0, self.size, self.size)
+        if self.collision_boxes:
+            first_box = self.collision_boxes[0]
+        else:
+            first_box = pygame.Rect(0, 0, self.size, self.size)
         self.rect = pygame.Rect(int(self.x + first_box.x), int(self.y + first_box.y), int(first_box.w), int(first_box.h))
 
         self.origin_x = x
@@ -118,7 +121,10 @@ class Projectile:
             self.alive = False
             return
         if self.max_distance is not None:
-            target_px = self.origin_x + (self.max_distance if self.direction == 1 else -self.max_distance)
+            if self.direction == 1:
+                target_px = self.origin_x + self.max_distance
+            else:
+                target_px = self.origin_x - self.max_distance
             cell_idx = int(target_px // TAILLE_CELLULE)
             if self.direction == 1:
                 edge_x = (cell_idx + 1) * TAILLE_CELLULE
@@ -160,7 +166,7 @@ class Sorcier:
         path = os.path.join("img", "ennemy.png")
         self.spritesheet = pygame.image.load(path)
         self.sprite_w = 192
-        self.sprite_h = 196
+        self.sprite_h = 192
 
         self.frames = []
         for col in (0, 3):
@@ -177,7 +183,10 @@ class Sorcier:
         # durée courte pour la frame de tir
         firing_ms = max(60, int(self.shoot_interval * 0.12))
         remaining = max(0, self.shoot_interval - firing_ms)
-        other_ms = int(remaining / max(1, n - 1)) if n > 1 else remaining
+        if n > 1:
+            other_ms = int(remaining / max(1, n - 1))
+        else:
+            other_ms = remaining
         # créer la liste de délais par frame
         self.frame_delays = []
         for i in range(n):
@@ -243,10 +252,268 @@ class Sorcier:
         ecran.blit(frame, (self.x, self.y))
 
 
+class Squelette:
+    """Squelette qui marche sur N cases, fait demi-tour et attaque tous les 3 pas."""
+    def __init__(self, x, y, direction=-1, walk_blocks=3):
+        pass
+        self.x = x
+        self.y = y
+        self.direction = direction
+        self.alive = True
+
+        self.width = TAILLE_CELLULE * 2
+        self.height = TAILLE_CELLULE * 2
+        self.marge_x = 40
+        self.marge_y_haut = 10
+        self.marge_y_bas = 2
+        self.rect = pygame.Rect(self.x + self.marge_x, self.y + self.marge_y_haut,
+                                self.width - 2 * self.marge_x,
+                                self.height - self.marge_y_haut - self.marge_y_bas)
+
+        path = os.path.join("img", "ennemy.png")
+        self.spritesheet = pygame.image.load(path)
+        self.sprite_w = 192
+        self.sprite_h = 192
+
+        def get_sprite(col, row):
+            x_sprite = col * self.sprite_w
+            y_sprite = row * self.sprite_h
+            sw = self.spritesheet.get_width()
+            sh = self.spritesheet.get_height()
+            if x_sprite < 0 or y_sprite < 0 or x_sprite + self.sprite_w > sw or y_sprite + self.sprite_h > sh:
+                sprite = pygame.Surface((self.sprite_w, self.sprite_h), pygame.SRCALPHA)
+                sprite.fill((0, 0, 0, 0))
+            else:
+                sprite = self.spritesheet.subsurface(pygame.Rect(x_sprite, y_sprite, self.sprite_w, self.sprite_h)).copy()
+            sprite = pygame.transform.scale(sprite, (self.width, self.height))
+            return sprite
+
+        # charger les frames d'animation
+        self.idle_frame = get_sprite(1, 4)
+        self.walk_frames = [get_sprite(2, 4), get_sprite(3, 4)]
+        self.pre_attack = get_sprite(4, 4)
+        self.attack_frames = []
+        for c in range(0, 5):
+            self.attack_frames.append(get_sprite(c, 5))
+
+        # si les frames d'attaque sont vides
+        all_empty = True
+        for f in self.attack_frames:
+            br = f.get_bounding_rect()
+            if br.w != 0 and br.h != 0:
+                all_empty = False
+                break
+        if all_empty:
+            self.attack_frames = [self.pre_attack] * 5
+
+        frames_for_offset = [self.idle_frame] + self.walk_frames + [self.pre_attack] + self.attack_frames
+        bottoms = []
+        bounds = []
+        for f in frames_for_offset:
+            br = f.get_bounding_rect()
+            bounds.append(br)
+            bottoms.append(br.y + br.h)
+        if bottoms:
+            max_bottom = max(bottoms)
+        else:
+            max_bottom = 0
+        self.frame_offsets = []
+        for br in bounds:
+            self.frame_offsets.append(max_bottom - (br.y + br.h))
+
+        # hitbox et offset pour chaque frame
+        idx = 0
+        self.idle_offset = self.frame_offsets[idx]; idx += 1
+        self.idle_box = bounds[0]
+
+        self.walk_offsets = []
+        self.walk_boxes = []
+        for i in range(len(self.walk_frames)):
+            self.walk_offsets.append(self.frame_offsets[idx])
+            self.walk_boxes.append(bounds[idx])
+            idx += 1
+
+        self.pre_attack_offset = self.frame_offsets[idx]
+        self.pre_attack_box = bounds[idx]
+        idx += 1
+
+        self.attack_offsets = []
+        self.attack_boxes = []
+        for i in range(len(self.attack_frames)):
+            self.attack_offsets.append(self.frame_offsets[idx])
+            self.attack_boxes.append(bounds[idx])
+            idx += 1
+
+        # calculer les masques de collistion pour chaque frame (pour la cohérence des hitbox avec le visuel)
+        def make_masks(surface_list):
+            masks = []
+            for surf in surface_list:
+                mask = pygame.mask.from_surface(surf)
+                masks.append((mask, pygame.mask.from_surface(pygame.transform.flip(surf, True, False))))
+            return masks
+
+        self.idle_masks = make_masks([self.idle_frame])
+        self.walk_masks = make_masks(self.walk_frames)
+        self.pre_attack_masks = make_masks([self.pre_attack])
+        self.attack_masks = make_masks(self.attack_frames)
+
+        # masque courant + position de dessin utilisés pour les vérifications de collision
+        self.current_mask = None
+        self.current_draw_x = int(self.x)
+        self.current_draw_y = int(self.y)
+
+        # état de l'animation
+        self.state = "walking" 
+        self.walk_index = 0
+        self.last_anim_time = pygame.time.get_ticks()
+        self.walk_delay = 180
+        self.pre_attack_delay = 140
+        self.attack_delay = 120
+
+        # mouvement
+        self.speed = 2
+        self.origin_x = x
+        if walk_blocks is not None:
+            self.walk_blocks = int(walk_blocks)
+        else:
+            self.walk_blocks = 3
+        self.max_distance = self.walk_blocks * TAILLE_CELLULE
+        self.turn_start_time = 0
+        self.turn_pause_ms = 240
+
+        # conteur de pas pour déclencher l'attaque
+        self.step_count = 0
+        self.prev_walk_index = self.walk_index
+
+        # état d'attaque
+        self.attacking = False
+        self.attack_index = 0
+        self.attack_start_time = 0
+        self.pre_attack_start = 0
+
+    def update(self):
+        now = pygame.time.get_ticks()
+        if self.state == "attacking":
+            if now - self.last_anim_time >= self.attack_delay:
+                self.last_anim_time = now
+                self.attack_index += 1
+                if self.attack_index >= len(self.attack_frames):
+                    # fin de l'attaque
+                    self.attacking = False
+                    self.attack_index = 0
+                    self.step_count = 0
+                    self.state = "walking"
+            # pas de mouvement pendant l'attaque
+
+        elif self.state == "pre_attack":
+            if now - self.pre_attack_start >= self.pre_attack_delay:
+                self.state = "attacking"
+                self.attacking = True
+                self.attack_index = 0
+                self.last_anim_time = now
+
+        elif self.state == "turning":
+            if now - self.turn_start_time >= self.turn_pause_ms:
+                self.state = "walking"
+                self.direction *= -1
+
+        else: 
+            # marche : animer les pas
+            if now - self.last_anim_time >= self.walk_delay:
+                self.last_anim_time = now
+                prev = self.walk_index
+                self.walk_index = (self.walk_index + 1) % len(self.walk_frames)
+                # compter chaque pas
+                if self.walk_index != prev:
+                    self.step_count += 1
+                # tous les 3 pas déclencher lattaque
+                if self.step_count >= 3:
+                    self.state = "pre_attack"
+                    self.pre_attack_start = now
+                    self.last_anim_time = now
+
+            # déplacer horizontalement lors de la marche
+            if self.state == "walking":
+                self.x += self.speed * self.direction
+
+                # vérifier la distance parcourue
+                if abs(self.x - self.origin_x) >= self.max_distance:
+                    # commencer à tourner
+                    self.state = "turning"
+                    self.turn_start_time = now
+
+        if self.state == "attacking":
+            idx = self.attack_index % len(self.attack_boxes)
+            box = self.attack_boxes[idx]
+            offset = self.attack_offsets[idx]
+        elif self.state == "pre_attack":
+            box = self.pre_attack_box
+            offset = self.pre_attack_offset
+        elif self.state == "walking":
+            box = self.walk_boxes[self.walk_index]
+            offset = self.walk_offsets[self.walk_index]
+        else:
+            box = self.idle_box
+            offset = self.idle_offset
+
+        draw_y = self.y + offset
+        self.rect.topleft = (int(self.x + box.x), int(draw_y + box.y))
+        self.rect.size = (int(box.w), int(box.h))
+
+    def dessiner(self, ecran):
+        # choisir la frame
+        if self.state == "attacking":
+            idx = self.attack_index % len(self.attack_frames)
+            frame = self.attack_frames[idx]
+            offset = self.attack_offsets[idx]
+        elif self.state == "pre_attack":
+            frame = self.pre_attack
+            offset = self.pre_attack_offset
+        elif self.state == "turning":
+            frame = self.idle_frame
+            offset = self.idle_offset
+        elif self.state == "walking":
+            frame = self.walk_frames[self.walk_index]
+            offset = self.walk_offsets[self.walk_index]
+        else:
+            frame = self.idle_frame
+            offset = self.idle_offset
+
+        flipped = False
+        draw_frame = frame
+        if self.direction == -1:
+            draw_frame = pygame.transform.flip(frame, True, False)
+            flipped = True
+        draw_x = int(self.x)
+        draw_y = int(self.y + offset)
+        ecran.blit(draw_frame, (draw_x, draw_y))
+
+        # mettre à jour le masque de collision courant et sa position de dessin pour les vérifications de collision
+        self.current_draw_x = draw_x
+        self.current_draw_y = draw_y
+        if self.state == "attacking":
+            idx = self.attack_index % len(self.attack_masks)
+            mask_pair = self.attack_masks[idx]
+        elif self.state == "pre_attack":
+            mask_pair = self.pre_attack_masks[0]
+        elif self.state == "walking":
+            mask_pair = self.walk_masks[self.walk_index]
+        else:
+            mask_pair = self.idle_masks[0]
+        if flipped:
+            self.current_mask = mask_pair[1]
+        else:
+            self.current_mask = mask_pair[0]
+
+
 def mettre_a_jour_groupes(elems):
     for elem in list(elems):
         elem.update()
-        if not getattr(elem, "alive", True):
+        try:
+            alive = elem.alive
+        except AttributeError:
+            alive = True
+        if not alive:
             elems.remove(elem)
 
 
