@@ -111,6 +111,15 @@ class Game:
         self.son_pause.set_volume(vol_effets)
         self.son_unpause.set_volume(vol_effets)
     
+    def maj_volume_effets(self):
+        """Met à jour le volume des effets sonores depuis la config"""
+        volumes = self.gestionnaire_config.obtenir_volumes()
+        vol_effets = volumes.get("effets", 50) / 100
+        self.son_hurt.set_volume(vol_effets)
+        self.son_piece.set_volume(vol_effets)
+        self.son_pause.set_volume(vol_effets)
+        self.son_unpause.set_volume(vol_effets)
+    
     def gerer_evenements(self):
         """Gère les événements pygame"""
         for evenement in pygame.event.get():
@@ -135,12 +144,14 @@ class Game:
                 if evenement.type == pygame.KEYDOWN and evenement.key == pygame.K_ESCAPE:
                     if self.etat == "jeu":
                         # En jeu, Échap met en pause
+                        self.maj_volume_effets()
                         self.son_pause.play()
                         self.chrono.pause()
                         action = self.pause.afficher_pause(self.ecran, self.joueur, self.niveau, self.niveau_actuel, self.chrono, draw_background=self.dessiner_fond_niveau)
                         
                         # Reprendre le chronomètre
                         if action == "continuer":
+                            self.maj_volume_effets()
                             self.son_unpause.play()
                             self.chrono.reprendre()
                         elif action == "recommencer":
@@ -264,12 +275,14 @@ class Game:
                 elif self.etat == "jeu":
                     if evenement.type == pygame.KEYDOWN and evenement.key == pygame.K_p:
                         # Mettre en pause le chronomètre
+                        self.maj_volume_effets()
                         self.son_pause.play()
                         self.chrono.pause()
                         action = self.pause.afficher_pause(self.ecran, self.joueur, self.niveau, self.niveau_actuel, self.chrono, draw_background=self.dessiner_fond_niveau)
                         
                         # Reprendre le chronomètre
                         if action == "continuer":
+                            self.maj_volume_effets()
                             self.son_unpause.play()
                             self.chrono.reprendre()
                         elif action == "recommencer":
@@ -295,6 +308,7 @@ class Game:
                     if evenement.type == pygame.MOUSEBUTTONDOWN:
                         if self.pause.bouton_rect.collidepoint(evenement.pos):
                             # Mettre en pause le chronomètre
+                            self.maj_volume_effets()
                             self.son_pause.play()
                             self.chrono.pause()
                             
@@ -302,6 +316,7 @@ class Game:
                             
                             # Reprendre le chronomètre
                             if action == "continuer":
+                                self.maj_volume_effets()
                                 self.son_unpause.play()
                                 self.chrono.reprendre()
                             elif action == "recommencer":
