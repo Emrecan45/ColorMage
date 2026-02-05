@@ -4,6 +4,7 @@ import random
 import math
 from config import LARGEUR_GRILLE, HAUTEUR_GRILLE, TAILLE_CELLULE, COULEURS, LARGEUR_ECRAN, HAUTEUR_ECRAN
 from enemies import Sorcier
+from enemies import Squelette
 
 
 class Niveau:
@@ -14,6 +15,7 @@ class Niveau:
         self.spawn_cell = None
         # entités du niveau
         self.sorciers = []
+        self.squelettes = []
         self.projectiles = []
         self.traversables = ["change_rouge", "change_bleu", "change_vert", "porte", "vide", "pic"]
         self.image_pic = pygame.image.load("img/pic.png")
@@ -51,6 +53,7 @@ class Niveau:
         # reset
         self.sorciers = []
         self.projectiles = []
+        self.squelettes = []
         for type_bloc, positions in data.items():
             if type_bloc == "spawn":
                 x, y = positions
@@ -58,25 +61,36 @@ class Niveau:
                 self.grille[y][x] = "vide"
             elif type_bloc == "sorcier":
                 for item in positions:
+                    # valeurs par défaut
+                    dirv = 1
+                    range_blocks = None
+
                     if type(item) == list or type(item) == tuple:
-                        # cas où la direction est fournie
+                        # cas où la direction et/ou range sont fournis
                         if len(item) >= 3:
                             x = item[0]
                             y = item[1]
                             dirv = int(item[2])
                             if len(item) >= 4:
                                 range_blocks = int(item[3])
-                            else:
-                                range_blocks = None
                         else:
                             x = item[0]
                             y = item[1]
-                            dirv = 1
-                            range_blocks = None
+                    else:
+                        # tenter de déballer d'autres types (sécurité)
+                        try:
+                            x = item[0]
+                            y = item[1]
+                        except Exception:
+                            continue
 
                     # créer sorcier à la position (pixels)
                     px = x * TAILLE_CELLULE
-                    sorcier = Sorcier(px, 0, direction=(1 if dirv == 1 else -1), shoot_range_blocks=range_blocks)
+                    if dirv == 1:
+                        direction_val = 1
+                    else:
+                        direction_val = -1
+                    sorcier = Sorcier(px, 0, direction=direction_val, shoot_range_blocks=range_blocks)
 
                     rect_w = sorcier.width - 2 * sorcier.marge_x
                     cell_cx = x * TAILLE_CELLULE + TAILLE_CELLULE // 2
@@ -93,6 +107,48 @@ class Niveau:
 
                     self.sorciers.append(sorcier)
                     # laisser la case vide pour ne pas bloquer le joueur
+                    self.grille[y][x] = "vide"
+            elif type_bloc == "squelette":
+                for item in positions:
+                    if type(item) == list or type(item) == tuple:
+                        if len(item) >= 3:
+                            x = item[0]
+                            y = item[1]
+                            dirv = int(item[2])
+                            if len(item) >= 4:
+                                walk_blocks = int(item[3])
+                            else:
+                                walk_blocks = 3
+                        else:
+                            x = item[0]
+                            y = item[1]
+                            dirv = 1
+                            walk_blocks = 3
+
+                    # créer squelette à la position
+                    px = x * TAILLE_CELLULE
+                    if dirv == 1:
+                        direction_val = 1
+                    else:
+                        direction_val = -1
+                    squelette = Squelette(px, 0, direction=direction_val, walk_blocks=walk_blocks)
+
+                    rect_w = squelette.width - 2 * squelette.marge_x
+                    cell_cx = x * TAILLE_CELLULE + TAILLE_CELLULE // 2
+                    new_rect_left = cell_cx - rect_w // 2
+                    squelette.x = int(new_rect_left - squelette.marge_x)
+
+                    cell_top_px = y * TAILLE_CELLULE
+                    rect_h = squelette.height - squelette.marge_y_haut - squelette.marge_y_bas
+                    rect_top = cell_top_px - rect_h
+                    squelette.y = int(rect_top - squelette.marge_y_haut + 50)
+
+                    # mettre à jour la rect en fonction de la nouvelle position
+                    squelette.rect.topleft = (int(squelette.x + squelette.marge_x), int(squelette.y + squelette.marge_y_haut))
+
+                    squelette.origin_x = squelette.x
+
+                    self.squelettes.append(squelette)
                     self.grille[y][x] = "vide"
             else:
                 for pos in positions:
@@ -177,6 +233,10 @@ class Niveau:
                 if proj is not None:
                     self.projectiles.append(proj)
                 sorcier.dessiner(ecran)
+
+            for squelette in list(self.squelettes):
+                squelette.update()
+                squelette.dessiner(ecran)
 
             proj_list = list(self.projectiles)
             for proj in proj_list:

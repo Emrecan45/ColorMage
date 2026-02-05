@@ -459,6 +459,35 @@ class Game:
                     resultat = "mort"
                     break
 
+            # toucher un squelette (fumer tue)
+            squelette_list = getattr(self.niveau, 'squelettes', [])
+            for squelette in list(squelette_list):
+                draw_x = int(getattr(squelette, 'current_draw_x', getattr(squelette, 'x', 0)))
+                draw_y = int(getattr(squelette, 'current_draw_y', getattr(squelette, 'y', 0)))
+                frame_w = int(getattr(squelette, 'width', TAILLE_CELLULE * 2))
+                frame_h = int(getattr(squelette, 'height', TAILLE_CELLULE * 2))
+                frame_rect = pygame.Rect(draw_x, draw_y, frame_w, frame_h)
+                if not player_hitbox.colliderect(frame_rect):
+                    continue
+
+                # Utiliser les masques pour la collision
+                squ_mask = getattr(squelette, 'current_mask', None)
+                if squ_mask is not None and player_mask is not None:
+                    offset = (int(self.joueur.x - getattr(squelette, 'current_draw_x', squelette.x)),
+                              int(self.joueur.y - getattr(squelette, 'current_draw_y', squelette.y)))
+                    if squ_mask.overlap(player_mask, offset) is not None:
+                        self.joueur.son_mort.play()
+                        resultat = "mort"
+                        break
+                    else:
+                        # pour éviter que le joueur ne meurt en touchant juste le rectangle de collision du squelette on vérifie aussi la collision par masque
+                        continue
+                else:
+                    # si pas de masque
+                    self.joueur.son_mort.play()
+                    resultat = "mort"
+                    break
+
             for proj in proj_iter:
                 rect = proj.rect
 
