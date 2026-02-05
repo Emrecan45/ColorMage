@@ -2,6 +2,7 @@ import pygame
 import json
 import random
 import math
+import os
 from config import LARGEUR_GRILLE, HAUTEUR_GRILLE, TAILLE_CELLULE, COULEURS, LARGEUR_ECRAN, HAUTEUR_ECRAN
 from enemies import Sorcier
 from enemies import Squelette
@@ -30,6 +31,17 @@ class Niveau:
         self.image_porte = pygame.image.load("img/porte.png")
         self.image_porte = pygame.transform.scale(self.image_porte, (TAILLE_CELLULE, TAILLE_CELLULE))
 
+        # Sons aléatoires pour le sorcier (tir) et le squelette (attaque)
+        self.sons_sorcier_shot = []
+        for i in range(1, 4):
+            son = pygame.mixer.Sound(os.path.join("audio", "sorcier_shot" + str(i) + ".mp3"))
+            self.sons_sorcier_shot.append(son)
+        self.sons_squelette_tape = []
+        for i in range(1, 4):
+            son = pygame.mixer.Sound(os.path.join("audio", "squelette_tape" + str(i) + ".wav"))
+            self.sons_squelette_tape.append(son)
+        self.maj_volume_sons()
+
         # stocker les infos des étoiles pour le fond
         self.etoiles_fond = []
         for _ in range(100):
@@ -41,6 +53,15 @@ class Niveau:
             phase = random.uniform(0, 2 * math.pi)
             self.etoiles_fond.append([x, y, taille, brillance, vitesse_scintillement, phase])
     
+    def maj_volume_sons(self):
+        """Met à jour le volume des sons d'ennemis"""
+        volumes = self.gestionnaire_config.obtenir_volumes()
+        vol_effets = volumes.get("effets", 50) / 100
+        for son in self.sons_sorcier_shot:
+            son.set_volume(vol_effets)
+        for son in self.sons_squelette_tape:
+            son.set_volume(vol_effets)
+
     def creer_grille_vide(self):
         """Crée une grille vide"""
         self.grille = []
@@ -276,10 +297,15 @@ class Niveau:
                 proj = sorcier.update()
                 if proj is not None:
                     self.projectiles.append(proj)
+                    random.choice(self.sons_sorcier_shot).play()
                 sorcier.dessiner(ecran)
 
             for squelette in list(self.squelettes):
+                ancien_etat = squelette.state
                 squelette.update()
+                # Jouer un son quand le squelette commence à attaquer
+                if squelette.state == "attacking" and ancien_etat == "pre_attack":
+                    random.choice(self.sons_squelette_tape).play()
                 squelette.dessiner(ecran)
 
             proj_list = list(self.projectiles)

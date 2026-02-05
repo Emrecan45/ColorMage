@@ -119,6 +119,7 @@ class Game:
         self.son_piece.set_volume(vol_effets)
         self.son_pause.set_volume(vol_effets)
         self.son_unpause.set_volume(vol_effets)
+        self.niveau.maj_volume_sons()
     
     def gerer_evenements(self):
         """Gère les événements pygame"""
