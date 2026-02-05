@@ -110,10 +110,6 @@ class Niveau:
                     self.grille[y][x] = "vide"
             elif type_bloc == "squelette":
                 for item in positions:
-                    # valeurs par défaut
-                    dirv = 1
-                    walk_blocks = 3
-
                     if type(item) == list or type(item) == tuple:
                         if len(item) >= 3:
                             x = item[0]
@@ -121,15 +117,13 @@ class Niveau:
                             dirv = int(item[2])
                             if len(item) >= 4:
                                 walk_blocks = int(item[3])
+                            else:
+                                walk_blocks = 3
                         else:
                             x = item[0]
                             y = item[1]
-                    else:
-                        try:
-                            x = item[0]
-                            y = item[1]
-                        except Exception:
-                            continue
+                            dirv = 1
+                            walk_blocks = 3
 
                     # créer squelette à la position
                     px = x * TAILLE_CELLULE
