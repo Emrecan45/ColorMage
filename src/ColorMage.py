@@ -344,6 +344,21 @@ class Game:
             self.menu_niveaux.camera_cible_x = self.menu_niveaux.camera_x
             self.menu_niveaux.planetes = self.menu_niveaux.univers[univers_idx]["planetes"]
             self.menu_niveaux.planete_selectionnee = nouvelle_planete
+            
+            # Charger la musique de la nouvelle planète
+            try:
+                planete = self.menu_niveaux.planetes[nouvelle_planete]
+                nom_planete = planete["nom"].lower()
+                chemin_musique = os.path.join("audio", nom_planete + ".wav")
+                if os.path.exists(chemin_musique):
+                    pygame.mixer.music.stop()
+                    pygame.mixer.music.load(chemin_musique)
+                    vol = self.gestionnaire_config.obtenir_volumes().get("musique", 50) / 100
+                    pygame.mixer.music.set_volume(vol)
+                    pygame.mixer.music.play(-1)
+            except Exception:
+                pass
+            
             self.menu_niveaux.etat_menu = "galaxie"
             self.menu_niveaux.zoom_en_cours = True
             self.menu_niveaux.zoom_direction = 1
@@ -355,6 +370,16 @@ class Game:
             # Calculer le nouvel univers
             niveaux_par_univers = self.menu_niveaux.nombre_planetes_par_univers * self.menu_niveaux.niveaux_par_planete
             nouvel_univers = (self.niveau_actuel - 1) // niveaux_par_univers
+            
+            # Restaurer la musique principale
+            try:
+                pygame.mixer.music.stop()
+                pygame.mixer.music.load(os.path.join("audio", "main_theme.mp3"))
+                vol = self.gestionnaire_config.obtenir_volumes().get("musique", 50) / 100
+                pygame.mixer.music.set_volume(vol)
+                pygame.mixer.music.play(-1)
+            except Exception:
+                pass
             
             # Revenir à la vue galaxie de l'univers précédent
             self.menu_niveaux.etat_menu = "galaxie"

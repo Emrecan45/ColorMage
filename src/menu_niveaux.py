@@ -795,6 +795,15 @@ class MenuNiveaux:
             if self.etat_menu == "planete":
                 # Retour à la galaxie avec son de portail
                 random.choice(self.sons_portail).play()
+                # Restaurer la musique principale
+                try:
+                    pygame.mixer.music.stop()
+                    pygame.mixer.music.load(os.path.join("audio", "main_theme.mp3"))
+                    vol = self.gestionnaire_config.obtenir_volumes().get("musique", 50) / 100
+                    pygame.mixer.music.set_volume(vol)
+                    pygame.mixer.music.play(-1)
+                except Exception:
+                    pass
                 self.zoom_en_cours = True
                 self.zoom_direction = -1
                 return None
@@ -844,6 +853,19 @@ class MenuNiveaux:
                 random.choice(self.sons_portail).play()
                 self.planete_selectionnee = i
                 self.planetes = planetes_univers  # Mettre à jour la référence
+                
+                # Charger la musique de la planète
+                try:
+                    nom_planete = planete["nom"].lower()
+                    chemin_musique = os.path.join("audio", nom_planete + ".wav")
+                    if os.path.exists(chemin_musique):
+                        pygame.mixer.music.stop()
+                        pygame.mixer.music.load(chemin_musique)
+                        vol = self.gestionnaire_config.obtenir_volumes().get("musique", 50) / 100
+                        pygame.mixer.music.set_volume(vol)
+                        pygame.mixer.music.play(-1)
+                except Exception:
+                    pass
                 
                 # Initialiser immédiatement la position du mage pour éviter le flash
                 premier_niveau_planete = self.univers_actuel * self.nombre_planetes_par_univers * self.niveaux_par_planete + self.planete_selectionnee * self.niveaux_par_planete + 1
