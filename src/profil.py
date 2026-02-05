@@ -212,13 +212,13 @@ class Profil:
         # Temps total de jeu (somme des meilleurs temps)
         temps_total_ms = sum(meilleurs_temps.values()) if meilleurs_temps else 0
         
-        # nombre de morts
-        nb_morts = config.get("nb_morts", 0)
+        # nombre de pièces collectées
+        pieces_total = config.get("pieces_total", 0)
         return {
             "niveau_max": niveau_max,
             "planete": nom_planete,
             "temps_total_ms": temps_total_ms,
-            "nb_morts": nb_morts
+            "pieces_total": pieces_total
         }
     
     def formater_temps(self, temps_ms):
@@ -320,15 +320,15 @@ class Profil:
         temps_txt_y = self.zone_temps_total.y + self.zone_temps_total.height - temps_txt.get_height() - 12 + 6
         ecran.blit(temps_txt, (self.zone_temps_total.x + 15, temps_txt_y))
         
-        # Zone nombre de morts - fond gris
+        # Zone pièces collectées - fond gris
         pygame.draw.rect(ecran, (80, 80, 90), self.zone_cibles, border_radius=10)
         pygame.draw.rect(ecran, COULEUR_BORDURE, self.zone_cibles, 3, border_radius=10)
-        morts_label = self.font_3.render("Nombre de morts", True, (200, 200, 200))
-        morts_label_y = self.zone_cibles.y + 10
-        ecran.blit(morts_label, (self.zone_cibles.x + 15, morts_label_y))
-        morts_txt = self.font_2.render(str(stats.get('nb_morts', 0)), True, (255, 255, 255))
-        morts_txt_y = self.zone_cibles.y + self.zone_cibles.height - morts_txt.get_height() - 12 + 6
-        ecran.blit(morts_txt, (self.zone_cibles.x + 15, morts_txt_y))
+        pieces_label = self.font_3.render("Pièces", True, (200, 200, 200))
+        pieces_label_y = self.zone_cibles.y + 10
+        ecran.blit(pieces_label, (self.zone_cibles.x + 15, pieces_label_y))
+        pieces_txt = self.font_2.render(str(stats.get('pieces_total', 0)), True, (255, 255, 255))
+        pieces_txt_y = self.zone_cibles.y + self.zone_cibles.height - pieces_txt.get_height() - 12 + 6
+        ecran.blit(pieces_txt, (self.zone_cibles.x + 15, pieces_txt_y))
         
         # Bouton réinitialiser sauvegarde (en rouge, au dessus de retour)
         if self.bouton_reset_save.collidepoint(mouse_pos):
