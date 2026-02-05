@@ -2,9 +2,13 @@ import pygame
 import json
 import random
 import math
+import os
 from config import LARGEUR_GRILLE, HAUTEUR_GRILLE, TAILLE_CELLULE, COULEURS, LARGEUR_ECRAN, HAUTEUR_ECRAN
 from enemies import Sorcier
 from enemies import Squelette
+from enemies import Slime
+from enemies import Piece
+from config_manager import ConfigManager
 
 
 class Niveau:
@@ -13,15 +17,30 @@ class Niveau:
     def __init__(self):
         self.grille = []
         self.spawn_cell = None
+        self.numero_niveau = 1
+        self.gestionnaire_config = ConfigManager()
         # entités du niveau
         self.sorciers = []
         self.squelettes = []
         self.projectiles = []
+        self.slimes = []
+        self.pieces = []
         self.traversables = ["change_rouge", "change_bleu", "change_vert", "porte", "vide", "pic"]
         self.image_pic = pygame.image.load("img/pic.png")
         self.image_pic = pygame.transform.scale(self.image_pic, (TAILLE_CELLULE, TAILLE_CELLULE))
         self.image_porte = pygame.image.load("img/porte.png")
         self.image_porte = pygame.transform.scale(self.image_porte, (TAILLE_CELLULE, TAILLE_CELLULE))
+
+        # Sons aléatoires pour le sorcier (tir) et le squelette (attaque)
+        self.sons_sorcier_shot = []
+        for i in range(1, 4):
+            son = pygame.mixer.Sound(os.path.join("audio", "sorcier_shot" + str(i) + ".mp3"))
+            self.sons_sorcier_shot.append(son)
+        self.sons_squelette_tape = []
+        for i in range(1, 4):
+            son = pygame.mixer.Sound(os.path.join("audio", "squelette_tape" + str(i) + ".wav"))
+            self.sons_squelette_tape.append(son)
+        self.maj_volume_sons()
 
         # stocker les infos des étoiles pour le fond
         self.etoiles_fond = []
@@ -34,6 +53,15 @@ class Niveau:
             phase = random.uniform(0, 2 * math.pi)
             self.etoiles_fond.append([x, y, taille, brillance, vitesse_scintillement, phase])
     
+    def maj_volume_sons(self):
+        """Met à jour le volume des sons d'ennemis"""
+        volumes = self.gestionnaire_config.obtenir_volumes()
+        vol_effets = volumes.get("effets", 50) / 100
+        for son in self.sons_sorcier_shot:
+            son.set_volume(vol_effets)
+        for son in self.sons_squelette_tape:
+            son.set_volume(vol_effets)
+
     def creer_grille_vide(self):
         """Crée une grille vide"""
         self.grille = []
@@ -45,6 +73,7 @@ class Niveau:
     
     def charger_depuis_json(self, numero):
         """Charge un niveau depuis un fichier JSON"""
+        self.numero_niveau = numero
         chemin = "niveaux/niveau_" + str(numero) + ".json"
         with open(chemin, "r", encoding="utf-8") as f:
             data = json.load(f)
@@ -54,6 +83,8 @@ class Niveau:
         self.sorciers = []
         self.projectiles = []
         self.squelettes = []
+        self.slimes = []
+        self.pieces = []
         for type_bloc, positions in data.items():
             if type_bloc == "spawn":
                 x, y = positions
@@ -150,6 +181,40 @@ class Niveau:
 
                     self.squelettes.append(squelette)
                     self.grille[y][x] = "vide"
+            elif type_bloc == "slime_vert" or type_bloc == "slime_violet":
+                if type_bloc == "slime_vert":
+                    couleur_slime = "vert"
+                else:
+                    couleur_slime = "violet"
+                for pos in positions:
+                    x = pos[0]
+                    y = pos[1]
+                    px = x * TAILLE_CELLULE
+                    py = y * TAILLE_CELLULE
+                    slime = Slime(px, py, couleur=couleur_slime)
+                    self.slimes.append(slime)
+                    self.grille[y][x] = "vide"
+            elif type_bloc == "piece":
+                pieces_deja = self.gestionnaire_config.obtenir_pieces_collectees(numero)
+                for pos in positions:
+                    x = pos[0]
+                    y = pos[1]
+                    # Vérifier si cette pièce a déjà été collectée
+                    deja_collectee = False
+                    for p in pieces_deja:
+                        if p[0] == x and p[1] == y:
+                            deja_collectee = True
+                            break
+                    if deja_collectee:
+                        self.grille[y][x] = "vide"
+                        continue
+                    px = x * TAILLE_CELLULE
+                    py = y * TAILLE_CELLULE
+                    piece = Piece(px, py)
+                    piece.cell_x = x
+                    piece.cell_y = y
+                    self.pieces.append(piece)
+                    self.grille[y][x] = "vide"
             else:
                 for pos in positions:
                     x, y = pos
@@ -232,10 +297,15 @@ class Niveau:
                 proj = sorcier.update()
                 if proj is not None:
                     self.projectiles.append(proj)
+                    random.choice(self.sons_sorcier_shot).play()
                 sorcier.dessiner(ecran)
 
             for squelette in list(self.squelettes):
+                ancien_etat = squelette.state
                 squelette.update()
+                # Jouer un son quand le squelette commence à attaquer
+                if squelette.state == "attacking" and ancien_etat == "pre_attack":
+                    random.choice(self.sons_squelette_tape).play()
                 squelette.dessiner(ecran)
 
             proj_list = list(self.projectiles)
@@ -246,11 +316,29 @@ class Niveau:
                     self.projectiles.remove(proj)
                 else:
                     proj.dessiner(ecran)
+
+            for slime in list(self.slimes):
+                slime.update()
+                if not slime.alive:
+                    self.slimes.remove(slime)
+                else:
+                    slime.dessiner(ecran)
+
+            for piece in list(self.pieces):
+                piece.update()
+                if not piece.alive:
+                    self.pieces.remove(piece)
+                else:
+                    piece.dessiner(ecran)
         else:
             for sorcier in self.sorciers:
                 sorcier.dessiner(ecran)
             for proj in self.projectiles:
                 proj.dessiner(ecran)
+            for slime in self.slimes:
+                slime.dessiner(ecran)
+            for piece in self.pieces:
+                piece.dessiner(ecran)
     def dessiner_fond(self, ecran, couleur_planete, temps_global=0):
         """Dessine le fond pour le niveau basé sur la couleur de la planète.
         """

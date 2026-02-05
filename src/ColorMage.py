@@ -92,8 +92,34 @@ class Game:
         self.portail_sortie_x = 0
         self.portail_sortie_y = 0
         
+        # Pièces collectées pendant le niveau en cours (sauvegardées seulement à la victoire)
+        self.pieces_en_cours = []
+        
         # Timer global pour les animations
         self.temps_global = 0
+        
+        # Sons pour slimes et pièces
+        self.son_hurt = pygame.mixer.Sound(os.path.join("audio", "hurt.mp3"))
+        self.son_piece = pygame.mixer.Sound(os.path.join("audio", "piece.mp3"))
+        # Sons de pause/unpause
+        self.son_pause = pygame.mixer.Sound(os.path.join("audio", "pause.mp3"))
+        self.son_unpause = pygame.mixer.Sound(os.path.join("audio", "unpause.mp3"))
+        volumes = self.gestionnaire_config.obtenir_volumes()
+        vol_effets = volumes.get("effets", 50) / 100
+        self.son_hurt.set_volume(vol_effets)
+        self.son_piece.set_volume(vol_effets)
+        self.son_pause.set_volume(vol_effets)
+        self.son_unpause.set_volume(vol_effets)
+    
+    def maj_volume_effets(self):
+        """Met à jour le volume des effets sonores depuis la config"""
+        volumes = self.gestionnaire_config.obtenir_volumes()
+        vol_effets = volumes.get("effets", 50) / 100
+        self.son_hurt.set_volume(vol_effets)
+        self.son_piece.set_volume(vol_effets)
+        self.son_pause.set_volume(vol_effets)
+        self.son_unpause.set_volume(vol_effets)
+        self.niveau.maj_volume_sons()
     
     def gerer_evenements(self):
         """Gère les événements pygame"""
@@ -119,11 +145,15 @@ class Game:
                 if evenement.type == pygame.KEYDOWN and evenement.key == pygame.K_ESCAPE:
                     if self.etat == "jeu":
                         # En jeu, Échap met en pause
+                        self.maj_volume_effets()
+                        self.son_pause.play()
                         self.chrono.pause()
                         action = self.pause.afficher_pause(self.ecran, self.joueur, self.niveau, self.niveau_actuel, self.chrono, draw_background=self.dessiner_fond_niveau)
                         
                         # Reprendre le chronomètre
                         if action == "continuer":
+                            self.maj_volume_effets()
+                            self.son_unpause.play()
                             self.chrono.reprendre()
                         elif action == "recommencer":
                             # Déclencher l'animation de portail d'entrée
@@ -144,9 +174,14 @@ class Game:
                             self.menu_niveaux.preparer_retour_niveau(self.niveau_actuel)
                             self.etat = "selection"
                     elif self.etat == "selection":
+                        # Marché : Échap retourne à la galaxie
+                        if self.menu_niveaux.etat_menu == "marche":
+                            self.menu_niveaux.son_select.play()
+                            self.menu_niveaux.quitter_marche()
+                            self.menu_niveaux.etat_menu = "galaxie"
                         # Dans la sélection de niveaux, Échap agit comme le bouton retour
                         # Mais bloquer si des animations sont en cours
-                        if self.menu_niveaux.mage_en_mouvement or self.menu_niveaux.teleportation_en_cours or self.menu_niveaux.transition_univers:
+                        elif self.menu_niveaux.mage_en_mouvement or self.menu_niveaux.teleportation_en_cours or self.menu_niveaux.transition_univers:
                             # Bloquer Échap pendant les animations
                             pass
                         # Si une animation de zoom est en cours, l'annuler
@@ -157,9 +192,8 @@ class Game:
                             self.menu_niveaux.zoom_animation = 0
                             self.menu_niveaux.etat_menu = "galaxie"
                         elif self.menu_niveaux.etat_menu == "planete":
-                            # Retour à la galaxie avec sons
-                            self.menu_niveaux.son_select.play()
-                            random.choice(self.menu_niveaux.sons_portail).play()
+                            # Retour à la galaxie avec son de téléportation
+                            random.choice(self.menu_niveaux.sons_teleport).play()
                             self.menu_niveaux.zoom_en_cours = True
                             self.menu_niveaux.zoom_direction = -1
                         else:
@@ -234,17 +268,23 @@ class Game:
                         resultat = self.menu_niveaux.gerer_clic(evenement.pos)
                         if resultat == 0:
                             self.etat = "menu"
+                        elif resultat == "marche":
+                            self.menu_niveaux.etat_menu = "marche"
                         elif resultat is not None and resultat > 0:
                             self.lancer_niveau(resultat)
 
                 elif self.etat == "jeu":
                     if evenement.type == pygame.KEYDOWN and evenement.key == pygame.K_p:
                         # Mettre en pause le chronomètre
+                        self.maj_volume_effets()
+                        self.son_pause.play()
                         self.chrono.pause()
                         action = self.pause.afficher_pause(self.ecran, self.joueur, self.niveau, self.niveau_actuel, self.chrono, draw_background=self.dessiner_fond_niveau)
                         
                         # Reprendre le chronomètre
                         if action == "continuer":
+                            self.maj_volume_effets()
+                            self.son_unpause.play()
                             self.chrono.reprendre()
                         elif action == "recommencer":
                             # Déclencher l'animation de portail d'entrée
@@ -269,12 +309,16 @@ class Game:
                     if evenement.type == pygame.MOUSEBUTTONDOWN:
                         if self.pause.bouton_rect.collidepoint(evenement.pos):
                             # Mettre en pause le chronomètre
+                            self.maj_volume_effets()
+                            self.son_pause.play()
                             self.chrono.pause()
                             
                             action = self.pause.afficher_pause(self.ecran, self.joueur, self.niveau, self.niveau_actuel, self.chrono, draw_background=self.dessiner_fond_niveau)
                             
                             # Reprendre le chronomètre
                             if action == "continuer":
+                                self.maj_volume_effets()
+                                self.son_unpause.play()
                                 self.chrono.reprendre()
                             elif action == "recommencer":
                                 # Déclencher l'animation de portail d'entrée
@@ -282,6 +326,7 @@ class Game:
                                 self.portail_entree_animation = 0
                                 self.etat = "jeu"
                                 self.joueur_visible = False
+                                self.pieces_en_cours = []
                                 
                                 self.niveau.reset(self.niveau_actuel, self.ecran)
                                 self.joueur.reset(self.niveau)
@@ -298,6 +343,7 @@ class Game:
     def lancer_niveau(self, numero):
         """Lance un niveau avec l'animation de portail"""
         self.niveau_actuel = numero
+        self.pieces_en_cours = []
         self.niveau.reset(numero, self.ecran)
         self.joueur.maj_controles()
         self.niveau.charger_niveau(numero, self.ecran)
@@ -318,6 +364,7 @@ class Game:
         """Traite l'action sélectionnée dans un popup"""
         if action == "suivant":
             self.niveau_actuel += 1
+            self.pieces_en_cours = []
             self.niveau.reset(self.niveau_actuel, self.ecran)
             self.joueur.reset(self.niveau)
             self.joueur.maj_controles()
@@ -344,6 +391,21 @@ class Game:
             self.menu_niveaux.camera_cible_x = self.menu_niveaux.camera_x
             self.menu_niveaux.planetes = self.menu_niveaux.univers[univers_idx]["planetes"]
             self.menu_niveaux.planete_selectionnee = nouvelle_planete
+            
+            # Charger la musique de la nouvelle planète
+            try:
+                planete = self.menu_niveaux.planetes[nouvelle_planete]
+                nom_planete = planete["nom"].lower()
+                chemin_musique = os.path.join("audio", nom_planete + ".wav")
+                if os.path.exists(chemin_musique):
+                    pygame.mixer.music.stop()
+                    pygame.mixer.music.load(chemin_musique)
+                    vol = self.gestionnaire_config.obtenir_volumes().get("musique", 50) / 100
+                    pygame.mixer.music.set_volume(vol)
+                    pygame.mixer.music.play(-1)
+            except Exception:
+                pass
+            
             self.menu_niveaux.etat_menu = "galaxie"
             self.menu_niveaux.zoom_en_cours = True
             self.menu_niveaux.zoom_direction = 1
@@ -356,12 +418,23 @@ class Game:
             niveaux_par_univers = self.menu_niveaux.nombre_planetes_par_univers * self.menu_niveaux.niveaux_par_planete
             nouvel_univers = (self.niveau_actuel - 1) // niveaux_par_univers
             
+            # Restaurer la musique principale
+            try:
+                pygame.mixer.music.stop()
+                pygame.mixer.music.load(os.path.join("audio", "main_theme.mp3"))
+                vol = self.gestionnaire_config.obtenir_volumes().get("musique", 50) / 100
+                pygame.mixer.music.set_volume(vol)
+                pygame.mixer.music.play(-1)
+            except Exception:
+                pass
+            
             # Revenir à la vue galaxie de l'univers précédent
             self.menu_niveaux.etat_menu = "galaxie"
             # Démarrer l'animation de swipe vers le nouvel univers
             self.menu_niveaux.changer_univers(1)  # +1 pour aller vers la droite
             self.etat = "selection"
         elif action == "rejouer":
+            self.pieces_en_cours = []
             self.niveau.reset(self.niveau_actuel, self.ecran)
             self.joueur.reset(self.niveau)
             self.joueur.maj_controles()
@@ -419,6 +492,11 @@ class Game:
                 
                 # Jouer le son de victoire maintenant
                 self.joueur.son_victoire.play()
+                
+                # Sauvegarder les pièces collectées pendant ce niveau
+                for pos in self.pieces_en_cours:
+                    self.gestionnaire_config.sauvegarder_piece_collectee(self.niveau_actuel, pos[0], pos[1])
+                self.pieces_en_cours = []
                 
                 # Sauvegarder le temps et vérifier si c'est un record
                 temps_final = self.chrono.obtenir_temps()
@@ -488,6 +566,44 @@ class Game:
                     resultat = "mort"
                     break
 
+            # Collision avec les slimes
+            for slime in list(self.niveau.slimes):
+                if slime.en_train_de_mourir:
+                    continue
+                if not player_hitbox.colliderect(slime.rect):
+                    continue
+                # Vérifier si le joueur tombe sur le slime (pieds du joueur au dessus du milieu du slime)
+                pieds_joueur = player_hitbox.bottom
+                milieu_slime = slime.rect.top + slime.rect.height // 2
+                joueur_descend = self.joueur.vitesse_y > 0
+                if joueur_descend and pieds_joueur <= milieu_slime + 15:
+                    # Le joueur saute sur le slime
+                    self.son_hurt.play()
+                    slime.recevoir_degats()
+                    # Rebond du joueur
+                    self.joueur.vitesse_y = -12
+                    self.joueur.au_sol = False
+                else:
+                    self.joueur.son_mort.play()
+                    resultat = "mort"
+                    break
+
+            # Collision avec les pièces
+            for piece in list(self.niveau.pieces):
+                if not piece.alive:
+                    continue
+                if player_hitbox.colliderect(piece.rect):
+                    self.son_piece.play()
+                    piece.alive = False
+                    # Stocker temporairement la piece collectee
+                    try:
+                        cx = piece.cell_x
+                        cy = piece.cell_y
+                    except AttributeError:
+                        cx = int(piece.x // TAILLE_CELLULE)
+                        cy = int(piece.y // TAILLE_CELLULE)
+                    self.pieces_en_cours.append([cx, cy])
+
             for proj in proj_iter:
                 rect = proj.rect
 
@@ -542,13 +658,8 @@ class Game:
 
             # Cas de défaite
             elif resultat == "mort":
-                # incrémenter le compteur de morts et sauvegarder
-                try:
-                    cfg = self.gestionnaire_config.charger_config()
-                    cfg["nb_morts"] = cfg.get("nb_morts", 0) + 1
-                    self.gestionnaire_config.sauvegarder_config(cfg)
-                except Exception:
-                    pass
+                # Les pièces collectées pendant cette tentative sont perdues
+                self.pieces_en_cours = []
                 self.popup_actif = "defaite"
                 self.chrono.arreter()
                 self.est_record = False

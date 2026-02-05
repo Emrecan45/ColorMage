@@ -63,7 +63,16 @@ class Profil:
             {"nom": "Rouge 1", "fichier": "joueur_rouge.png", "pose_x": 0, "pose_y": 0, "offset_y": 4},     # L1 C1
             {"nom": "Rouge 2", "fichier": "joueur_rouge.png", "pose_x": 576, "pose_y": 196, "offset_y": 7.5}, # L2 C4
             {"nom": "Rouge 3", "fichier": "joueur_rouge.png", "pose_x": 192, "pose_y": 392, "offset_y": 10}, # L3 C2
+            # Sorcier - 2 poses
+            {"nom": "Sorcier 1", "fichier": "ennemy.png", "pose_x": 0 * 192, "pose_y": 0 * 192, "pose_w": 192, "pose_h": 192, "offset_y": 5},
+            {"nom": "Sorcier 2", "fichier": "ennemy.png", "pose_x": 3 * 192, "pose_y": 0 * 192, "pose_w": 192, "pose_h": 192, "offset_y": 5},
+            # Squelette - 4 poses
+            {"nom": "Squelette 1", "fichier": "ennemy.png", "pose_x": 2 * 192, "pose_y": 4 * 192, "pose_w": 192, "pose_h": 192, "offset_y": 5},
+            {"nom": "Squelette 2", "fichier": "ennemy.png", "pose_x": 4 * 192, "pose_y": 4 * 192, "pose_w": 192, "pose_h": 192, "offset_y": 5},
+            {"nom": "Squelette 3", "fichier": "ennemy.png", "pose_x": 0 * 192, "pose_y": 5 * 192, "pose_w": 192, "pose_h": 192, "offset_y": 5},
+            {"nom": "Squelette 4", "fichier": "ennemy.png", "pose_x": 2 * 192, "pose_y": 5 * 192, "pose_w": 192, "pose_h": 192, "offset_y": 5},
         ]
+        
         self.tenue_actuelle = self.gestionnaire_config.config.get("tenue_profil", 0)
         
         # Charger l'icône de changement
@@ -121,15 +130,39 @@ class Profil:
         """Charge l'image du mage selon la tenue actuelle"""
         try:
             tenue = self.tenues[self.tenue_actuelle]
-            self.image_mage_original = pygame.image.load(f"img/{tenue['fichier']}")
-            # Extraire le sprite selon la pose
-            sprite_largeur = 192
-            sprite_hauteur = 195  # Réduit de 1 pixel pour éviter de capturer la ligne suivante
-            mage_surface = pygame.Surface((sprite_largeur, sprite_hauteur), pygame.SRCALPHA)
-            mage_surface.blit(self.image_mage_original, (0, 0), 
-                            (tenue['pose_x'], tenue['pose_y'], sprite_largeur, sprite_hauteur))
-            # Agrandir le mage extrait (cadre fait 200x160, on met 150x150 pour laisser de la marge)
-            self.image_mage = pygame.transform.scale(mage_surface, (150, 150))
+            image_path = f"img/{tenue['fichier']}"
+            self.image_mage_original = pygame.image.load(image_path)
+            # Si c'est une spritesheet de joueur (fichier commençant par 'joueur_'), on découpe
+            if tenue['fichier'].startswith('joueur_'):
+                sprite_largeur = 192
+                sprite_hauteur = 195  # Réduit de 1 pixel pour éviter de capturer la ligne suivante
+                mage_surface = pygame.Surface((sprite_largeur, sprite_hauteur), pygame.SRCALPHA)
+                mage_surface.blit(self.image_mage_original, (0, 0), 
+                                (tenue['pose_x'], tenue['pose_y'], sprite_largeur, sprite_hauteur))
+                self.image_mage = pygame.transform.scale(mage_surface, (150, 150))
+            else:
+                # Pour les autres fichiers (ennemis, icones...), on tente d'extraire
+                # une sous-image si des coordonnées sont fournies, sinon on met l'image entière à l'échelle
+                pose_w = tenue.get('pose_w')
+                pose_h = tenue.get('pose_h')
+                pose_x = tenue.get('pose_x', 0)
+                pose_y = tenue.get('pose_y', 0)
+                if pose_w and pose_h:
+                    try:
+                        frame_surface = pygame.Surface((pose_w, pose_h), pygame.SRCALPHA)
+                        frame_surface.blit(self.image_mage_original, (0, 0), (pose_x, pose_y, pose_w, pose_h))
+                        self.image_mage = pygame.transform.scale(frame_surface, (150, 150))
+                    except Exception:
+                        # Fallback to full image if crop fails
+                        try:
+                            self.image_mage = pygame.transform.scale(self.image_mage_original, (150, 150))
+                        except Exception:
+                            self.image_mage = self.image_mage_original
+                else:
+                    try:
+                        self.image_mage = pygame.transform.scale(self.image_mage_original, (150, 150))
+                    except Exception:
+                        self.image_mage = self.image_mage_original
             # Stocker l'offset vertical pour cette pose
             self.mage_offset_y = tenue.get('offset_y', 0)
         except:
@@ -179,13 +212,13 @@ class Profil:
         # Temps total de jeu (somme des meilleurs temps)
         temps_total_ms = sum(meilleurs_temps.values()) if meilleurs_temps else 0
         
-        # nombre de morts
-        nb_morts = config.get("nb_morts", 0)
+        # nombre de pièces collectées
+        pieces_total = config.get("pieces_total", 0)
         return {
             "niveau_max": niveau_max,
             "planete": nom_planete,
             "temps_total_ms": temps_total_ms,
-            "nb_morts": nb_morts
+            "pieces_total": pieces_total
         }
     
     def formater_temps(self, temps_ms):
@@ -287,15 +320,15 @@ class Profil:
         temps_txt_y = self.zone_temps_total.y + self.zone_temps_total.height - temps_txt.get_height() - 12 + 6
         ecran.blit(temps_txt, (self.zone_temps_total.x + 15, temps_txt_y))
         
-        # Zone nombre de morts - fond gris
+        # Zone pièces collectées - fond gris
         pygame.draw.rect(ecran, (80, 80, 90), self.zone_cibles, border_radius=10)
         pygame.draw.rect(ecran, COULEUR_BORDURE, self.zone_cibles, 3, border_radius=10)
-        morts_label = self.font_3.render("Nombre de morts", True, (200, 200, 200))
-        morts_label_y = self.zone_cibles.y + 10
-        ecran.blit(morts_label, (self.zone_cibles.x + 15, morts_label_y))
-        morts_txt = self.font_2.render(str(stats.get('nb_morts', 0)), True, (255, 255, 255))
-        morts_txt_y = self.zone_cibles.y + self.zone_cibles.height - morts_txt.get_height() - 12 + 6
-        ecran.blit(morts_txt, (self.zone_cibles.x + 15, morts_txt_y))
+        pieces_label = self.font_3.render("Pièces", True, (200, 200, 200))
+        pieces_label_y = self.zone_cibles.y + 10
+        ecran.blit(pieces_label, (self.zone_cibles.x + 15, pieces_label_y))
+        pieces_txt = self.font_2.render(str(stats.get('pieces_total', 0)), True, (255, 255, 255))
+        pieces_txt_y = self.zone_cibles.y + self.zone_cibles.height - pieces_txt.get_height() - 12 + 6
+        ecran.blit(pieces_txt, (self.zone_cibles.x + 15, pieces_txt_y))
         
         # Bouton réinitialiser sauvegarde (en rouge, au dessus de retour)
         if self.bouton_reset_save.collidepoint(mouse_pos):

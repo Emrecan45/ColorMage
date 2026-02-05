@@ -46,7 +46,8 @@ class ConfigManager:
             "niveau_actuel": 1,
             "meilleurs_temps": {},
             "pseudo": "Mage",
-            "nb_morts": 0,
+            "pieces_total": 0,
+            "pieces_collectees": {}
         }
         
         # Si le fichier existe, le charger
@@ -95,7 +96,8 @@ class ConfigManager:
                 "meilleurs_temps": self.meilleurs_temps,
                 "pseudo": self.config.get("pseudo", "Joueur"),
                 "tenue_profil": self.config.get("tenue_profil", 0),
-                "nb_morts": self.config.get("nb_morts", 0)
+                "pieces_total": self.config.get("pieces_total", 0),
+                "pieces_collectees": self.config.get("pieces_collectees", {})
             }
         with open(self.chemin_config, "w", encoding="utf-8") as f:
             json.dump(config, f, ensure_ascii=False)
@@ -193,7 +195,8 @@ class ConfigManager:
         self.config["niveau_actuel"] = 1
         self.config["meilleurs_temps"] = {}
         self.config["tenue_profil"] = 0  # Reset la tenue du profil
-        self.config["nb_morts"] = 0
+        self.config["pieces_total"] = 0
+        self.config["pieces_collectees"] = {}
         
         # Restaurer les paramètres et le pseudo
         self.config["pseudo"] = pseudo_actuel
@@ -230,3 +233,34 @@ class ConfigManager:
         """Sauvegarde le pseudo du joueur"""
         self.config["pseudo"] = pseudo
         self.sauvegarder_config()
+
+    def obtenir_pieces_collectees(self, niveau):
+        """Retourne la liste des positions [x,y] de pièces déjà collectées pour un niveau"""
+        self.config = self.charger_config()
+        toutes = self.config.get("pieces_collectees", {})
+        return toutes.get(str(niveau), [])
+
+    def sauvegarder_piece_collectee(self, niveau, cell_x, cell_y):
+        """Enregistre qu'une pièce a été collectée et incrémente le total"""
+        self.config = self.charger_config()
+        toutes = self.config.get("pieces_collectees", {})
+        niveau_str = str(niveau)
+        if niveau_str not in toutes:
+            toutes[niveau_str] = []
+        position = [cell_x, cell_y]
+        # Éviter les doublons
+        deja_present = False
+        for p in toutes[niveau_str]:
+            if p[0] == cell_x and p[1] == cell_y:
+                deja_present = True
+                break
+        if not deja_present:
+            toutes[niveau_str].append(position)
+            self.config["pieces_collectees"] = toutes
+            self.config["pieces_total"] = self.config.get("pieces_total", 0) + 1
+            self.sauvegarder_config()
+
+    def obtenir_pieces_total(self):
+        """Retourne le nombre total de pièces collectées"""
+        self.config = self.charger_config()
+        return self.config.get("pieces_total", 0)
