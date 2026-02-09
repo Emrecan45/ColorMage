@@ -63,7 +63,7 @@ class Game:
         self.pause = Pause()
         
         # Parametres
-        self.parametres = Parametres(self.joueur, self.gestionnaire_config)
+        self.parametres = Parametres(self.joueur, self.gestionnaire_config, self.niveau)
         
         # Profil
         self.profil = Profil(self.gestionnaire_config)
@@ -257,7 +257,7 @@ class Game:
                             # Reset des paramètres
                             self.gestionnaire_config.reinitialiser_parametres()
                             # Recharger les paramètres
-                            self.parametres = Parametres(self.joueur, self.gestionnaire_config)
+                            self.parametres = Parametres(self.joueur, self.gestionnaire_config, self.niveau)
                             # Appliquer le volume de la musique
                             pygame.mixer.music.set_volume(0.5)
                             # Mettre à jour les contrôles du joueur
