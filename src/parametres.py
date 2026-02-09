@@ -10,8 +10,9 @@ from config_manager import ConfigManager
 class Parametres:
     """Affiche les parametres et retourne l'action choisie"""
     
-    def __init__(self, joueur = None, gestionnaire_config=None):
+    def __init__(self, joueur = None, gestionnaire_config=None, niveau=None):
         self.joueur = joueur
+        self.niveau = niveau
         # charge les touches du joueur et les volumes
         if gestionnaire_config is None:
             self.gestionnaire_config = ConfigManager()
@@ -230,16 +231,17 @@ class Parametres:
             nouvelle_valeur = min(100, max(0, (pos[0] - self.jauge_musique.x) / self.jauge_musique.width * 100))
             self.val_jauge_musique = nouvelle_valeur
             self.gestionnaire_config.maj_volume("musique", nouvelle_valeur)
-            # Appliquer immédiatement le volume
+            # Appliquer le volume
             pygame.mixer.music.set_volume(nouvelle_valeur / 100)
         elif self.jauge_active == "effets":
             nouvelle_valeur = min(100, max(0, (pos[0] - self.jauge_general.x) / self.jauge_general.width * 100))
             self.val_jauge_general = nouvelle_valeur
             self.gestionnaire_config.maj_volume("effets", nouvelle_valeur)
-            # Appliquer immédiatement le volume à TOUS les sons
+            # Appliquer le volume à tout les sons
             if self.joueur:
                 self.joueur.maj_volume_effets()
-            # Mettre à jour aussi le son de sélection
+            if self.niveau:
+                self.niveau.maj_volume_sons()
             self.son_select.set_volume(nouvelle_valeur / 100)
 
     def gerer_events(self, evenement):

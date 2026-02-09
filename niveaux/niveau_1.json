@@ -10,7 +10,7 @@
 
   "change_vert": [[2, 13], [1, 5]],
 
-  "change_bleu": [[6, 7], [20, 13]], 
+  "change_bleu": [[6, 7]], 
 
   "change_rouge": [[10, 6], [29, 5]],
 

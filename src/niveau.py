@@ -281,11 +281,28 @@ class Niveau:
                         ecran.blit(image_porte_haute, (x * TAILLE_CELLULE, y * TAILLE_CELLULE - TAILLE_CELLULE * 0.4))
                     
                     elif "change_" in bloc:
-                        # Portails = cercles colorés
+                        # Portails = 3 cercles 
                         couleur = COULEURS[bloc]
                         centre_x = x * TAILLE_CELLULE + TAILLE_CELLULE // 2
                         centre_y = y * TAILLE_CELLULE + TAILLE_CELLULE // 2
-                        pygame.draw.circle(ecran, couleur, (centre_x, centre_y), TAILLE_CELLULE // 2 - 4)
+                        rayon = TAILLE_CELLULE // 2 - 2
+                        
+                        # Couleur claire pour le cercle intérieur
+                        r = min(couleur[0] + 100, 255)
+                        g = min(couleur[1] + 100, 255)
+                        b = min(couleur[2] + 100, 255)
+                        couleur_claire = (r, g, b)
+                        
+                        # Cercle exterieur (transparent)
+                        surface_portail = pygame.Surface((TAILLE_CELLULE, TAILLE_CELLULE), pygame.SRCALPHA)
+                        pygame.draw.circle(surface_portail, (couleur[0], couleur[1], couleur[2], 80), (TAILLE_CELLULE // 2, TAILLE_CELLULE // 2), rayon)
+                        ecran.blit(surface_portail, (x * TAILLE_CELLULE, y * TAILLE_CELLULE))
+                        
+                        # Cercle moyen
+                        pygame.draw.circle(ecran, couleur, (centre_x, centre_y), rayon - 8)
+                        
+                        # Cercle intérieur
+                        pygame.draw.circle(ecran, couleur_claire, (centre_x, centre_y), rayon - 16)
                     
                     else:
                         # Blocs normaux
