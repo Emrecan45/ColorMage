@@ -63,7 +63,7 @@ class Game:
         self.pause = Pause()
         
         # Parametres
-        self.parametres = Parametres(self.joueur, self.gestionnaire_config, self.niveau)
+        self.parametres = Parametres(self.joueur, self.gestionnaire_config, self.niveau, self)
         
         # Profil
         self.profil = Profil(self.gestionnaire_config)
@@ -120,6 +120,12 @@ class Game:
         self.son_pause.set_volume(vol_effets)
         self.son_unpause.set_volume(vol_effets)
         self.niveau.maj_volume_sons()
+        self.joueur.maj_volume_effets()
+        self.menu.maj_volume()
+        self.menu_niveaux.maj_volume()
+        self.profil.maj_volume()
+        self.pause.maj_volume()
+        self.popup.maj_volume()
     
     def gerer_evenements(self):
         """Gère les événements pygame"""
@@ -259,7 +265,7 @@ class Game:
                             # Reset des paramètres
                             self.gestionnaire_config.reinitialiser_parametres()
                             # Recharger les paramètres
-                            self.parametres = Parametres(self.joueur, self.gestionnaire_config, self.niveau)
+                            self.parametres = Parametres(self.joueur, self.gestionnaire_config, self.niveau, self)
                             # Appliquer le volume de la musique
                             pygame.mixer.music.set_volume(0.5)
                             # Mettre à jour les contrôles du joueur

@@ -100,6 +100,15 @@ class Popup:
                 ]
             },
             2: {
+                "titre": "Page à venir",
+                "images": [self.img_portail_couleur],
+                "lignes": [
+                    "- Contenu en préparation pour ce niveau.",
+                    "- Obtiens ce grimoire en jouant le niveau 2.",
+                    "- Revient bientôt pour plus d'infos !"
+                ]
+            },
+            3: {
                 "titre": "Sorcier",
                 "images": [self.img_sorcier],
                 "lignes": [
@@ -108,7 +117,7 @@ class Popup:
                     "- Il ne bouge pas mais reste vigilant !"
                 ]
             },
-            3: {
+            4: {
                 "titre": "Squelette",
                 "images": [self.img_squelette],
                 "lignes": [
@@ -117,7 +126,7 @@ class Popup:
                     "- Passe au bon moment pour l'éviter !"
                 ]
             },
-            4: {
+            5: {
                 "titre": "Slimes",
                 "images": [self.img_slime, self.img_slime_violet],
                 "lignes": [

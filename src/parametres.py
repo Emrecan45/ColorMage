@@ -10,9 +10,10 @@ from config_manager import ConfigManager
 class Parametres:
     """Affiche les parametres et retourne l'action choisie"""
     
-    def __init__(self, joueur = None, gestionnaire_config=None, niveau=None):
+    def __init__(self, joueur = None, gestionnaire_config=None, niveau=None, game=None):
         self.joueur = joueur
         self.niveau = niveau
+        self.game = game
         # charge les touches du joueur et les volumes
         if gestionnaire_config is None:
             self.gestionnaire_config = ConfigManager()
@@ -242,6 +243,9 @@ class Parametres:
                 self.joueur.maj_volume_effets()
             if self.niveau:
                 self.niveau.maj_volume_sons()
+            # Mettre à jour les sons
+            if self.game is not None:
+                self.game.maj_volume_effets()
             self.son_select.set_volume(nouvelle_valeur / 100)
 
     def gerer_events(self, evenement):
