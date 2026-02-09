@@ -1,7 +1,9 @@
 import pygame
+import sys
 import os
 import random
-from config import LARGEUR_ECRAN, HAUTEUR_ECRAN
+import math
+from config import LARGEUR_ECRAN, HAUTEUR_ECRAN, TAILLE_CELLULE
 from config_manager import ConfigManager
 from chronometre import Chronometre
 
@@ -36,6 +38,96 @@ class Popup:
         
         self.largeur_popup = 600
         self.hauteur_popup = 450
+
+        # Charger les images des mobs pour le grimoire
+        ennemy_path = os.path.join("img", "ennemy.png")
+        self.ennemy_sheet = pygame.image.load(ennemy_path)
+        sprite_w = 192
+        sprite_h = 192
+        
+        # Sorcier
+        sorcier_rect = pygame.Rect(0, 0, sprite_w, sprite_h)
+        self.img_sorcier = pygame.transform.scale(self.ennemy_sheet.subsurface(sorcier_rect), (100, 100))
+        
+        # Squelette
+        squelette_rect = pygame.Rect(sprite_w, 4 * sprite_h, sprite_w, sprite_h)
+        self.img_squelette = pygame.transform.scale(self.ennemy_sheet.subsurface(squelette_rect), (100, 100))
+        
+        # Slime vert
+        slime_vert_sheet = pygame.image.load(os.path.join("img", "slime_vert.png"))
+        slime_vert_rect = pygame.Rect(0, 24, 24, 24)
+        self.img_slime = pygame.transform.scale(slime_vert_sheet.subsurface(slime_vert_rect), (80, 80))
+        
+        # Slime violet
+        slime_violet_sheet = pygame.image.load(os.path.join("img", "slime_violet.png"))
+        slime_violet_rect = pygame.Rect(0, 24, 24, 24)
+        self.img_slime_violet = pygame.transform.scale(slime_violet_sheet.subsurface(slime_violet_rect), (80, 80))
+
+        # Taille illustrations grimoire
+        taille_illu = 70
+
+        # Bloc rouge
+        self.img_bloc_rouge = pygame.Surface((taille_illu, taille_illu), pygame.SRCALPHA)
+        pygame.draw.rect(self.img_bloc_rouge, (255, 0, 0), (0, 0, taille_illu, taille_illu))
+        pygame.draw.rect(self.img_bloc_rouge, (0, 0, 0), (0, 0, taille_illu, taille_illu), 2)
+
+        # Portail de couleur
+        self.img_portail_couleur = pygame.Surface((taille_illu, taille_illu), pygame.SRCALPHA)
+        centre = taille_illu // 2
+        pygame.draw.circle(self.img_portail_couleur, (255, 0, 0, 80), (centre, centre), centre)
+        pygame.draw.circle(self.img_portail_couleur, (255, 0, 0), (centre, centre), centre - 8)
+        pygame.draw.circle(self.img_portail_couleur, (255, 100, 100), (centre, centre), centre - 16)
+
+        # Pic
+        self.img_pic_tuto = pygame.image.load(os.path.join("img", "pic.png"))
+        self.img_pic_tuto = pygame.transform.scale(self.img_pic_tuto, (taille_illu, taille_illu))
+
+        # Porte
+        self.img_porte_tuto = pygame.image.load(os.path.join("img", "porte.png"))
+        self.img_porte_tuto = pygame.transform.scale(self.img_porte_tuto, (taille_illu, taille_illu))
+
+        # pages du grimoire (par niveau)
+        pseudo = self.gestionnaire_config.obtenir_pseudo()
+        self.grimoires = {
+            1: {
+                "titre": "Bienvenue " + pseudo + " !",
+                "images": [self.img_portail_couleur, self.img_bloc_rouge, self.img_pic_tuto, self.img_porte_tuto],
+                "lignes": [
+                    "- Les portails colorés changent ta couleur.",
+                    "- Les blocs de ta couleur deviennent solides.",
+                    "- Évite les pics car ils sont mortels !",
+                    "- Atteins le portail jaune pour gagner !"
+                ]
+            },
+            2: {
+                "titre": "Sorcier",
+                "images": [self.img_sorcier],
+                "lignes": [
+                    "- Le sorcier lance des têtes de mort.",
+                    "- Esquive ses projectiles pour survivre !",
+                    "- Il ne bouge pas mais reste vigilant !"
+                ]
+            },
+            3: {
+                "titre": "Squelette",
+                "images": [self.img_squelette],
+                "lignes": [
+                    "- Le squelette patrouille et attaque au corps-à-corps.",
+                    "- Il fait demi-tour après quelques pas.",
+                    "- Passe au bon moment pour l'éviter !"
+                ]
+            },
+            4: {
+                "titre": "Slimes",
+                "images": [self.img_slime, self.img_slime_violet],
+                "lignes": [
+                    "- Les slimes restent sur place mais sont dangereux !",
+                    "- Saute sur eux pour les éliminer.",
+                    "- Slime vert = 1 PV | Slime violet = 3 PV.",
+                    "- Tu rebondis en sautant dessus !"
+                ]
+            }
+        }
         
         # Rectangle du popup
         self.popup_rect = pygame.Rect((LARGEUR_ECRAN - self.largeur_popup) // 2, (HAUTEUR_ECRAN - self.hauteur_popup) // 2, self.largeur_popup, self.hauteur_popup)
@@ -50,6 +142,17 @@ class Popup:
         self.bouton_quitter = pygame.Rect(0, 0, 260, 60)
         self.bouton_quitter.center = (self.popup_rect.centerx, self.popup_rect.top + 340)
 
+        # Fond
+        self.etoiles = []
+        for _ in range(150):
+            x = random.randint(0, LARGEUR_ECRAN)
+            y = random.randint(0, HAUTEUR_ECRAN)
+            taille = random.randint(1, 3)
+            brillance = random.randint(100, 255)
+            vitesse_scintillement = random.uniform(0.02, 0.08)
+            self.etoiles.append([x, y, taille, brillance, vitesse_scintillement, random.uniform(0, 2 * math.pi)])
+        self.temps_global = 0
+
     def maj_volume(self):
         """Met à jour le volume du son de sélection"""
         volumes = self.gestionnaire_config.obtenir_volumes()
@@ -57,6 +160,15 @@ class Popup:
         self.son_select.set_volume(volume)
         for son in self.sons_portail:
             son.set_volume(volume)
+
+    def dessiner_etoiles(self, ecran):
+        """Dessine les étoiles scintillantes"""
+        for etoile in self.etoiles:
+            x, y, taille, brillance_base, vitesse, phase = etoile
+            # Scintillement
+            brillance = int(brillance_base * (0.5 + 0.5 * math.sin(self.temps_global * vitesse + phase)))
+            brillance = max(50, min(255, brillance))
+            pygame.draw.circle(ecran, (brillance, brillance, brillance), (x, y), taille)
 
     def niveau_existe(self, numero_niveau):
         """Vérifie si un fichier de niveau existe"""
@@ -140,6 +252,286 @@ class Popup:
             self.son_select.play()
             return "quitter"
         return None
+
+    def afficher_popup_grimoire(self, ecran, numero_niveau, draw_background=None):
+        """Affiche un popup grimoire pour un niveau donné
+        Freeze jusqu'à ce que le joueur clique OK.
+        """
+        if numero_niveau not in self.grimoires:
+            return
+        
+        grimoire = self.grimoires[numero_niveau]
+        titre = grimoire["titre"]
+        images = grimoire["images"]
+        lignes = grimoire["lignes"]
+        
+        # Dimensions du popup
+        popup_w = 620
+        popup_h = 400
+        popup_rect = pygame.Rect((LARGEUR_ECRAN - popup_w) // 2, (HAUTEUR_ECRAN - popup_h) // 2, popup_w, popup_h)
+        
+        # Bouton OK
+        bouton_ok = pygame.Rect(0, 0, 180, 50)
+        bouton_ok.center = (popup_rect.centerx, popup_rect.bottom - 50)
+        
+        # Fonts
+        font_titre = pygame.font.Font(None, 46)
+        font_texte = pygame.font.Font(None, 32)
+        font_bouton = pygame.font.Font(None, 40)
+        
+        self.maj_volume()
+        
+        # Fond du jeu
+        fond_capture = pygame.Surface((LARGEUR_ECRAN, HAUTEUR_ECRAN))
+        fond_capture.blit(ecran, (0, 0))
+        
+        while True:
+            for evenement in pygame.event.get():
+                if evenement.type == pygame.QUIT:
+                    pygame.quit()
+                    sys.exit()
+                elif evenement.type == pygame.KEYDOWN:
+                    if evenement.key == pygame.K_RETURN or evenement.key == pygame.K_SPACE:
+                        self.son_select.play()
+                        return
+                elif evenement.type == pygame.MOUSEBUTTONDOWN:
+                    if bouton_ok.collidepoint(evenement.pos):
+                        self.son_select.play()
+                        return
+            
+            # Fond
+            ecran.blit(fond_capture, (0, 0))
+            
+            # Overlay semi-transparent
+            overlay = pygame.Surface((LARGEUR_ECRAN, HAUTEUR_ECRAN), pygame.SRCALPHA)
+            overlay.fill((0, 0, 0, 160))
+            ecran.blit(overlay, (0, 0))
+            
+            # Popup fond
+            pygame.draw.rect(ecran, (40, 40, 65), popup_rect, border_radius=15)
+            pygame.draw.rect(ecran, (255, 215, 0), popup_rect, 3, border_radius=15)
+            
+            # Titre
+            titre_surface = font_titre.render(titre, True, (255, 215, 0))
+            ecran.blit(titre_surface, (popup_rect.centerx - titre_surface.get_width() // 2, popup_rect.top + 20))
+            
+            # Images des mobs
+            total_img_w = 0
+            for img in images:
+                total_img_w = total_img_w + img.get_width()
+            total_img_w = total_img_w + (len(images) - 1) * 15
+            
+            max_img_h = 0
+            for img in images:
+                if img.get_height() > max_img_h:
+                    max_img_h = img.get_height()
+            
+            img_start_x = popup_rect.centerx - total_img_w // 2
+            img_y = popup_rect.top + 70
+            offset_x = 0
+            for img in images:
+                # Centrer verticalement chaque image
+                y_offset = (max_img_h - img.get_height()) // 2
+                ecran.blit(img, (img_start_x + offset_x, img_y + y_offset))
+                offset_x = offset_x + img.get_width() + 15
+            
+            # Lignes de texte
+            texte_y = img_y + 115
+            for i, ligne in enumerate(lignes):
+                texte_surface = font_texte.render(ligne, True, (255, 255, 255))
+                ecran.blit(texte_surface, (popup_rect.centerx - texte_surface.get_width() // 2, texte_y + i * 32))
+            
+            # Bouton OK
+            souris = pygame.mouse.get_pos()
+            if bouton_ok.collidepoint(souris):
+                pygame.draw.rect(ecran, (80, 160, 80), bouton_ok, border_radius=10)
+            else:
+                pygame.draw.rect(ecran, (50, 130, 50), bouton_ok, border_radius=10)
+            pygame.draw.rect(ecran, (255, 255, 255), bouton_ok, 2, border_radius=10)
+            ok_surface = font_bouton.render("C'est parti !", True, (255, 255, 255))
+            ecran.blit(ok_surface, (bouton_ok.centerx - ok_surface.get_width() // 2, bouton_ok.centery - ok_surface.get_height() // 2))
+            
+            pygame.display.flip()
+            pygame.time.Clock().tick(60)
+
+    def _creer_silhouette(self, image):
+        """Crée une silhouette noire à l'image"""
+        largeur = image.get_width()
+        hauteur = image.get_height()
+        silhouette = pygame.Surface((largeur, hauteur), pygame.SRCALPHA)
+        silhouette.blit(image, (0, 0))
+        # Parcourir chaque pixel et le rendre noir tout en gardant la transparence
+        for px in range(largeur):
+            for py in range(hauteur):
+                r, g, b, a = silhouette.get_at((px, py))
+                if a > 0:
+                    silhouette.set_at((px, py), (20, 20, 30, a))
+        return silhouette
+
+    def afficher_grimoire_complet(self, ecran):
+        """Affiche le grimoire complet et les infos non débloqués apparaissent en silhouette noire hehe"""
+        # Collecter tous les pages disponibles
+        numeros = list(self.grimoires.keys())
+        numeros.sort()
+        # Récupérer le niveau le plus haut débloqué par le joueur
+        niveau_joueur = self.gestionnaire_config.obtenir_niveau_actuel()
+        page_idx = 0
+        
+        font_titre = pygame.font.Font(None, 50)
+        font_page = pygame.font.Font(None, 46)
+        font_texte = pygame.font.Font(None, 32)
+        font_bouton = pygame.font.Font(None, 38)
+        font_nav = pygame.font.Font(None, 44)
+        
+        popup_w = 650
+        popup_h = 450
+        popup_rect = pygame.Rect((LARGEUR_ECRAN - popup_w) // 2, (HAUTEUR_ECRAN - popup_h) // 2, popup_w, popup_h)
+        
+        bouton_fermer = pygame.Rect(0, 0, 160, 45)
+        bouton_fermer.center = (popup_rect.centerx, popup_rect.bottom - 45)
+        
+        bouton_prec = pygame.Rect(popup_rect.left + 20, bouton_fermer.y, 50, 45)
+        bouton_suiv = pygame.Rect(popup_rect.right - 70, bouton_fermer.y, 50, 45)
+        
+        self.maj_volume()
+        
+        while True:
+            for evenement in pygame.event.get():
+                if evenement.type == pygame.QUIT:
+                    pygame.quit()
+                    sys.exit()
+                elif evenement.type == pygame.KEYDOWN:
+                    if evenement.key == pygame.K_ESCAPE:
+                        self.son_select.play()
+                        return
+                    elif evenement.key == pygame.K_LEFT and page_idx > 0:
+                        page_idx = page_idx - 1
+                    elif evenement.key == pygame.K_RIGHT and page_idx < len(numeros) - 1:
+                        page_idx = page_idx + 1
+                elif evenement.type == pygame.MOUSEBUTTONDOWN:
+                    if bouton_fermer.collidepoint(evenement.pos):
+                        self.son_select.play()
+                        return
+                    if bouton_prec.collidepoint(evenement.pos) and page_idx > 0:
+                        self.son_select.play()
+                        page_idx = page_idx - 1
+                    if bouton_suiv.collidepoint(evenement.pos) and page_idx < len(numeros) - 1:
+                        self.son_select.play()
+                        page_idx = page_idx + 1
+            
+            # Fond étoilé
+            self.temps_global = self.temps_global + 1
+            ecran.fill((10, 10, 30))
+            self.dessiner_etoiles(ecran)
+            
+            # Popup fond
+            pygame.draw.rect(ecran, (40, 40, 65), popup_rect, border_radius=15)
+            pygame.draw.rect(ecran, (255, 215, 0), popup_rect, 3, border_radius=15)
+            
+            # Titre général
+            titre_gen = font_titre.render("Grimoire du Mage", True, (255, 215, 0))
+            ecran.blit(titre_gen, (popup_rect.centerx - titre_gen.get_width() // 2, popup_rect.top + 15))
+            
+            # Page courante
+            numero = numeros[page_idx]
+            grimoire = self.grimoires[numero]
+            est_debloque = numero <= niveau_joueur
+            
+            if est_debloque:
+                # soustitre de la page
+                sous_titre = font_page.render(grimoire["titre"], True, (255, 255, 255))
+                ecran.blit(sous_titre, (popup_rect.centerx - sous_titre.get_width() // 2, popup_rect.top + 60))
+                
+                # Image
+                images = grimoire["images"]
+                total_img_w = 0
+                for img in images:
+                    total_img_w = total_img_w + img.get_width()
+                total_img_w = total_img_w + (len(images) - 1) * 15
+                img_start_x = popup_rect.centerx - total_img_w // 2
+                img_y = popup_rect.top + 105
+                offset_x = 0
+                for img in images:
+                    ecran.blit(img, (img_start_x + offset_x, img_y))
+                    offset_x = offset_x + img.get_width() + 15
+                
+                # Texte
+                texte_y = img_y + 115
+                for i, ligne in enumerate(grimoire["lignes"]):
+                    t = font_texte.render(ligne, True, (200, 200, 200))
+                    ecran.blit(t, (popup_rect.centerx - t.get_width() // 2, texte_y + i * 32))
+            else:
+                # Titre mystere
+                sous_titre = font_page.render("???", True, (100, 100, 120))
+                ecran.blit(sous_titre, (popup_rect.centerx - sous_titre.get_width() // 2, popup_rect.top + 60))
+                
+                # Images sous ombre noire
+                images = grimoire["images"]
+                total_img_w = 0
+                for img in images:
+                    total_img_w = total_img_w + img.get_width()
+                total_img_w = total_img_w + (len(images) - 1) * 15
+                img_start_x = popup_rect.centerx - total_img_w // 2
+                img_y = popup_rect.top + 105
+                offset_x = 0
+                for img in images:
+                    sil = self._creer_silhouette(img)
+                    ecran.blit(sil, (img_start_x + offset_x, img_y))
+                    offset_x = offset_x + img.get_width() + 15
+                
+                # Cadena et message qui dit que c'est bloqué
+                lock_font = pygame.font.Font(None, 36)
+                lock_txt = lock_font.render("Continue ta progression pour débloquer !", True, (120, 120, 140))
+                ecran.blit(lock_txt, (popup_rect.centerx - lock_txt.get_width() // 2, popup_rect.top + 250))
+                
+                # Icône cadenas
+                cadenas_path = os.path.join("img", "cadena.png")
+                if os.path.exists(cadenas_path):
+                    cadenas = pygame.image.load(cadenas_path)
+                    cadenas = pygame.transform.scale(cadenas, (50, 50))
+                    ecran.blit(cadenas, (popup_rect.centerx - 25, popup_rect.top + 280))
+            
+            # Navigation
+            souris = pygame.mouse.get_pos()
+            
+            # Bouton précédent
+            if page_idx > 0:
+                if bouton_prec.collidepoint(souris):
+                    couleur_prec = (100, 100, 140)
+                else:
+                    couleur_prec = (70, 70, 110)
+                pygame.draw.rect(ecran, couleur_prec, bouton_prec, border_radius=8)
+                pygame.draw.rect(ecran, (255, 255, 255), bouton_prec, 2, border_radius=8)
+                prec_txt = font_nav.render("<", True, (255, 255, 255))
+                ecran.blit(prec_txt, (bouton_prec.centerx - prec_txt.get_width() // 2, bouton_prec.centery - prec_txt.get_height() // 2))
+            
+            # Bouton suivant
+            if page_idx < len(numeros) - 1:
+                if bouton_suiv.collidepoint(souris):
+                    couleur_suiv = (100, 100, 140)
+                else:
+                    couleur_suiv = (70, 70, 110)
+                pygame.draw.rect(ecran, couleur_suiv, bouton_suiv, border_radius=8)
+                pygame.draw.rect(ecran, (255, 255, 255), bouton_suiv, 2, border_radius=8)
+                suiv_txt = font_nav.render(">", True, (255, 255, 255))
+                ecran.blit(suiv_txt, (bouton_suiv.centerx - suiv_txt.get_width() // 2, bouton_suiv.centery - suiv_txt.get_height() // 2))
+            
+            # Indicateur de page
+            page_txt = font_texte.render(str(page_idx + 1) + " / " + str(len(numeros)), True, (180, 180, 180))
+            ecran.blit(page_txt, (popup_rect.centerx - page_txt.get_width() // 2, popup_rect.bottom - 55))
+            
+            # Bouton fermer
+            if bouton_fermer.collidepoint(souris):
+                couleur_fermer = (150, 60, 60)
+            else:
+                couleur_fermer = (120, 40, 40)
+            pygame.draw.rect(ecran, couleur_fermer, bouton_fermer, border_radius=10)
+            pygame.draw.rect(ecran, (255, 255, 255), bouton_fermer, 2, border_radius=10)
+            fermer_txt = font_bouton.render("Fermer", True, (255, 255, 255))
+            ecran.blit(fermer_txt, (bouton_fermer.centerx - fermer_txt.get_width() // 2, bouton_fermer.centery - fermer_txt.get_height() // 2))
+            
+            pygame.display.flip()
+            pygame.time.Clock().tick(60)
 
     def dessiner_popup_victoire(self, ecran, niveau_actuel, temps_ms=0, est_record=False):
         """Dessine le popup de victoire avec le temps et indication de record

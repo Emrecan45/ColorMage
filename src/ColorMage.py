@@ -219,6 +219,8 @@ class Game:
                         action = self.menu.gerer_clic(evenement.pos)
                         if action == "jouer":
                             self.etat = "selection"
+                        elif action == "grimoire":
+                            self.popup.afficher_grimoire_complet(self.ecran)
                         elif action == "parametres":
                             self.etat = "param"
                         elif action == "profil":
@@ -354,6 +356,16 @@ class Game:
         meilleur_temps = self.gestionnaire_config.obtenir_meilleur_temps(numero)
         self.chrono.definir_meilleur_temps(meilleur_temps)
         self.est_record = False
+        # Popup page du grimoire (une seule fois par progression)
+        if not self.gestionnaire_config.page_vue(numero):
+            self.dessiner_fond_niveau(self.ecran)
+            self.niveau.dessiner(self.ecran, self.temps_global, update_entities=False)
+            self.popup.afficher_popup_grimoire(self.ecran, numero)
+            self.gestionnaire_config.marquer_page_vue(numero)
+            self.chrono.demarrer()
+            meilleur_temps = self.gestionnaire_config.obtenir_meilleur_temps(numero)
+            self.chrono.definir_meilleur_temps(meilleur_temps)
+
         # Activer l'animation de portail d'entrée
         self.portail_entree_actif = True
         self.portail_entree_animation = 0
@@ -372,6 +384,15 @@ class Game:
             meilleur_temps = self.gestionnaire_config.obtenir_meilleur_temps(self.niveau_actuel)
             self.chrono.definir_meilleur_temps(meilleur_temps)
             self.est_record = False
+            # Popup page du grimoire (une seule fois par progression)
+            if not self.gestionnaire_config.page_vue(self.niveau_actuel):
+                self.dessiner_fond_niveau(self.ecran)
+                self.niveau.dessiner(self.ecran, self.temps_global, update_entities=False)
+                self.popup.afficher_popup_grimoire(self.ecran, self.niveau_actuel)
+                self.gestionnaire_config.marquer_page_vue(self.niveau_actuel)
+                self.chrono.demarrer()
+                meilleur_temps = self.gestionnaire_config.obtenir_meilleur_temps(self.niveau_actuel)
+                self.chrono.definir_meilleur_temps(meilleur_temps)
             # Activer l'animation de portail d'entrée
             self.portail_entree_actif = True
             self.portail_entree_animation = 0

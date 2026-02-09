@@ -28,10 +28,11 @@ class Menu:
         except:
             self.icone_profil = None
         
-        self.bouton_jouer = pygame.Rect(LARGEUR_ECRAN // 2 - 125, HAUTEUR_ECRAN // 2 - 30, 250, 50)
-        self.bouton_parametres = pygame.Rect(LARGEUR_ECRAN // 2 - 125, HAUTEUR_ECRAN // 2 + 60, 250, 50)
-        self.bouton_quitter = pygame.Rect(LARGEUR_ECRAN // 2 - 125, HAUTEUR_ECRAN // 2 + 150, 250, 50)
-        self.bouton_profil = pygame.Rect(LARGEUR_ECRAN - 100, 15, 80, 80)  # Carré parfait 80x80
+        self.bouton_jouer = pygame.Rect(LARGEUR_ECRAN // 2 - 125, HAUTEUR_ECRAN // 2 - 60, 250, 50)
+        self.bouton_grimoire = pygame.Rect(LARGEUR_ECRAN // 2 - 125, HAUTEUR_ECRAN // 2 + 20, 250, 50)
+        self.bouton_parametres = pygame.Rect(LARGEUR_ECRAN // 2 - 125, HAUTEUR_ECRAN // 2 + 100, 250, 50)
+        self.bouton_quitter = pygame.Rect(LARGEUR_ECRAN // 2 - 125, HAUTEUR_ECRAN // 2 + 180, 250, 50)
+        self.bouton_profil = pygame.Rect(LARGEUR_ECRAN - 100, 15, 80, 80)
         
         # son des clics
         self.gestionnaire_config = ConfigManager()
@@ -71,6 +72,10 @@ class Menu:
         couleur_jouer = COULEUR_SURVOL if self.bouton_jouer.collidepoint(mouse_pos) else COULEUR_BOUTON
         self.dessiner_bouton_arrondi(ecran, self.bouton_jouer, couleur_jouer, "Jouer", self.font_1)
         
+        # Bouton Grimoire
+        couleur_grimoire = COULEUR_SURVOL if self.bouton_grimoire.collidepoint(mouse_pos) else COULEUR_BOUTON
+        self.dessiner_bouton_arrondi(ecran, self.bouton_grimoire, couleur_grimoire, "Grimoire", self.font_1)
+        
         # Bouton Paramètres
         couleur_param = COULEUR_SURVOL if self.bouton_parametres.collidepoint(mouse_pos) else COULEUR_BOUTON
         self.dessiner_bouton_arrondi(ecran, self.bouton_parametres, couleur_param, "Paramètres", self.font_1)
@@ -105,6 +110,9 @@ class Menu:
         if self.bouton_jouer.collidepoint(pos):
             self.son_select.play()
             return "jouer"
+        elif self.bouton_grimoire.collidepoint(pos):
+            self.son_select.play()
+            return "grimoire"
         elif self.bouton_parametres.collidepoint(pos):
             self.son_select.play()
             return "parametres"

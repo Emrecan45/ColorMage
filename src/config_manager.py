@@ -97,7 +97,8 @@ class ConfigManager:
                 "pseudo": self.config.get("pseudo", "Joueur"),
                 "tenue_profil": self.config.get("tenue_profil", 0),
                 "pieces_total": self.config.get("pieces_total", 0),
-                "pieces_collectees": self.config.get("pieces_collectees", {})
+                "pieces_collectees": self.config.get("pieces_collectees", {}),
+                "pages_vues": self.config.get("pages_vues", [])
             }
         with open(self.chemin_config, "w", encoding="utf-8") as f:
             json.dump(config, f, ensure_ascii=False)
@@ -197,6 +198,7 @@ class ConfigManager:
         self.config["tenue_profil"] = 0  # Reset la tenue du profil
         self.config["pieces_total"] = 0
         self.config["pieces_collectees"] = {}
+        self.config["pages_vues"] = []
         
         # Restaurer les paramètres et le pseudo
         self.config["pseudo"] = pseudo_actuel
@@ -264,3 +266,18 @@ class ConfigManager:
         """Retourne le nombre total de pièces collectées"""
         self.config = self.charger_config()
         return self.config.get("pieces_total", 0)
+
+    def page_vue(self, niveau):
+        """Vérifie si la page (du grimoire) d'un niveau a déjà été vue"""
+        self.config = self.charger_config()
+        pages = self.config.get("pages_vues", [])
+        return niveau in pages
+
+    def marquer_page_vue(self, niveau):
+        """Marque la page (grimoire) d'un niveau comme vue"""
+        self.config = self.charger_config()
+        pages = self.config.get("pages_vues", [])
+        if niveau not in pages:
+            pages.append(niveau)
+            self.config["pages_vues"] = pages
+            self.sauvegarder_config()
