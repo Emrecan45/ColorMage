@@ -3,7 +3,7 @@ import sys
 import os
 import random
 import math
-from config import LARGEUR_ECRAN, HAUTEUR_ECRAN, FPS, TAILLE_CELLULE
+from config import LARGEUR_ECRAN, HAUTEUR_ECRAN, FPS, TAILLE_CELLULE, HAUTEUR_GRILLE
 from joueur import Joueur
 from niveau import Niveau
 from popup import Popup
@@ -63,7 +63,7 @@ class Game:
         self.pause = Pause()
         
         # Parametres
-        self.parametres = Parametres(self.joueur, self.gestionnaire_config, self.niveau)
+        self.parametres = Parametres(self.joueur, self.gestionnaire_config, self.niveau, self)
         
         # Profil
         self.profil = Profil(self.gestionnaire_config)
@@ -120,6 +120,12 @@ class Game:
         self.son_pause.set_volume(vol_effets)
         self.son_unpause.set_volume(vol_effets)
         self.niveau.maj_volume_sons()
+        self.joueur.maj_volume_effets()
+        self.menu.maj_volume()
+        self.menu_niveaux.maj_volume()
+        self.profil.maj_volume()
+        self.pause.maj_volume()
+        self.popup.maj_volume()
     
     def gerer_evenements(self):
         """Gère les événements pygame"""
@@ -259,7 +265,7 @@ class Game:
                             # Reset des paramètres
                             self.gestionnaire_config.reinitialiser_parametres()
                             # Recharger les paramètres
-                            self.parametres = Parametres(self.joueur, self.gestionnaire_config, self.niveau)
+                            self.parametres = Parametres(self.joueur, self.gestionnaire_config, self.niveau, self)
                             # Appliquer le volume de la musique
                             pygame.mixer.music.set_volume(0.5)
                             # Mettre à jour les contrôles du joueur
@@ -360,6 +366,8 @@ class Game:
         if not self.gestionnaire_config.page_vue(numero):
             self.dessiner_fond_niveau(self.ecran)
             self.niveau.dessiner(self.ecran, self.temps_global, update_entities=False)
+            for piece in list(self.niveau.pieces):
+                piece.dessiner(self.ecran)
             self.popup.afficher_popup_grimoire(self.ecran, numero)
             self.gestionnaire_config.marquer_page_vue(numero)
             self.chrono.demarrer()
@@ -478,6 +486,17 @@ class Game:
         """Met à jour la logique du jeu"""
         # Incrémenter le timer global
         self.temps_global += 1
+        if self.etat == "jeu" and self.popup_actif is None:
+            self.niveau.maj_plateformes(self.temps_global)
+            rc = self.niveau.appliquer_pousse_plateforme(self.joueur)
+            if rc == "mort":
+                # Écrasement
+                self.joueur.son_mort.play()
+                self.pieces_en_cours = []
+                self.popup_actif = "defaite"
+                self.chrono.arreter()
+                self.est_record = False
+                return
         
         # Vérifier si un niveau doit être lancé depuis le menu
         if self.etat == "selection":
@@ -531,10 +550,21 @@ class Game:
             
         if self.etat == "jeu":
             touches = pygame.key.get_pressed()
-            self.joueur.deplacer(touches, self.niveau)
+            resultat = None
+            resultat_deplacement = self.joueur.deplacer(touches, self.niveau)
+            if resultat_deplacement == "mort":
+                resultat = "mort"
+            # tomber dans le vide
+            if self.joueur.y > (HAUTEUR_GRILLE * TAILLE_CELLULE):
+                resultat = "mort"
             self.joueur.animer()
             # Stocke l'interaction du joueur
-            resultat = self.joueur.interagir_avec_blocs(self.niveau)
+            inter_result = self.joueur.interagir_avec_blocs(self.niveau)
+            if inter_result is not None:
+                if inter_result == "mort":
+                    resultat = "mort"
+                elif resultat is None:
+                    resultat = inter_result
 
             # Vérifier collision projectiles -> joueur
             player_hitbox = pygame.Rect(

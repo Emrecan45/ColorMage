@@ -135,11 +135,7 @@ class Joueur:
     def reset(self, niveau=None):
         """Réinitialise le joueur à sa position de départ et sa couleur de base (gris)"""
         if niveau is not None:
-            spawn_px = None
-            try:
-                spawn_px = niveau.obtenir_spawn_pixel()
-            except Exception:
-                spawn_px = None
+            spawn_px = niveau.obtenir_spawn_pixel()
             if spawn_px is not None:
                 self.x_initial, self.y_initial = spawn_px
 
@@ -175,6 +171,7 @@ class Joueur:
     def deplacer(self, touches, niveau):
         """Gère le déplacement du joueur"""
         self.etait_au_sol = self.au_sol
+        self._pousse_plateforme = False
         # empeche le joueur de bouger pendant l'animation de changement de couleur
         if self.en_changement_couleur:
             return None
@@ -252,6 +249,26 @@ class Joueur:
             self.vitesse_y = 0
         else:
             self.au_sol = False
+
+        # Interaction avec les plateformes mobiles
+        if self.au_sol:
+            pieds = pygame.Rect(self.x + self.marge_x, self.y + self.hauteur - self.marge_y_bas - 2, self.largeur - 2 * self.marge_x, 2)
+            for plat in niveau.platformes_mobiles:
+                rect_plat = plat.obtenir_rect()
+                if pieds.colliderect(rect_plat):
+                    # déplacement plateforme
+                    dx = plat.dernier_dx
+                    if dx != 0 and not self._pousse_plateforme:
+                        self.x += dx
+                        rect_test = pygame.Rect(self.x + self.marge_x, self.y + self.marge_y_haut, self.largeur - 2 * self.marge_x, self.hauteur - self.marge_y_haut - self.marge_y_bas)
+                        if niveau.collision(rect_test, self.couleur):
+                            self.x -= dx
+                    break
+
+        # tomber dans le vide
+        if self.y > (HAUTEUR_GRILLE * TAILLE_CELLULE):
+            self.son_mort.play()
+            return "mort"
         
         # chute
         if self.etait_au_sol and not self.au_sol and self.type_animation != "saut":
