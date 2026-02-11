@@ -3,9 +3,11 @@ import sys
 import os
 import random
 import math
-from config import LARGEUR_ECRAN, HAUTEUR_ECRAN, TAILLE_CELLULE
+from config import LARGEUR_ECRAN, HAUTEUR_ECRAN, TAILLE_CELLULE, COULEURS, COULEUR_BOUTON, COULEUR_SURVOL, COULEUR_BORDURE
 from config_manager import ConfigManager
 from chronometre import Chronometre
+from profil import Profil
+from parametres import Parametres
 
 class Popup:
     """Gère l'affichage des popups de victoire et de défaite"""
@@ -68,8 +70,28 @@ class Popup:
 
         # Bloc rouge
         self.img_bloc_rouge = pygame.Surface((taille_illu, taille_illu), pygame.SRCALPHA)
-        pygame.draw.rect(self.img_bloc_rouge, (255, 0, 0), (0, 0, taille_illu, taille_illu))
-        pygame.draw.rect(self.img_bloc_rouge, (0, 0, 0), (0, 0, taille_illu, taille_illu), 2)
+        pygame.draw.rect(self.img_bloc_rouge, COULEURS.get("rouge"), (0, 0, taille_illu, taille_illu))
+
+       # Bloc mobile (plateforme mobile)
+        self.img_bloc_bleu = pygame.Surface((taille_illu, taille_illu), pygame.SRCALPHA)
+        pygame.draw.rect(self.img_bloc_bleu, COULEURS.get("bleu"), (0, 0, taille_illu, taille_illu))
+        self.img_mobile_bleu = pygame.Surface((taille_illu + 60, taille_illu), pygame.SRCALPHA)
+        self.img_mobile_bleu.blit(self.img_bloc_bleu, (0, 0))
+
+        # speed lines
+        couleur_lignes = (230, 230, 230)
+        for i in range(5):
+            y = 5 + i * 15
+            if i == 1 or i == 3: 
+                start_x = taille_illu - 10
+                longueur_ligne = 50
+            elif i == 2:
+                start_x = taille_illu - 5
+                longueur_ligne = 60
+            else:
+                start_x = taille_illu - 20
+                longueur_ligne = 40
+            pygame.draw.line(self.img_mobile_bleu, couleur_lignes, (start_x, y), (start_x + longueur_ligne, y), 3)
 
         # Portail de couleur
         self.img_portail_couleur = pygame.Surface((taille_illu, taille_illu), pygame.SRCALPHA)
@@ -87,11 +109,11 @@ class Popup:
         self.img_porte_tuto = pygame.transform.scale(self.img_porte_tuto, (taille_illu, taille_illu))
 
         # pages du grimoire (par niveau)
-        pseudo = self.gestionnaire_config.obtenir_pseudo()
         self.grimoires = {
             1: {
-                "titre": "Bienvenue " + pseudo + " !",
+                "titre": "Les bases",
                 "images": [self.img_portail_couleur, self.img_bloc_rouge, self.img_pic_tuto, self.img_porte_tuto],
+                "lore": "Dans ce monde, les portails chantent et les blocs répondent aux couleurs du mage.",
                 "lignes": [
                     "- Les portails colorés changent ta couleur.",
                     "- Les blocs de ta couleur deviennent solides.",
@@ -100,17 +122,19 @@ class Popup:
                 ]
             },
             2: {
-                "titre": "Page à venir",
-                "images": [self.img_portail_couleur],
+                "titre": "Blocs enchantés",
+                "images": [self.img_mobile_bleu],
+                "lore": "À cause de la magie instable de ce monde, des blocs enchantés flottent et se déplacent.",
                 "lignes": [
-                    "- Contenu en préparation pour ce niveau.",
-                    "- Obtiens ce grimoire en jouant le niveau 2.",
-                    "- Revient bientôt pour plus d'infos !"
+                    "- Des blocs bougent horizontalement ou verticalement.",
+                    "- Seuls les blocs de ta couleur t'affectent.",
+                    "- Attention : ne pas te faire écraser par les blocs."
                 ]
             },
             3: {
                 "titre": "Sorcier",
                 "images": [self.img_sorcier],
+                "lore": "Un mage déchu. Ses projectiles portent la rancune des couleurs.",
                 "lignes": [
                     "- Le sorcier lance des têtes de mort.",
                     "- Esquive ses projectiles pour survivre !",
@@ -120,6 +144,7 @@ class Popup:
             4: {
                 "titre": "Squelette",
                 "images": [self.img_squelette],
+                "lore": "Os ressuscités par des runes anciennes, ils gardent des chemins creusés par la magie.",
                 "lignes": [
                     "- Le squelette patrouille et attaque au corps-à-corps.",
                     "- Il fait demi-tour après quelques pas.",
@@ -129,6 +154,7 @@ class Popup:
             5: {
                 "titre": "Slimes",
                 "images": [self.img_slime, self.img_slime_violet],
+                "lore": "Essences visqueuses nées des résidus magiques, certains sont plus coriaces que d'autres.",
                 "lignes": [
                     "- Les slimes restent sur place mais sont dangereux !",
                     "- Saute sur eux pour les éliminer.",
@@ -325,30 +351,33 @@ class Popup:
             ecran.blit(titre_surface, (popup_rect.centerx - titre_surface.get_width() // 2, popup_rect.top + 20))
             
             # Images des mobs
-            total_img_w = 0
+            total_largeur_images = 0
             for img in images:
-                total_img_w = total_img_w + img.get_width()
-            total_img_w = total_img_w + (len(images) - 1) * 15
-            
-            max_img_h = 0
+                total_largeur_images = total_largeur_images + img.get_width()
+            total_largeur_images = total_largeur_images + (len(images) - 1) * 15
+
+            max_hauteur_img = 0
             for img in images:
-                if img.get_height() > max_img_h:
-                    max_img_h = img.get_height()
-            
-            img_start_x = popup_rect.centerx - total_img_w // 2
-            img_y = popup_rect.top + 70
-            offset_x = 0
+                if img.get_height() > max_hauteur_img:
+                    max_hauteur_img = img.get_height()
+
+            x_depart_images = popup_rect.centerx - total_largeur_images // 2
+            y_images = popup_rect.top + 70
+            decalage_x = 0
             for img in images:
                 # Centrer verticalement chaque image
-                y_offset = (max_img_h - img.get_height()) // 2
-                ecran.blit(img, (img_start_x + offset_x, img_y + y_offset))
-                offset_x = offset_x + img.get_width() + 15
+                decalage_y = (max_hauteur_img - img.get_height()) // 2
+                ecran.blit(img, (x_depart_images + decalage_x, y_images + decalage_y))
+                decalage_x = decalage_x + img.get_width() + 15
             
             # Lignes de texte
-            texte_y = img_y + 115
-            for i, ligne in enumerate(lignes):
+            texte_y = y_images + 115
+            
+
+            for idx in range(len(lignes)):
+                ligne = lignes[idx]
                 texte_surface = font_texte.render(ligne, True, (255, 255, 255))
-                ecran.blit(texte_surface, (popup_rect.centerx - texte_surface.get_width() // 2, texte_y + i * 32))
+                ecran.blit(texte_surface, (popup_rect.centerx - texte_surface.get_width() // 2, texte_y + idx * 32))
             
             # Bouton OK
             souris = pygame.mouse.get_pos()
@@ -386,21 +415,28 @@ class Popup:
         niveau_joueur = self.gestionnaire_config.obtenir_niveau_actuel()
         page_idx = 0
         
-        font_titre = pygame.font.Font(None, 50)
+        font_titre = pygame.font.Font(None, 64)
         font_page = pygame.font.Font(None, 46)
         font_texte = pygame.font.Font(None, 32)
         font_bouton = pygame.font.Font(None, 38)
         font_nav = pygame.font.Font(None, 44)
         
-        popup_w = 650
-        popup_h = 450
+        popup_w = LARGEUR_ECRAN - 120
+        popup_h = HAUTEUR_ECRAN - 120
         popup_rect = pygame.Rect((LARGEUR_ECRAN - popup_w) // 2, (HAUTEUR_ECRAN - popup_h) // 2, popup_w, popup_h)
-        
-        bouton_fermer = pygame.Rect(0, 0, 160, 45)
-        bouton_fermer.center = (popup_rect.centerx, popup_rect.bottom - 45)
-        
-        bouton_prec = pygame.Rect(popup_rect.left + 20, bouton_fermer.y, 50, 45)
-        bouton_suiv = pygame.Rect(popup_rect.right - 70, bouton_fermer.y, 50, 45)
+
+        # Bouton Fermer
+        bouton_fermer = pygame.Rect(0, 0, 250, 50)
+        bouton_fermer.center = (popup_rect.centerx, popup_rect.bottom - 40)
+
+        # Flèches de navigation
+        arrow_h = bouton_fermer.height
+        arrow_w = 50
+        spacing = 20
+        bouton_prec = pygame.Rect(0, 0, arrow_w, arrow_h)
+        bouton_suiv = pygame.Rect(0, 0, arrow_w, arrow_h)
+        bouton_prec.center = (bouton_fermer.left - spacing - arrow_w // 2, bouton_fermer.centery)
+        bouton_suiv.center = (bouton_fermer.right + spacing + arrow_w // 2, bouton_fermer.centery)
         
         self.maj_volume()
         
@@ -433,13 +469,8 @@ class Popup:
             ecran.fill((10, 10, 30))
             self.dessiner_etoiles(ecran)
             
-            # Popup fond
-            pygame.draw.rect(ecran, (40, 40, 65), popup_rect, border_radius=15)
-            pygame.draw.rect(ecran, (255, 215, 0), popup_rect, 3, border_radius=15)
-            
-            # Titre général
             titre_gen = font_titre.render("Grimoire du Mage", True, (255, 215, 0))
-            ecran.blit(titre_gen, (popup_rect.centerx - titre_gen.get_width() // 2, popup_rect.top + 15))
+            ecran.blit(titre_gen, (popup_rect.centerx - titre_gen.get_width() // 2, popup_rect.top + 12))
             
             # Page courante
             numero = numeros[page_idx]
@@ -448,95 +479,131 @@ class Popup:
             
             if est_debloque:
                 # soustitre de la page
-                sous_titre = font_page.render(grimoire["titre"], True, (255, 255, 255))
-                ecran.blit(sous_titre, (popup_rect.centerx - sous_titre.get_width() // 2, popup_rect.top + 60))
+                sous_titre_text = grimoire["titre"]
+                sous_titre = font_page.render(sous_titre_text, True, (255, 255, 255))
+                ecran.blit(sous_titre, (popup_rect.centerx - sous_titre.get_width() // 2, popup_rect.top + 110))
                 
                 # Image
                 images = grimoire["images"]
-                total_img_w = 0
+                if numero in (3, 4, 5):
+                    hauteur_cible = 160
+                else:
+                    hauteur_cible = 110
+                images_redimensionnees = []
                 for img in images:
-                    total_img_w = total_img_w + img.get_width()
-                total_img_w = total_img_w + (len(images) - 1) * 15
-                img_start_x = popup_rect.centerx - total_img_w // 2
-                img_y = popup_rect.top + 105
-                offset_x = 0
-                for img in images:
-                    ecran.blit(img, (img_start_x + offset_x, img_y))
-                    offset_x = offset_x + img.get_width() + 15
-                
+                    if img.get_height() == 0:
+                        w = hauteur_cible
+                    else:
+                        w = int(img.get_width() * (hauteur_cible / img.get_height()))
+                    redim = pygame.transform.smoothscale(img, (w, hauteur_cible))
+                    images_redimensionnees.append(redim)
+
+                total_largeur_images = sum(i.get_width() for i in images_redimensionnees) + (len(images_redimensionnees) - 1) * 20
+                x_depart_images = popup_rect.centerx - total_largeur_images // 2
+
+                zone_img_haut = popup_rect.top + 160
+                zone_img_hauteur = 160
+                y_images = zone_img_haut + (zone_img_hauteur - hauteur_cible) // 2
+                decalage_x = 0
+                for img in images_redimensionnees:
+                    ecran.blit(img, (x_depart_images + decalage_x, y_images))
+                    decalage_x = decalage_x + img.get_width() + 20
+
                 # Texte
-                texte_y = img_y + 115
-                for i, ligne in enumerate(grimoire["lignes"]):
-                    t = font_texte.render(ligne, True, (200, 200, 200))
-                    ecran.blit(t, (popup_rect.centerx - t.get_width() // 2, texte_y + i * 32))
+                texte_y = zone_img_haut + zone_img_hauteur + 40
+                max_w = popup_rect.width - 120
+                if "lore" in grimoire:
+                    # afficher lore
+                    s = font_texte.render(grimoire["lore"], True, (200, 200, 200))
+                    ecran.blit(s, (popup_rect.centerx - s.get_width() // 2, texte_y))
+                    texte_y = texte_y + font_texte.get_linesize() + 10
+
+                for idx in range(len(grimoire["lignes"])):
+                    ligne = grimoire["lignes"][idx]
+                    t = font_texte.render(ligne, True, (220, 220, 220))
+                    ecran.blit(t, (popup_rect.centerx - t.get_width() // 2, texte_y + idx * 32))
             else:
                 # Titre mystere
                 sous_titre = font_page.render("???", True, (100, 100, 120))
-                ecran.blit(sous_titre, (popup_rect.centerx - sous_titre.get_width() // 2, popup_rect.top + 60))
+                ecran.blit(sous_titre, (popup_rect.centerx - sous_titre.get_width() // 2, popup_rect.top + 110))
                 
                 # Images sous ombre noire
                 images = grimoire["images"]
-                total_img_w = 0
+                if numero in (3, 4, 5):
+                    hauteur_cible = 160
+                else:
+                    hauteur_cible = 110
+                images_redimensionnees = []
                 for img in images:
-                    total_img_w = total_img_w + img.get_width()
-                total_img_w = total_img_w + (len(images) - 1) * 15
-                img_start_x = popup_rect.centerx - total_img_w // 2
-                img_y = popup_rect.top + 105
-                offset_x = 0
-                for img in images:
+                    if img.get_height() == 0:
+                        w = hauteur_cible
+                    else:
+                        w = int(img.get_width() * (hauteur_cible / img.get_height()))
+                    redim = pygame.transform.smoothscale(img, (w, hauteur_cible))
+                    images_redimensionnees.append(redim)
+
+                total_largeur_images = sum(i.get_width() for i in images_redimensionnees) + (len(images_redimensionnees) - 1) * 20
+                x_depart_images = popup_rect.centerx - total_largeur_images // 2
+                zone_img_haut = popup_rect.top + 160
+                zone_img_hauteur = 160
+                y_images = zone_img_haut + (zone_img_hauteur - hauteur_cible) // 2
+                decalage_x = 0
+                for img in images_redimensionnees:
                     sil = self._creer_silhouette(img)
-                    ecran.blit(sil, (img_start_x + offset_x, img_y))
-                    offset_x = offset_x + img.get_width() + 15
-                
-                # Cadena et message qui dit que c'est bloqué
-                lock_font = pygame.font.Font(None, 36)
-                lock_txt = lock_font.render("Continue ta progression pour débloquer !", True, (120, 120, 140))
-                ecran.blit(lock_txt, (popup_rect.centerx - lock_txt.get_width() // 2, popup_rect.top + 250))
-                
+                    ecran.blit(sil, (x_depart_images + decalage_x, y_images))
+                    decalage_x = decalage_x + img.get_width() + 20
                 # Icône cadenas
                 cadenas_path = os.path.join("img", "cadena.png")
+                font_cadenas = pygame.font.Font(None, 36)
+                texte_cadenas = font_cadenas.render("Continue ta progression pour débloquer !", True, (120, 120, 140))
                 if os.path.exists(cadenas_path):
-                    cadenas = pygame.image.load(cadenas_path)
-                    cadenas = pygame.transform.scale(cadenas, (50, 50))
-                    ecran.blit(cadenas, (popup_rect.centerx - 25, popup_rect.top + 280))
+                    cadenas_img = pygame.image.load(cadenas_path).convert_alpha()
+                    taille_cadenas = 40
+                    cadenas_img = pygame.transform.smoothscale(cadenas_img, (taille_cadenas, taille_cadenas))
+                    lock_x = popup_rect.centerx - taille_cadenas // 2
+                    lock_y = y_images + (hauteur_cible // 2) - taille_cadenas // 2
+                    ecran.blit(cadenas_img, (lock_x, lock_y))
+                    haut_zone = zone_img_haut + zone_img_hauteur
+                    haut_bouton = bouton_fermer.top
+                    pos_y_texte = haut_zone + (haut_bouton - haut_zone) // 2 - (texte_cadenas.get_height() // 2)
+                    ecran.blit(texte_cadenas, (popup_rect.centerx - texte_cadenas.get_width() // 2, pos_y_texte))
+                else:
+                    haut_zone = zone_img_haut + zone_img_hauteur
+                    haut_bouton = bouton_fermer.top
+                    pos_y_texte = haut_zone + (haut_bouton - haut_zone) // 2 - (texte_cadenas.get_height() // 2)
+                    ecran.blit(texte_cadenas, (popup_rect.centerx - texte_cadenas.get_width() // 2, pos_y_texte))
             
             # Navigation
             souris = pygame.mouse.get_pos()
             
             # Bouton précédent
+            font_button = pygame.font.SysFont(None, 50)
             if page_idx > 0:
                 if bouton_prec.collidepoint(souris):
-                    couleur_prec = (100, 100, 140)
+                    couleur_prec = COULEUR_SURVOL
                 else:
-                    couleur_prec = (70, 70, 110)
-                pygame.draw.rect(ecran, couleur_prec, bouton_prec, border_radius=8)
-                pygame.draw.rect(ecran, (255, 255, 255), bouton_prec, 2, border_radius=8)
+                    couleur_prec = COULEUR_BOUTON
+                pygame.draw.rect(ecran, couleur_prec, bouton_prec, border_radius=10)
+                pygame.draw.rect(ecran, COULEUR_BORDURE, bouton_prec, 3, border_radius=10)
                 prec_txt = font_nav.render("<", True, (255, 255, 255))
                 ecran.blit(prec_txt, (bouton_prec.centerx - prec_txt.get_width() // 2, bouton_prec.centery - prec_txt.get_height() // 2))
-            
             # Bouton suivant
             if page_idx < len(numeros) - 1:
                 if bouton_suiv.collidepoint(souris):
-                    couleur_suiv = (100, 100, 140)
+                    couleur_suiv = COULEUR_SURVOL
                 else:
-                    couleur_suiv = (70, 70, 110)
-                pygame.draw.rect(ecran, couleur_suiv, bouton_suiv, border_radius=8)
-                pygame.draw.rect(ecran, (255, 255, 255), bouton_suiv, 2, border_radius=8)
+                    couleur_suiv = COULEUR_BOUTON
+                pygame.draw.rect(ecran, couleur_suiv, bouton_suiv, border_radius=10)
+                pygame.draw.rect(ecran, COULEUR_BORDURE, bouton_suiv, 3, border_radius=10)
                 suiv_txt = font_nav.render(">", True, (255, 255, 255))
                 ecran.blit(suiv_txt, (bouton_suiv.centerx - suiv_txt.get_width() // 2, bouton_suiv.centery - suiv_txt.get_height() // 2))
             
-            # Indicateur de page
-            page_txt = font_texte.render(str(page_idx + 1) + " / " + str(len(numeros)), True, (180, 180, 180))
-            ecran.blit(page_txt, (popup_rect.centerx - page_txt.get_width() // 2, popup_rect.bottom - 55))
             
-            # Bouton fermer
-            if bouton_fermer.collidepoint(souris):
-                couleur_fermer = (150, 60, 60)
-            else:
-                couleur_fermer = (120, 40, 40)
+            # Bouton fermer 
+            couleur_fermer = (150, 60, 60) if bouton_fermer.collidepoint(souris) else (120, 40, 40)
             pygame.draw.rect(ecran, couleur_fermer, bouton_fermer, border_radius=10)
-            pygame.draw.rect(ecran, (255, 255, 255), bouton_fermer, 2, border_radius=10)
-            fermer_txt = font_bouton.render("Fermer", True, (255, 255, 255))
+            pygame.draw.rect(ecran, COULEUR_BORDURE, bouton_fermer, 3, border_radius=10)
+            fermer_txt = font_button.render("Fermer", True, (255, 255, 255))
             ecran.blit(fermer_txt, (bouton_fermer.centerx - fermer_txt.get_width() // 2, bouton_fermer.centery - fermer_txt.get_height() // 2))
             
             pygame.display.flip()
@@ -831,9 +898,10 @@ class Popup:
             # Message
             font_message = pygame.font.Font(None, 30)
             
-            for i, ligne in enumerate(lignes):
+            for idx in range(len(lignes)):
+                ligne = lignes[idx]
                 text = font_message.render(ligne, True, (255, 255, 255))
-                ecran.blit(text, (popup_rect.centerx - text.get_width() // 2, popup_rect.top + 110 + i * 35))
+                ecran.blit(text, (popup_rect.centerx - text.get_width() // 2, popup_rect.top + 110 + idx * 35))
             
             # Boutons
             souris_pos = pygame.mouse.get_pos()
