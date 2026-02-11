@@ -12,12 +12,25 @@ from config_manager import ConfigManager
 
 class PlateformeMobile:
     """Plateforme qui bouge horizontalement ou verticallement."""
-    def __init__(self, cell_x, cell_y, dirv=1, range_blocks=1, speed_px=1):
+    def __init__(self, cell_x, cell_y, dirv=1, range_blocks=1, sens=1, speed_px=1):
         self.cell_x = int(cell_x)
         self.cell_y = int(cell_y)
         self.dir = int(dirv)  # 1 = horizontal, -1 = vertical
-        self.range_blocks = int(range_blocks) if range_blocks is not None else 1
-        self.vitesse = int(speed_px)
+        # s'assurer que les valeurs sont positives
+        try:
+            if range_blocks is not None:
+                self.range_blocks = abs(int(range_blocks))
+            else:
+                self.range_blocks = 1
+        except Exception:
+            self.range_blocks = 1
+        try:
+            if speed_px is not None:
+                self.vitesse = abs(int(speed_px))
+            else:
+                self.vitesse = 1
+        except Exception:
+            self.vitesse = 1
         
         # position d'origine
         self.origine_x = self.cell_x * TAILLE_CELLULE
@@ -25,12 +38,24 @@ class PlateformeMobile:
         
         # plage de déplacement
         self.plage = self.range_blocks * TAILLE_CELLULE
+        # 1 ou -1
+        try:
+            self.sens = int(sens)
+            if self.sens not in (-1, 1):
+                self.sens = 1
+        except Exception:
+            self.sens = 1
+
         self.decalage = 0
         self.sens_direction = 1
         
         # position courante en pixels
-        self.x = self.origine_x
-        self.y = self.origine_y
+        if self.dir == 1:
+            self.x = self.origine_x
+            self.y = self.origine_y
+        else:
+            self.x = self.origine_x
+            self.y = self.origine_y
         
         # pour transmettre le déplacement auxentités
         self.dernier_dx = 0
@@ -56,11 +81,13 @@ class PlateformeMobile:
             self.decalage = 0
             self.sens_direction = 1
         if self.dir == 1:
-            self.x = self.origine_x + self.decalage
+            # horizontal
+            self.x = int(self.origine_x + self.sens * self.decalage)
             self.y = self.origine_y
         else:
+            # vertical
             self.x = self.origine_x
-            self.y = self.origine_y + self.decalage
+            self.y = int(self.origine_y + self.sens * self.decalage)
         self.dernier_dx = int(self.x - old_x)
         self.dernier_dy = int(self.y - old_y)
         return (self.dernier_dx, self.dernier_dy)
@@ -291,17 +318,66 @@ class Niveau:
                     couleur = parts[1]
                 else:
                     continue
-                # positions: [x, y, dir, range, speed]
+                # positions: [x, y, dir, range, sens, speed]
                 for item in positions:
                     try:
                         x = int(item[0])
                         y = int(item[1])
-                        dirv = int(item[2]) if len(item) >= 3 else 1
-                        range_blocks = int(item[3]) if len(item) >= 4 else 1
-                        speed_px = int(item[4]) if len(item) >= 5 else 1
                     except Exception:
                         continue
-                    plat = PlateformeMobile(x, y, dirv=dirv, range_blocks=range_blocks, speed_px=speed_px)
+
+                    dirv = 1
+                    sens = 1
+                    range_blocks = 1
+                    speed_px = 1
+
+                    try:
+                        if len(item) >= 3:
+                            dirv = int(item[2])
+
+                        if len(item) >= 6:
+                            a3 = int(item[3])
+                            a4 = int(item[4])
+                            # détecter le sens (-1 ou 1)
+                            if a3 in (-1, 1) and a4 not in (-1, 1):
+                                sens = a3
+                                range_blocks = int(item[4])
+                            elif a4 in (-1, 1) and a3 not in (-1, 1):
+                                range_blocks = int(item[3])
+                                sens = a4
+                            else:
+                                if a3 in (-1, 1):
+                                    sens = a3
+                                else:
+                                    sens = 1
+                                range_blocks = int(item[4])
+                            speed_px = int(item[5])
+                        elif len(item) == 5:
+                            a3 = int(item[3])
+                            a4 = int(item[4])
+                            if a3 in (-1, 1) and a4 not in (-1, 1):
+                                sens = a3
+                                range_blocks = a4
+                            elif a4 in (-1, 1) and a3 not in (-1, 1):
+                                range_blocks = a3
+                                sens = a4
+                            else:
+                                range_blocks = a3
+                                if a4 in (-1, 1):
+                                    sens = a4
+                                else:
+                                    sens = 1
+                        elif len(item) == 4:
+                            range_blocks = int(item[3])
+                            sens = 1
+                        elif len(item) == 3:
+                            dirv = int(item[2])
+                            sens = 1
+                            range_blocks = 1
+                    except Exception:
+                        continue
+
+                    plat = PlateformeMobile(x, y, dirv=dirv, range_blocks=range_blocks, sens=sens, speed_px=speed_px)
                     plat.couleur = couleur
                     self.platformes_mobiles.append(plat)
                     # ne pas laisser de bloc dans la grille (plateforme gérée séparément)
@@ -576,7 +652,10 @@ class Niveau:
                     old_plat.move_ip(-dx, -dy)
                     if not old_plat.colliderect(rect_joueur):
                         player_vy = joueur.vitesse_y
-                        upward_mag = -player_vy if player_vy < 0 else 0
+                        if player_vy < 0:
+                            upward_mag = -player_vy
+                        else:
+                            upward_mag = 0
                         if upward_mag > abs(dy) + 1:
                             joueur.y = rect_plat.bottom - joueur.marge_y_haut
                             joueur.vitesse_y = 0
