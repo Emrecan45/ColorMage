@@ -10,6 +10,72 @@ from enemies import Slime
 from enemies import Piece
 from config_manager import ConfigManager
 
+class PlateformeMobile:
+    """Plateforme qui bouge horizontalement ou verticallement."""
+    def __init__(self, cell_x, cell_y, dirv=1, range_blocks=1, speed_px=1):
+        self.cell_x = int(cell_x)
+        self.cell_y = int(cell_y)
+        self.dir = int(dirv)  # 1 = horizontal, -1 = vertical
+        self.range_blocks = int(range_blocks) if range_blocks is not None else 1
+        self.vitesse = int(speed_px)
+        
+        # position d'origine
+        self.origine_x = self.cell_x * TAILLE_CELLULE
+        self.origine_y = self.cell_y * TAILLE_CELLULE
+        
+        # plage de déplacement
+        self.plage = self.range_blocks * TAILLE_CELLULE
+        self.decalage = 0
+        self.sens_direction = 1
+        
+        # position courante en pixels
+        self.x = self.origine_x
+        self.y = self.origine_y
+        
+        # pour transmettre le déplacement auxentités
+        self.dernier_dx = 0
+        self.dernier_dy = 0
+        
+        # taille de la plateforme (1 cellule)
+        self.largeur = TAILLE_CELLULE
+        self.hauteur = TAILLE_CELLULE
+        
+        # couleur (par defaut noir)
+        self.couleur = "noir"
+
+    def maj(self):
+        """Met à jour la position et retourne (dx, dy)."""
+        old_x = self.x
+        old_y = self.y
+        # avancer le décalage
+        self.decalage += self.vitesse * self.sens_direction
+        if self.decalage > self.plage:
+            self.decalage = self.plage
+            self.sens_direction = -1
+        if self.decalage < 0:
+            self.decalage = 0
+            self.sens_direction = 1
+        if self.dir == 1:
+            self.x = self.origine_x + self.decalage
+            self.y = self.origine_y
+        else:
+            self.x = self.origine_x
+            self.y = self.origine_y + self.decalage
+        self.dernier_dx = int(self.x - old_x)
+        self.dernier_dy = int(self.y - old_y)
+        return (self.dernier_dx, self.dernier_dy)
+
+    def obtenir_rect(self):
+        return pygame.Rect(int(self.x), int(self.y), self.largeur, self.hauteur)
+
+    def dessiner(self, ecran):
+        draw_color = (30, 30, 30)
+        if self.couleur in COULEURS:
+            draw_color = COULEURS[self.couleur]
+        elif self.couleur == 'noir':
+            draw_color = (30, 30, 30)
+        pygame.draw.rect(ecran, draw_color, (int(self.x), int(self.y), self.largeur, self.hauteur))
+
 
 class Niveau:
     """Représente un niveau du jeu avec sa grille"""
@@ -25,6 +91,8 @@ class Niveau:
         self.projectiles = []
         self.slimes = []
         self.pieces = []
+        # plateformes mobiles
+        self.platformes_mobiles = []
         self.traversables = ["change_rouge", "change_bleu", "change_vert", "porte", "vide", "pic"]
         self.image_pic = pygame.image.load("img/pic.png")
         self.image_pic = pygame.transform.scale(self.image_pic, (TAILLE_CELLULE, TAILLE_CELLULE))
@@ -52,6 +120,7 @@ class Niveau:
             vitesse_scintillement = random.uniform(0.02, 0.08)
             phase = random.uniform(0, 2 * math.pi)
             self.etoiles_fond.append([x, y, taille, brillance, vitesse_scintillement, phase])
+        self._last_platform_update_tick = -1
     
     def maj_volume_sons(self):
         """Met à jour le volume des sons d'ennemis"""
@@ -85,6 +154,7 @@ class Niveau:
         self.squelettes = []
         self.slimes = []
         self.pieces = []
+        self.platformes_mobiles = []
         for type_bloc, positions in data.items():
             if type_bloc == "spawn":
                 x, y = positions
@@ -215,6 +285,27 @@ class Niveau:
                     piece.cell_y = y
                     self.pieces.append(piece)
                     self.grille[y][x] = "vide"
+            elif type_bloc.startswith("mobile_"):
+                parts = type_bloc.split("_")
+                if len(parts) >= 2:
+                    couleur = parts[1]
+                else:
+                    continue
+                # positions: [x, y, dir, range, speed]
+                for item in positions:
+                    try:
+                        x = int(item[0])
+                        y = int(item[1])
+                        dirv = int(item[2]) if len(item) >= 3 else 1
+                        range_blocks = int(item[3]) if len(item) >= 4 else 1
+                        speed_px = int(item[4]) if len(item) >= 5 else 1
+                    except Exception:
+                        continue
+                    plat = PlateformeMobile(x, y, dirv=dirv, range_blocks=range_blocks, speed_px=speed_px)
+                    plat.couleur = couleur
+                    self.platformes_mobiles.append(plat)
+                    # ne pas laisser de bloc dans la grille (plateforme gérée séparément)
+                    self.grille[y][x] = "vide"
             else:
                 for pos in positions:
                     x, y = pos
@@ -262,6 +353,48 @@ class Niveau:
                     bloc_rect = pygame.Rect(x * TAILLE_CELLULE, y * TAILLE_CELLULE, TAILLE_CELLULE, TAILLE_CELLULE)
                     if rect.colliderect(bloc_rect):
                         return True
+        # plateformes
+        for plat in self.platformes_mobiles:
+            pr = plat.obtenir_rect()
+            if plat.couleur is None or plat.couleur == "noir":
+                if rect.colliderect(pr):
+                    return True
+            else:
+                if plat.couleur in ["rouge", "bleu", "vert", "gris"] and plat.couleur == couleur_joueur:
+                    if rect.colliderect(pr):
+                        return True
+        return False
+
+    def bloc_solide_au_dessus(self, joueur):
+        """Vérifie s'il y a un bloc solide juste au-dessus du joueur"""
+        # Zone de détection au-dessus de la tête du joueur
+        head_y = joueur.y + joueur.marge_y_haut
+        detection_height = 10
+        
+        detection_rect = pygame.Rect(
+            joueur.x + joueur.marge_x + 5,
+            head_y - detection_height,
+            joueur.largeur - 2 * joueur.marge_x - 10,
+            detection_height
+        )
+        
+        # blocs solides
+        for y in range(HAUTEUR_GRILLE):
+            for x in range(LARGEUR_GRILLE):
+                bloc = self.grille[y][x]
+                if bloc == "noir" or (bloc in ["rouge", "bleu", "vert", "gris"] and bloc == joueur.couleur):
+                    bloc_rect = pygame.Rect(x * TAILLE_CELLULE, y * TAILLE_CELLULE, TAILLE_CELLULE, TAILLE_CELLULE)
+                    if detection_rect.colliderect(bloc_rect):
+                        return True
+        
+        # collision avec plateformes mobiles
+        for plat in self.platformes_mobiles:
+            # Ignorer si les plateformes de couleur différente
+            if plat.couleur is not None and plat.couleur != "noir" and plat.couleur != joueur.couleur:
+                continue
+            pr = plat.obtenir_rect()
+            if detection_rect.colliderect(pr):
+                return True
         
         return False
     
@@ -308,8 +441,13 @@ class Niveau:
                         # Blocs normaux
                         couleur = COULEURS[bloc]
                         pygame.draw.rect(ecran, couleur, (x * TAILLE_CELLULE, y * TAILLE_CELLULE, TAILLE_CELLULE, TAILLE_CELLULE))
-                        pygame.draw.rect(ecran, (0, 0, 0), (x * TAILLE_CELLULE, y * TAILLE_CELLULE, TAILLE_CELLULE, TAILLE_CELLULE), 1)
+        
         if update_entities:
+            # mise à jour plateformes
+            self.maj_plateformes(temps_global)
+            for plat in list(self.platformes_mobiles):
+                plat.dessiner(ecran)
+            
             for sorcier in list(self.sorciers):
                 proj = sorcier.update()
                 if proj is not None:
@@ -348,8 +486,12 @@ class Niveau:
                 else:
                     piece.dessiner(ecran)
         else:
+            for plat in self.platformes_mobiles:
+                plat.dessiner(ecran)
             for sorcier in self.sorciers:
                 sorcier.dessiner(ecran)
+            for squelette in self.squelettes:
+                squelette.dessiner(ecran)
             for proj in self.projectiles:
                 proj.dessiner(ecran)
             for slime in self.slimes:
@@ -376,7 +518,6 @@ class Niveau:
     
     def dessiner_portail(self, ecran, x, y, taille, temps_global):
         """Dessine un portail de téléportation jaune"""
-        import math
         
         # Effet de rotation et pulsation
         pulse = 1 + 0.2 * math.sin(temps_global * 0.03)
@@ -402,3 +543,82 @@ class Niveau:
             pygame.draw.circle(ecran, (255, 255, 150), (px, py), particle_size)
         
         pygame.draw.circle(ecran, (255, 255, 200), (x, y), rayon // 4)
+
+    def maj_plateformes(self, tick):
+        """Met à jour toutes les plateformes mobiles."""
+        if tick == self._last_platform_update_tick:
+            return
+        self._last_platform_update_tick = tick
+        for plat in self.platformes_mobiles:
+            plat.maj()
+
+    def appliquer_pousse_plateforme(self, joueur):
+        """collision"""
+        rect_joueur = pygame.Rect(joueur.x + joueur.marge_x, joueur.y + joueur.marge_y_haut, joueur.largeur - 2 * joueur.marge_x, joueur.hauteur - joueur.marge_y_haut - joueur.marge_y_bas)
+
+        for plat in self.platformes_mobiles:
+            # gestion des interactions de  couleurs
+            if plat.couleur is not None and plat.couleur != "noir" and plat.couleur != joueur.couleur:
+                continue
+
+            rect_plat = plat.obtenir_rect()
+            dx = plat.dernier_dx
+            dy = plat.dernier_dy
+
+            # écrasement
+            if dy > 0 and rect_joueur.colliderect(rect_plat):
+                tete_top = joueur.y + joueur.marge_y_haut
+                if tete_top <= rect_plat.bottom - 5:
+                    if self.bloc_solide_au_dessus(joueur):
+                        return "mort"
+
+                    old_plat = rect_plat.copy()
+                    old_plat.move_ip(-dx, -dy)
+                    if not old_plat.colliderect(rect_joueur):
+                        player_vy = joueur.vitesse_y
+                        upward_mag = -player_vy if player_vy < 0 else 0
+                        if upward_mag > abs(dy) + 1:
+                            joueur.y = rect_plat.bottom - joueur.marge_y_haut
+                            joueur.vitesse_y = 0
+
+            # collision
+            if rect_joueur.colliderect(rect_plat):
+                old_x = joueur.x
+                old_y = joueur.y
+                joueur.x += dx
+                if dy != 0:
+                    joueur.y += dy
+
+                rect_test = pygame.Rect(joueur.x + joueur.marge_x, joueur.y + joueur.marge_y_haut, joueur.largeur - 2 * joueur.marge_x, joueur.hauteur - joueur.marge_y_haut - joueur.marge_y_bas)
+
+                if self.collision(rect_test, joueur.couleur):
+                    joueur.x = old_x
+                    rect_test_x = pygame.Rect(joueur.x + joueur.marge_x, old_y + joueur.marge_y_haut, joueur.largeur - 2 * joueur.marge_x, joueur.hauteur - joueur.marge_y_haut - joueur.marge_y_bas)
+                    if not self.collision(rect_test_x, joueur.couleur):
+                        joueur.y = old_y + dy
+                    else:
+                        joueur.x = old_x
+                        joueur.y = old_y
+
+                rect_joueur.topleft = (joueur.x + joueur.marge_x, joueur.y + joueur.marge_y_haut)
+                if dx != 0 or dy != 0:
+                    joueur._pousse_plateforme = True
+                continue
+
+            # debout
+            pieds_bottom = joueur.y + joueur.hauteur - joueur.marge_y_bas
+            tolerance = 6
+            overlap_horizontal = not (rect_joueur.right <= rect_plat.left or rect_joueur.left >= rect_plat.right)
+            if overlap_horizontal and (rect_plat.top - tolerance <= pieds_bottom <= rect_plat.top + 2):
+                old_x = joueur.x
+                joueur.x += dx
+                rect_test = pygame.Rect(joueur.x + joueur.marge_x, joueur.y + joueur.marge_y_haut, joueur.largeur - 2 * joueur.marge_x, joueur.hauteur - joueur.marge_y_haut - joueur.marge_y_bas)
+                if self.collision(rect_test, joueur.couleur):
+                    joueur.x = old_x
+                else:
+                    joueur._pousse_plateforme = True
+
+                if joueur.vitesse_y >= 0:
+                    joueur.au_sol = True
+
+                rect_joueur.topleft = (joueur.x + joueur.marge_x, joueur.y + joueur.marge_y_haut)
