@@ -113,53 +113,56 @@ class Popup:
             1: {
                 "titre": "Les bases",
                 "images": [self.img_portail_couleur, self.img_bloc_rouge, self.img_pic_tuto, self.img_porte_tuto],
-                "lore": "Dans ce monde, les portails chantent et les blocs répondent aux couleurs du mage.",
+                "lore": "Le Prisme s'est brisé. Seuls ceux qui maîtrisent le chant des couleurs peuvent traverser ce monde.",
                 "lignes": [
-                    "- Les portails colorés changent ta couleur.",
-                    "- Les blocs de ta couleur deviennent solides.",
-                    "- Évite les pics car ils sont mortels !",
-                    "- Atteins le portail jaune pour gagner !"
+                    "- Traverse les portails pour changer ta couleur.",
+                    "- Tu ne peux toucher que les blocs noirs ou de ta propre couleur.",
+                    "- Les autres blocs sont immatériels : tu passeras au travers.",
+                    "- Atteins le portail jaune pour t'échapper."
                 ]
             },
             2: {
-                "titre": "Blocs enchantés",
+                "titre": "Blocs Enchantés",
                 "images": [self.img_mobile_bleu],
-                "lore": "À cause de la magie instable de ce monde, des blocs enchantés flottent et se déplacent.",
+                "lore": "Certains fragments du monde refusent de rester immobiles, animés par une magie résiduelle.",
                 "lignes": [
-                    "- Des blocs bougent horizontalement ou verticalement.",
-                    "- Seuls les blocs de ta couleur t'affectent.",
-                    "- Attention : ne pas te faire écraser par les blocs."
+                    "- Ces blocs se déplacent en rythme.",
+                    "- Ils peuvent te transporter s'ils sont noirs ou de ta couleur.",
+                    "- Attention : ne te laisse pas écraser contre les murs !",
+                    "- Observe leur cycle avant de sauter."
                 ]
             },
             3: {
                 "titre": "Sorcier",
                 "images": [self.img_sorcier],
-                "lore": "Un mage déchu. Ses projectiles portent la rancune des couleurs.",
+                "lore": "Des mages corrompus par l'obsidienne. Ils canalisent leur haine sous forme de crânes spectraux.",
                 "lignes": [
-                    "- Le sorcier lance des têtes de mort.",
-                    "- Esquive ses projectiles pour survivre !",
-                    "- Il ne bouge pas mais reste vigilant !"
+                    "- Il reste immobile mais attaque à distance.",
+                    "- Il projette des crânes maudits en ligne droite.",
+                    "- Ses tirs traversent les murs : reste vigilant !",
+                    "- Trouve le bon timing pour passer entre les tirs."
                 ]
             },
             4: {
-                "titre": "Squelette",
+                "titre": "Garde d'Os",
                 "images": [self.img_squelette],
-                "lore": "Os ressuscités par des runes anciennes, ils gardent des chemins creusés par la magie.",
+                "lore": "D'anciens gardiens relevés par le néant. Ils patrouillent sans fin, frappant tout intrus.",
                 "lignes": [
-                    "- Le squelette patrouille et attaque au corps-à-corps.",
-                    "- Il fait demi-tour après quelques pas.",
-                    "- Passe au bon moment pour l'éviter !"
+                    "- Ce soldat fait des allers-retours constants.",
+                    "- Il attaque au corps-à-corps s'il te touche.",
+                    "- Il est invincible : ne tente pas de l'attaquer.",
+                    "- Saute par-dessus ou passe dans son dos."
                 ]
             },
             5: {
                 "titre": "Slimes",
                 "images": [self.img_slime, self.img_slime_violet],
-                "lore": "Essences visqueuses nées des résidus magiques, certains sont plus coriaces que d'autres.",
+                "lore": "Des résidus de magie condensés. Leurs noyaux sont durs, mais leur corps est élastique.",
                 "lignes": [
-                    "- Les slimes restent sur place mais sont dangereux !",
-                    "- Saute sur eux pour les éliminer.",
-                    "- Slime vert = 1 PV | Slime violet = 3 PV.",
-                    "- Tu rebondis en sautant dessus !"
+                    "- Ils bloquent le chemin. Saute-leur dessus pour les vaincre !",
+                    "- Verts : Fragiles, 1 seul saut suffit.",
+                    "- Violets : Résistants, il faut 3 sauts pour les détruire.",
+                    "- Utilise le rebond sur leur tête pour atteindre des hauteurs."
                 ]
             }
         }
@@ -301,9 +304,9 @@ class Popup:
         lignes = grimoire["lignes"]
         
         # Dimensions du popup
-        popup_w = 620
-        popup_h = 400
-        popup_rect = pygame.Rect((LARGEUR_ECRAN - popup_w) // 2, (HAUTEUR_ECRAN - popup_h) // 2, popup_w, popup_h)
+        popup_largeur = 700
+        popup_hauteur = 400
+        popup_rect = pygame.Rect((LARGEUR_ECRAN - popup_largeur) // 2, (HAUTEUR_ECRAN - popup_hauteur) // 2, popup_largeur, popup_hauteur)
         
         # Bouton OK
         bouton_ok = pygame.Rect(0, 0, 180, 50)
@@ -363,6 +366,11 @@ class Popup:
 
             x_depart_images = popup_rect.centerx - total_largeur_images // 2
             y_images = popup_rect.top + 70
+            texte_y_base = y_images + 105
+
+            if numero_niveau in [3, 4]:
+                y_images -= 15  # Remonte l'image pour le sorcier et le squelette
+
             decalage_x = 0
             for img in images:
                 # Centrer verticalement chaque image
@@ -371,7 +379,7 @@ class Popup:
                 decalage_x = decalage_x + img.get_width() + 15
             
             # Lignes de texte
-            texte_y = y_images + 115
+            texte_y = texte_y_base
             
 
             for idx in range(len(lignes)):
@@ -421,9 +429,9 @@ class Popup:
         font_bouton = pygame.font.Font(None, 38)
         font_nav = pygame.font.Font(None, 44)
         
-        popup_w = LARGEUR_ECRAN - 120
-        popup_h = HAUTEUR_ECRAN - 120
-        popup_rect = pygame.Rect((LARGEUR_ECRAN - popup_w) // 2, (HAUTEUR_ECRAN - popup_h) // 2, popup_w, popup_h)
+        popup_largeur = LARGEUR_ECRAN - 120
+        popup_hauteur = HAUTEUR_ECRAN - 120
+        popup_rect = pygame.Rect((LARGEUR_ECRAN - popup_largeur) // 2, (HAUTEUR_ECRAN - popup_hauteur) // 2, popup_largeur, popup_hauteur)
 
         # Bouton Fermer
         bouton_fermer = pygame.Rect(0, 0, 250, 50)
@@ -510,13 +518,13 @@ class Popup:
                     decalage_x = decalage_x + img.get_width() + 20
 
                 # Texte
-                texte_y = zone_img_haut + zone_img_hauteur + 40
+                texte_y = zone_img_haut + zone_img_hauteur + 20
                 max_w = popup_rect.width - 120
                 if "lore" in grimoire:
                     # afficher lore
                     s = font_texte.render(grimoire["lore"], True, (200, 200, 200))
                     ecran.blit(s, (popup_rect.centerx - s.get_width() // 2, texte_y))
-                    texte_y = texte_y + font_texte.get_linesize() + 10
+                    texte_y = texte_y + font_texte.get_linesize() + 30
 
                 for idx in range(len(grimoire["lignes"])):
                     ligne = grimoire["lignes"][idx]
@@ -826,7 +834,6 @@ class Popup:
         Returns:
             str: "confirmer", "annuler" ou None
         """
-        import sys
         # Dimensions du popup de confirmation (plus grand)
         largeur_popup = 600
         hauteur_popup = 350
