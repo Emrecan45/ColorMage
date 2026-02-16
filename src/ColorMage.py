@@ -633,7 +633,7 @@ class Game:
                     self.son_hurt.play()
                     slime.recevoir_degats()
                     # Rebond du joueur
-                    self.joueur.vitesse_y = -12
+                    self.joueur.vitesse_y = -17
                     self.joueur.au_sol = False
                 else:
                     self.joueur.son_mort.play()
