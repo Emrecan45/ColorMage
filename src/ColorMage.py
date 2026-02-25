@@ -574,10 +574,8 @@ class Game:
                 self.joueur.largeur - 2 * self.joueur.marge_x,
                 self.joueur.hauteur - self.joueur.marge_y_haut - self.joueur.marge_y_bas,
             )
-            player_img = self.joueur.images[self.joueur.couleur][self.joueur.frame_index]
-            if self.joueur.direction == -1:
-                player_img = pygame.transform.flip(player_img, True, False)
-            player_mask = pygame.mask.from_surface(player_img)
+            player_img = self.joueur.obtenir_image_courante()
+            player_mask = self.joueur.obtenir_masque_courant()
 
             proj_iter = list(self.niveau.projectiles)
             # toucher un sorcier tue
