@@ -399,7 +399,7 @@ class Joueur:
         if self.en_changement_couleur:
             if self.etape_changement == 0:
                 # Affiche la boule de couleur cible (effet visuel)
-                image_res = self._obtenir_image_boule_changement()
+                image_res = self.obtenir_image_boule_changement()
             else:
                 self.couleur = self.couleur_cible
                 image_res = self.images[self.couleur][0]
@@ -442,7 +442,7 @@ class Joueur:
                     if img is None:
                         base = self.combo_cache.get(key)
                         if base is None:
-                            base = self._obtenir_image_boule_changement()
+                            base = self.obtenir_image_boule_changement()
                             self.combo_cache[key] = base
                         img = pygame.transform.flip(base, True, False)
                         self.combo_cache[keyf] = img
@@ -450,7 +450,7 @@ class Joueur:
                 else:
                     img = self.combo_cache.get(key)
                     if img is None:
-                        img = self._obtenir_image_boule_changement()
+                        img = self.obtenir_image_boule_changement()
                         self.combo_cache[key] = img
                     return img
             return self.images[self.couleur][0]
