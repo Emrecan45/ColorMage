@@ -129,7 +129,7 @@ class Popup:
                     "- Des blocs bougent horizontalement ou verticalement.",
                     "- Ils peuvent te transporter s'ils sont noirs ou de ta couleur.",
                     "- Ne te fais pas écraser par un bloc et ne tombe pas dans le vide !",
-                    "- Observe leur cycle avant de sauter."
+                    "- Observe leur cycle avant de sauter !"
                 ]
             },
             3: {
@@ -139,8 +139,8 @@ class Popup:
                 "lignes": [
                     "- Il reste immobile mais attaque à distance.",
                     "- Il projette des crânes maudits en ligne droite.",
-                    "- Ses tirs traversent les murs : reste vigilant !",
-                    "- Trouve le bon timing pour passer entre les tirs."
+                    "- Le moindre contact avec lui ou ses crânes te sera fatal.",
+                    "- Trouve le bon timing pour passer entre les tirs !"
                 ]
             },
             4: {
@@ -149,9 +149,9 @@ class Popup:
                 "lore": "D'anciens gardiens relevés par le néant. Ils patrouillent sans fin, frappant tout intrus.",
                 "lignes": [
                     "- Ce soldat fait des allers-retours constants.",
-                    "- Il attaque au corps-à-corps s'il te touche.",
-                    "- Il est invincible : ne tente pas de l'attaquer.",
-                    "- Saute par-dessus ou passe dans son dos."
+                    "- Il attaque au corps-à-corps",
+                    "- Si tu le touches, c'est la fin",
+                    "- Saute par-dessus ou passe dans son dos !"
                 ]
             },
             5: {
