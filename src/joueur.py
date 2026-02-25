@@ -254,28 +254,6 @@ class Joueur:
         else:
             self.au_sol = False
 
-        # Interaction avec les plateformes mobiles
-        if self.au_sol:
-            pieds = pygame.Rect(self.x + self.marge_x, self.y + self.hauteur - self.marge_y_bas - 2, self.largeur - 2 * self.marge_x, 2)
-            for plat in niveau.platformes_mobiles:
-                rect_plat = plat.obtenir_rect()
-                # ignorer les plateformes de couleur différente (sauf le noir)
-                try:
-                    plat_couleur = plat.couleur
-                except Exception:
-                    plat_couleur = None
-
-                if plat_couleur is None or plat_couleur == 'noir' or plat_couleur == self.couleur:
-                    if pieds.colliderect(rect_plat):
-                        # déplacement plateforme
-                        dx = plat.dernier_dx
-                        if dx != 0 and not self._pousse_plateforme:
-                            self.x += dx
-                            rect_test = pygame.Rect(self.x + self.marge_x, self.y + self.marge_y_haut, self.largeur - 2 * self.marge_x, self.hauteur - self.marge_y_haut - self.marge_y_bas)
-                            if niveau.collision(rect_test, self.couleur):
-                                self.x -= dx
-                        break
-
         # tomber dans le vide
         if self.y > (HAUTEUR_GRILLE * TAILLE_CELLULE):
             self.son_mort.play()
