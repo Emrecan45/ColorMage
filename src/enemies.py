@@ -40,6 +40,9 @@ class Projectile:
             self.collision_boxes.append(box)
             self.masks.append((mask, flipped_mask))
 
+        self.cache_retournes = {}
+        self.cache_explosion_retournes = {}
+
         self.frame_index = 0
         self.last_frame_time = pygame.time.get_ticks()
         self.frame_delay = 100
@@ -109,11 +112,23 @@ class Projectile:
     def dessiner(self, ecran):
         if self.exploding and self.explosion_frames:
             frame = self.explosion_frames[self.explosion_index % len(self.explosion_frames)]
+            if self.direction == -1:
+                cle = ('expl', self.explosion_index % len(self.explosion_frames))
+                f = self.cache_explosion_retournes.get(cle)
+                if f is None:
+                    f = pygame.transform.flip(frame, True, False)
+                    self.cache_explosion_retournes[cle] = f
+                frame = f
             ecran.blit(frame, (self.x, self.y))
             return
         frame = self.frames[self.frame_index]
         if self.direction == -1:
-            frame = pygame.transform.flip(frame, True, False)
+            cle = ('f', self.frame_index)
+            f = self.cache_retournes.get(cle)
+            if f is None:
+                f = pygame.transform.flip(frame, True, False)
+                self.cache_retournes[cle] = f
+            frame = f
         ecran.blit(frame, (self.x, self.y))
 
     def start_explosion(self):
@@ -175,6 +190,9 @@ class Sorcier:
             sprite = self.spritesheet.subsurface(pygame.Rect(x_sprite, y_sprite, self.sprite_w, self.sprite_h))
             sprite = pygame.transform.scale(sprite, (self.width, self.height))
             self.frames.append(sprite)
+
+        # Cache pour images retournées du sorcier
+        self.cache_retournes = {}
 
         self.frame_index = 0
         self.last_frame_time = pygame.time.get_ticks()
@@ -248,7 +266,12 @@ class Sorcier:
     def dessiner(self, ecran):
         frame = self.frames[self.frame_index]
         if self.direction == -1:
-            frame = pygame.transform.flip(frame, True, False)
+            cle = ('f', self.frame_index)
+            f = self.cache_retournes.get(cle)
+            if f is None:
+                f = pygame.transform.flip(frame, True, False)
+                self.cache_retournes[cle] = f
+            frame = f
         ecran.blit(frame, (self.x, self.y))
 
 
@@ -482,7 +505,24 @@ class Squelette:
         flipped = False
         draw_frame = frame
         if self.direction == -1:
-            draw_frame = pygame.transform.flip(frame, True, False)
+            # utiliser un cache basé sur l'etat et l'indice de frame
+            if self.state == "attacking":
+                key = ("att", self.attack_index % max(1, len(self.attack_frames)))
+            elif self.state == "pre_attack":
+                key = ("pre", 0)
+            elif self.state == "walking":
+                key = ("walk", self.walk_index)
+            elif self.state == "turning":
+                key = ("idle", 0)
+            else:
+                key = ("idle", 0)
+            if not hasattr(self, 'cache_surface_retournes'):
+                self.cache_surface_retournes = {}
+            cached = self.cache_surface_retournes.get(key)
+            if cached is None:
+                cached = pygame.transform.flip(frame, True, False)
+                self.cache_surface_retournes[key] = cached
+            draw_frame = cached
             flipped = True
         draw_x = int(self.x)
         draw_y = int(self.y + offset)

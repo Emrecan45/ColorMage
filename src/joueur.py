@@ -131,6 +131,10 @@ class Joueur:
         self.etape_changement = 0
         self.couleur_cible = None
         self.couleur_precedente = None
+
+        # Caches pour les images retournées et les masques de collision
+        self.cache_retournes = {}
+        self.cache_masques = {}
     
     def reset(self, niveau=None):
         """Réinitialise le joueur à sa position de départ et sa couleur de base (gris)"""
@@ -426,7 +430,42 @@ class Joueur:
             image_res = frames[self.frame_index]
 
         if self.direction == -1:
-            image = pygame.transform.flip(image_res, True, False)
+            cle = (self.couleur, self.frame_index)
+            img = self.cache_retournes.get(cle)
+            if img is None:
+                img = pygame.transform.flip(image_res, True, False)
+                self.cache_retournes[cle] = img
         else:
-            image = image_res
-        ecran.blit(image, (self.x, self.y))
+            img = image_res
+
+        ecran.blit(img, (self.x, self.y))
+
+    def obtenir_image_courante(self):
+        """Retourne la surface courante du joueur (flip appliqué si nécessaire)."""
+        if self.en_changement_couleur:
+            if self.etape_changement == 0:
+                return self.images_boules[self.couleur_precedente][self.couleur_cible]
+            return self.images[self.couleur][0]
+        image_res = self.images[self.couleur][self.frame_index]
+        if self.direction == -1:
+            cle = (self.couleur, self.frame_index)
+            img = self.cache_retournes.get(cle)
+            if img is None:
+                img = pygame.transform.flip(image_res, True, False)
+                self.cache_retournes[cle] = img
+            return img
+        return image_res
+
+    def obtenir_masque_courant(self):
+        """Retourne le masque pré calculé correspondant à l'image courante."""
+        # Pour l'animation de changement de couleur, on calcule sans cache
+        if self.en_changement_couleur:
+            img = self.obtenir_image_courante()
+            return pygame.mask.from_surface(img)
+        cle = (self.couleur, self.frame_index, self.direction)
+        masque = self.cache_masques.get(cle)
+        if masque is None:
+            img = self.obtenir_image_courante()
+            masque = pygame.mask.from_surface(img)
+            self.cache_masques[cle] = masque
+        return masque

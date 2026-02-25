@@ -1,7 +1,6 @@
 import pygame
 import os
 import cv2
-import numpy as np
 from config import LARGEUR_ECRAN, HAUTEUR_ECRAN
 
 class Intro:
