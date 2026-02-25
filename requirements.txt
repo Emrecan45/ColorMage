@@ -1,3 +1,2 @@
 pygame
 opencv-python
-numpy
