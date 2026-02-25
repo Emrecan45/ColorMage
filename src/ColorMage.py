@@ -486,17 +486,6 @@ class Game:
         """Met à jour la logique du jeu"""
         # Incrémenter le timer global
         self.temps_global += 1
-        if self.etat == "jeu" and self.popup_actif is None:
-            self.niveau.maj_plateformes(self.temps_global)
-            rc = self.niveau.appliquer_pousse_plateforme(self.joueur)
-            if rc == "mort":
-                # Écrasement
-                self.joueur.son_mort.play()
-                self.pieces_en_cours = []
-                self.popup_actif = "defaite"
-                self.chrono.arreter()
-                self.est_record = False
-                return
         
         # Vérifier si un niveau doit être lancé depuis le menu
         if self.etat == "selection":
@@ -552,6 +541,18 @@ class Game:
             touches = pygame.key.get_pressed()
             resultat = None
             resultat_deplacement = self.joueur.deplacer(touches, self.niveau)
+
+            self.joueur._pousse_plateforme = False
+            self.niveau.maj_plateformes(self.temps_global)
+            rc = self.niveau.appliquer_pousse_plateforme(self.joueur)
+            if rc == "mort":
+                # Écrasement
+                self.joueur.son_mort.play()
+                self.pieces_en_cours = []
+                self.popup_actif = "defaite"
+                self.chrono.arreter()
+                self.est_record = False
+                return
             if resultat_deplacement == "mort":
                 resultat = "mort"
             # tomber dans le vide

@@ -126,9 +126,9 @@ class Popup:
                 "images": [self.img_mobile_bleu],
                 "lore": "Certains fragments du monde refusent de rester immobiles, animés par une magie résiduelle.",
                 "lignes": [
-                    "- Ces blocs se déplacent en rythme.",
+                    "- Des blocs bougent horizontalement ou verticalement.",
                     "- Ils peuvent te transporter s'ils sont noirs ou de ta couleur.",
-                    "- Attention : ne te laisse pas écraser contre les murs !",
+                    "- Ne te fais pas écraser par un bloc et ne tombe pas dans le vide !",
                     "- Observe leur cycle avant de sauter."
                 ]
             },
