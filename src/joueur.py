@@ -135,6 +135,7 @@ class Joueur:
         # Caches pour les images retournées et les masques de collision
         self.cache_retournes = {}
         self.cache_masques = {}
+        self.combo_cache = {}
     
     def reset(self, niveau=None):
         """Réinitialise le joueur à sa position de départ et sa couleur de base (gris)"""
@@ -398,7 +399,7 @@ class Joueur:
         if self.en_changement_couleur:
             if self.etape_changement == 0:
                 # Affiche la boule de couleur cible (effet visuel)
-                image_res = self.images_boules[self.couleur_precedente][self.couleur_cible]
+                image_res = self._obtenir_image_boule_changement()
             else:
                 self.couleur = self.couleur_cible
                 image_res = self.images[self.couleur][0]
@@ -408,11 +409,23 @@ class Joueur:
             image_res = frames[self.frame_index]
 
         if self.direction == -1:
-            cle = (self.couleur, self.frame_index)
-            img = self.cache_retournes.get(cle)
-            if img is None:
-                img = pygame.transform.flip(image_res, True, False)
-                self.cache_retournes[cle] = img
+            if self.en_changement_couleur and self.etape_changement == 0:
+                key = (self.couleur_precedente, self.couleur_cible)
+                keyf = (self.couleur_precedente, self.couleur_cible, 'flip')
+                img = self.combo_cache.get(keyf)
+                if img is None:
+                    base = self.combo_cache.get(key)
+                    if base is None:
+                        base = image_res
+                        self.combo_cache[key] = base
+                    img = pygame.transform.flip(base, True, False)
+                    self.combo_cache[keyf] = img
+            else:
+                cle = (self.couleur, self.frame_index)
+                img = self.cache_retournes.get(cle)
+                if img is None:
+                    img = pygame.transform.flip(image_res, True, False)
+                    self.cache_retournes[cle] = img
         else:
             img = image_res
 
@@ -422,7 +435,24 @@ class Joueur:
         """Retourne la surface courante du joueur (flip appliqué si nécessaire)."""
         if self.en_changement_couleur:
             if self.etape_changement == 0:
-                return self.images_boules[self.couleur_precedente][self.couleur_cible]
+                key = (self.couleur_precedente, self.couleur_cible)
+                keyf = (self.couleur_precedente, self.couleur_cible, 'flip')
+                if self.direction == -1:
+                    img = self.combo_cache.get(keyf)
+                    if img is None:
+                        base = self.combo_cache.get(key)
+                        if base is None:
+                            base = self._obtenir_image_boule_changement()
+                            self.combo_cache[key] = base
+                        img = pygame.transform.flip(base, True, False)
+                        self.combo_cache[keyf] = img
+                    return img
+                else:
+                    img = self.combo_cache.get(key)
+                    if img is None:
+                        img = self._obtenir_image_boule_changement()
+                        self.combo_cache[key] = img
+                    return img
             return self.images[self.couleur][0]
         image_res = self.images[self.couleur][self.frame_index]
         if self.direction == -1:
@@ -447,3 +477,44 @@ class Joueur:
             masque = pygame.mask.from_surface(img)
             self.cache_masques[cle] = masque
         return masque
+
+    def obtenir_image_boule_changement(self):
+        """Retourne l'image tenue_précédente + orb_cible (avec cache)."""
+        prev = self.couleur_precedente
+        target = self.couleur_cible
+        key = (prev, target)
+
+        # retour depuis le cache si déjà constitué
+        combo = self.combo_cache.get(key)
+        if combo:
+            return combo
+
+        if prev and prev in self.images_boules and target in self.images_boules[prev]:
+            combo = self.images_boules[prev][target]
+        elif target in self.images_boules and target in self.images_boules[target]:
+            combo = self.images_boules[target][target]
+        else:
+            base = None
+            orb = None
+            if prev in self.images and len(self.images[prev]) > 0:
+                base = self.images[prev][0]
+            elif target in self.images and len(self.images[target]) > 0:
+                base = self.images[target][0]
+
+            if prev in self.images_boules and target in self.images_boules.get(prev, {}):
+                orb = self.images_boules[prev][target]
+            elif target in self.images_boules and target in self.images_boules.get(target, {}):
+                orb = self.images_boules[target][target]
+            elif target in self.images and len(self.images[target]) > 0:
+                orb = self.images[target][0]
+
+            surf = pygame.Surface((self.largeur, self.hauteur), pygame.SRCALPHA)
+            if base:
+                surf.blit(base, (0, 0))
+            if orb:
+                surf.blit(orb, (0, 0))
+            combo = surf
+
+        # cache et retour
+        self.combo_cache[key] = combo
+        return combo
