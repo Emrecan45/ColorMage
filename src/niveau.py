@@ -12,7 +12,7 @@ from config_manager import ConfigManager
 
 class PlateformeMobile:
     """Plateforme qui bouge horizontalement ou verticallement."""
-    def __init__(self, cell_x, cell_y, dirv=1, range_blocks=1, sens=1, speed_px=1):
+    def __init__(self, cell_x, cell_y, dirv=1, range_blocks=1, sens=1, speed_px=1.0):
         self.cell_x = int(cell_x)
         self.cell_y = int(cell_y)
         self.dir = int(dirv)  # 1 = horizontal, -1 = vertical
@@ -26,11 +26,11 @@ class PlateformeMobile:
             self.range_blocks = 1
         try:
             if speed_px is not None:
-                self.vitesse = abs(int(speed_px))
+                self.vitesse = abs(float(speed_px))
             else:
-                self.vitesse = 1
+                self.vitesse = 1.0
         except Exception:
-            self.vitesse = 1
+            self.vitesse = 1.0
         
         # position d'origine
         self.origine_x = self.cell_x * TAILLE_CELLULE
@@ -329,7 +329,7 @@ class Niveau:
                     dirv = 1
                     sens = 1
                     range_blocks = 1
-                    speed_px = 1
+                    speed_px = 1.0
 
                     try:
                         if len(item) >= 3:
@@ -351,7 +351,7 @@ class Niveau:
                                 else:
                                     sens = 1
                                 range_blocks = int(item[4])
-                            speed_px = int(item[5])
+                            speed_px = float(item[5])
                         elif len(item) == 5:
                             a3 = int(item[3])
                             a4 = int(item[4])
