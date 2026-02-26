@@ -180,7 +180,7 @@ class Joueur:
     def deplacer(self, touches, niveau):
         """Gère le déplacement du joueur"""
         self.etait_au_sol = self.au_sol
-        self._pousse_plateforme = False
+        self.pousse_plateforme = False
         # empeche le joueur de bouger pendant l'animation de changement de couleur
         if self.en_changement_couleur:
             return None
