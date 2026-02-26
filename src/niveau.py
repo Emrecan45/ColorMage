@@ -147,7 +147,7 @@ class Niveau:
             vitesse_scintillement = random.uniform(0.02, 0.08)
             phase = random.uniform(0, 2 * math.pi)
             self.etoiles_fond.append([x, y, taille, brillance, vitesse_scintillement, phase])
-        self._last_platform_update_tick = -1
+        self.dernier_tick_maj_plat = -1
     
     def maj_volume_sons(self):
         """Met à jour le volume des sons d'ennemis"""
@@ -622,15 +622,16 @@ class Niveau:
 
     def maj_plateformes(self, tick):
         """Met à jour toutes les plateformes mobiles."""
-        if tick == self._last_platform_update_tick:
+        if tick == self.dernier_tick_maj_plat:
             return
-        self._last_platform_update_tick = tick
+        self.dernier_tick_maj_plat = tick
         for plat in self.platformes_mobiles:
             plat.maj()
 
     def appliquer_pousse_plateforme(self, joueur):
         """collision"""
         rect_joueur = pygame.Rect(joueur.x + joueur.marge_x, joueur.y + joueur.marge_y_haut, joueur.largeur - 2 * joueur.marge_x, joueur.hauteur - joueur.marge_y_haut - joueur.marge_y_bas)
+        dx_deja_applique = set()
 
         for plat in self.platformes_mobiles:
             # gestion des interactions de  couleurs
@@ -648,54 +649,60 @@ class Niveau:
                     if self.bloc_solide_au_dessus(joueur):
                         return "mort"
 
-                    old_plat = rect_plat.copy()
-                    old_plat.move_ip(-dx, -dy)
-                    if not old_plat.colliderect(rect_joueur):
+                    ancien_plateforme = rect_plat.copy()
+                    ancien_plateforme.move_ip(-dx, -dy)
+                    if not ancien_plateforme.colliderect(rect_joueur):
                         player_vy = joueur.vitesse_y
                         if player_vy < 0:
-                            upward_mag = -player_vy
+                            magnitude_montante = -player_vy
                         else:
-                            upward_mag = 0
-                        if upward_mag > abs(dy) + 1:
+                            magnitude_montante = 0
+                        if magnitude_montante > abs(dy) + 1:
                             joueur.y = rect_plat.bottom - joueur.marge_y_haut
                             joueur.vitesse_y = 0
 
             # collision
             if rect_joueur.colliderect(rect_plat):
-                old_x = joueur.x
-                old_y = joueur.y
-                joueur.x += dx
-                if dy != 0:
-                    joueur.y += dy
+                cle = (dx, dy)
+                if cle not in dx_deja_applique:
+                    old_x = joueur.x
+                    old_y = joueur.y
+                    joueur.x += dx
+                    if dy != 0:
+                        joueur.y += dy
 
-                rect_test = pygame.Rect(joueur.x + joueur.marge_x, joueur.y + joueur.marge_y_haut, joueur.largeur - 2 * joueur.marge_x, joueur.hauteur - joueur.marge_y_haut - joueur.marge_y_bas)
+                    rect_test = pygame.Rect(joueur.x + joueur.marge_x, joueur.y + joueur.marge_y_haut, joueur.largeur - 2 * joueur.marge_x, joueur.hauteur - joueur.marge_y_haut - joueur.marge_y_bas)
 
-                if self.collision(rect_test, joueur.couleur):
-                    joueur.x = old_x
-                    rect_test_x = pygame.Rect(joueur.x + joueur.marge_x, old_y + joueur.marge_y_haut, joueur.largeur - 2 * joueur.marge_x, joueur.hauteur - joueur.marge_y_haut - joueur.marge_y_bas)
-                    if not self.collision(rect_test_x, joueur.couleur):
-                        joueur.y = old_y + dy
-                    else:
+                    if self.collision(rect_test, joueur.couleur):
                         joueur.x = old_x
-                        joueur.y = old_y
+                        rect_test_x = pygame.Rect(joueur.x + joueur.marge_x, old_y + joueur.marge_y_haut, joueur.largeur - 2 * joueur.marge_x, joueur.hauteur - joueur.marge_y_haut - joueur.marge_y_bas)
+                        if not self.collision(rect_test_x, joueur.couleur):
+                            joueur.y = old_y + dy
+                        else:
+                            joueur.x = old_x
+                            joueur.y = old_y
 
-                rect_joueur.topleft = (joueur.x + joueur.marge_x, joueur.y + joueur.marge_y_haut)
-                if dx != 0 or dy != 0:
-                    joueur._pousse_plateforme = True
+                    rect_joueur.topleft = (joueur.x + joueur.marge_x, joueur.y + joueur.marge_y_haut)
+                    if dx != 0 or dy != 0:
+                        joueur.pousse_plateforme = True
+                    dx_deja_applique.add(cle)
                 continue
 
             # debout
             pieds_bottom = joueur.y + joueur.hauteur - joueur.marge_y_bas
             tolerance = 6
-            overlap_horizontal = not (rect_joueur.right <= rect_plat.left or rect_joueur.left >= rect_plat.right)
-            if overlap_horizontal and (rect_plat.top - tolerance <= pieds_bottom <= rect_plat.top + 2):
-                old_x = joueur.x
-                joueur.x += dx
-                rect_test = pygame.Rect(joueur.x + joueur.marge_x, joueur.y + joueur.marge_y_haut, joueur.largeur - 2 * joueur.marge_x, joueur.hauteur - joueur.marge_y_haut - joueur.marge_y_bas)
-                if self.collision(rect_test, joueur.couleur):
-                    joueur.x = old_x
-                else:
-                    joueur._pousse_plateforme = True
+            chevauchement_horizontal = not (rect_joueur.right <= rect_plat.left or rect_joueur.left >= rect_plat.right)
+            if chevauchement_horizontal and (rect_plat.top - tolerance <= pieds_bottom <= rect_plat.top + 2):
+                cle = (dx, dy)
+                if cle not in dx_deja_applique:
+                    old_x = joueur.x
+                    joueur.x += dx
+                    rect_test = pygame.Rect(joueur.x + joueur.marge_x, joueur.y + joueur.marge_y_haut, joueur.largeur - 2 * joueur.marge_x, joueur.hauteur - joueur.marge_y_haut - joueur.marge_y_bas)
+                    if self.collision(rect_test, joueur.couleur):
+                        joueur.x = old_x
+                    else:
+                        joueur.pousse_plateforme = True
+                    dx_deja_applique.add(cle)
 
                 if joueur.vitesse_y >= 0:
                     joueur.au_sol = True

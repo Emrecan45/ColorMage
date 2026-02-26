@@ -64,16 +64,23 @@ class Profil:
             {"nom": "Rouge 2", "fichier": "joueur_rouge.png", "pose_x": 576, "pose_y": 196, "offset_y": 7.5}, # L2 C4
             {"nom": "Rouge 3", "fichier": "joueur_rouge.png", "pose_x": 192, "pose_y": 392, "offset_y": 10}, # L3 C2
             # Sorcier - 2 poses
-            {"nom": "Sorcier 1", "fichier": "ennemy.png", "pose_x": 0 * 192, "pose_y": 0 * 192, "pose_w": 192, "pose_h": 192, "offset_y": 5},
-            {"nom": "Sorcier 2", "fichier": "ennemy.png", "pose_x": 3 * 192, "pose_y": 0 * 192, "pose_w": 192, "pose_h": 192, "offset_y": 5},
+            {"nom": "Sorcier 1", "fichier": "ennemy.png", "pose_x": 0 * 192, "pose_y": 0 * 192, "pose_w": 192, "pose_h": 192, "offset_y": 5, "niveau_associe": 3},
+            {"nom": "Sorcier 2", "fichier": "ennemy.png", "pose_x": 3 * 192, "pose_y": 0 * 192, "pose_w": 192, "pose_h": 192, "offset_y": 5, "niveau_associe": 3},
             # Squelette - 4 poses
-            {"nom": "Squelette 1", "fichier": "ennemy.png", "pose_x": 2 * 192, "pose_y": 4 * 192, "pose_w": 192, "pose_h": 192, "offset_y": 5},
-            {"nom": "Squelette 2", "fichier": "ennemy.png", "pose_x": 4 * 192, "pose_y": 4 * 192, "pose_w": 192, "pose_h": 192, "offset_y": 5},
-            {"nom": "Squelette 3", "fichier": "ennemy.png", "pose_x": 0 * 192, "pose_y": 5 * 192, "pose_w": 192, "pose_h": 192, "offset_y": 5},
-            {"nom": "Squelette 4", "fichier": "ennemy.png", "pose_x": 2 * 192, "pose_y": 5 * 192, "pose_w": 192, "pose_h": 192, "offset_y": 5},
+            {"nom": "Squelette 1", "fichier": "ennemy.png", "pose_x": 2 * 192, "pose_y": 4 * 192, "pose_w": 192, "pose_h": 192, "offset_y": 5, "niveau_associe": 4},
+            {"nom": "Squelette 2", "fichier": "ennemy.png", "pose_x": 4 * 192, "pose_y": 4 * 192, "pose_w": 192, "pose_h": 192, "offset_y": 5, "niveau_associe": 4},
+            {"nom": "Squelette 3", "fichier": "ennemy.png", "pose_x": 0 * 192, "pose_y": 5 * 192, "pose_w": 192, "pose_h": 192, "offset_y": 5, "niveau_associe": 4},
+            {"nom": "Squelette 4", "fichier": "ennemy.png", "pose_x": 2 * 192, "pose_y": 5 * 192, "pose_w": 192, "pose_h": 192, "offset_y": 5, "niveau_associe": 4},
+            # Slimes
+            {"nom": "Slime Vert", "fichier": "slime_vert.png", "pose_x": 0, "pose_y": 24, "pose_w": 24, "pose_h": 24, "offset_y": 0, "niveau_associe": 5},
+            {"nom": "Slime Violet", "fichier": "slime_violet.png", "pose_x": 0, "pose_y": 24, "pose_w": 24, "pose_h": 24, "offset_y": 0, "niveau_associe": 5},
         ]
         
         self.tenue_actuelle = self.gestionnaire_config.config.get("tenue_profil", 0)
+        for idx in range(len(self.tenues)):
+            if self.tenue_est_debloquee(idx):
+                self.tenue_actuelle = idx
+                break
         
         # Charger l'icône de changement
         try:
@@ -168,10 +175,24 @@ class Profil:
         except:
             self.image_mage = None
             self.mage_offset_y = 0
+
+    def tenue_est_debloquee(self, index):
+        """Déblocage"""
+        tenue = self.tenues[index]
+        niveau = tenue.get('niveau_associe')
+        if niveau is None:
+            return True
+        return self.gestionnaire_config.page_vue(niveau) and self.gestionnaire_config.obtenir_meilleur_temps(niveau) is not None
     
     def changer_tenue(self):
         """Change la tenue du mage"""
-        self.tenue_actuelle = (self.tenue_actuelle + 1) % len(self.tenues)
+        s = self.tenue_actuelle
+        n = len(self.tenues)
+        for i in range(1, n + 1):
+            idx = (s + i) % n
+            if self.tenue_est_debloquee(idx):
+                self.tenue_actuelle = idx
+                break
         self.charger_image_mage()
         # Sauvegarder le choix
         self.gestionnaire_config.config["tenue_profil"] = self.tenue_actuelle
@@ -412,3 +433,11 @@ class Profil:
     def recharger_donnees(self):
         """Recharge les données du profil depuis la config"""
         self.pseudo = self.gestionnaire_config.obtenir_pseudo()
+        if not self.tenue_est_debloquee(self.tenue_actuelle):
+            for idx in range(len(self.tenues)):
+                if self.tenue_est_debloquee(idx):
+                    self.tenue_actuelle = idx
+                    break
+            self.gestionnaire_config.config["tenue_profil"] = self.tenue_actuelle
+            self.gestionnaire_config.sauvegarder_config()
+        self.charger_image_mage()

@@ -21,6 +21,8 @@ class Joueur:
             self.y_initial = y - TAILLE_CELLULE
             self.x = x
             self.y = y
+        self.visual_x = self.x
+        self.visual_y = self.y
         self.largeur = TAILLE_CELLULE * 2
         self.hauteur = TAILLE_CELLULE * 2
         self.couleur = "gris"
@@ -135,6 +137,7 @@ class Joueur:
         # Caches pour les images retournées et les masques de collision
         self.cache_retournes = {}
         self.cache_masques = {}
+        self.combo_cache = {}
     
     def reset(self, niveau=None):
         """Réinitialise le joueur à sa position de départ et sa couleur de base (gris)"""
@@ -145,6 +148,8 @@ class Joueur:
 
         self.x = self.x_initial
         self.y = self.y_initial
+        self.visual_x = self.x
+        self.visual_y = self.y
         self.couleur = "gris"
         self.vitesse_x = 0
         self.vitesse_y = 0
@@ -175,7 +180,7 @@ class Joueur:
     def deplacer(self, touches, niveau):
         """Gère le déplacement du joueur"""
         self.etait_au_sol = self.au_sol
-        self._pousse_plateforme = False
+        self.pousse_plateforme = False
         # empeche le joueur de bouger pendant l'animation de changement de couleur
         if self.en_changement_couleur:
             return None
@@ -254,28 +259,6 @@ class Joueur:
         else:
             self.au_sol = False
 
-        # Interaction avec les plateformes mobiles
-        if self.au_sol:
-            pieds = pygame.Rect(self.x + self.marge_x, self.y + self.hauteur - self.marge_y_bas - 2, self.largeur - 2 * self.marge_x, 2)
-            for plat in niveau.platformes_mobiles:
-                rect_plat = plat.obtenir_rect()
-                # ignorer les plateformes de couleur différente (sauf le noir)
-                try:
-                    plat_couleur = plat.couleur
-                except Exception:
-                    plat_couleur = None
-
-                if plat_couleur is None or plat_couleur == 'noir' or plat_couleur == self.couleur:
-                    if pieds.colliderect(rect_plat):
-                        # déplacement plateforme
-                        dx = plat.dernier_dx
-                        if dx != 0 and not self._pousse_plateforme:
-                            self.x += dx
-                            rect_test = pygame.Rect(self.x + self.marge_x, self.y + self.marge_y_haut, self.largeur - 2 * self.marge_x, self.hauteur - self.marge_y_haut - self.marge_y_bas)
-                            if niveau.collision(rect_test, self.couleur):
-                                self.x -= dx
-                        break
-
         # tomber dans le vide
         if self.y > (HAUTEUR_GRILLE * TAILLE_CELLULE):
             self.son_mort.play()
@@ -346,10 +329,26 @@ class Joueur:
         for y in range(y_debut, y_fin + 1):
             for x in range(x_debut, x_fin + 1):
                 bloc = niveau.obtenir_bloc(x, y)
-                
-                if "change_" in bloc:
-                    bloc_rect = pygame.Rect(x * TAILLE_CELLULE, y * TAILLE_CELLULE, TAILLE_CELLULE, TAILLE_CELLULE)
+                bloc_rect = pygame.Rect(x * TAILLE_CELLULE, y * TAILLE_CELLULE, TAILLE_CELLULE, TAILLE_CELLULE)
+                player_mask = self.obtenir_masque_courant()
+                bloc_mask = None
+                if bloc == "pic" and getattr(niveau, 'image_pic', None) is not None:
+                    bloc_mask = pygame.mask.from_surface(niveau.image_pic)
+                else:
+                    bloc_mask = pygame.mask.Mask((TAILLE_CELLULE, TAILLE_CELLULE), fill=True)
+
+                offset = (int(bloc_rect.left - self.x), int(bloc_rect.top - self.y))
+
+                touche = False
+                if player_mask is not None and bloc_mask is not None:
+                    if player_mask.overlap(bloc_mask, offset) is not None:
+                        touche = True
+                else:
                     if hitbox.colliderect(bloc_rect):
+                        touche = True
+
+                if "change_" in bloc:
+                    if touche:
                         # ça prend juste 'couleur' dans 'change_couleur'
                         nouvelle_couleur = bloc.split("change_")[1]
                         
@@ -359,13 +358,11 @@ class Joueur:
                             return None
         
                 if bloc == "porte":
-                    bloc_rect = pygame.Rect(x * TAILLE_CELLULE, y * TAILLE_CELLULE, TAILLE_CELLULE, TAILLE_CELLULE)
-                    if hitbox.colliderect(bloc_rect):
+                    if touche:
                         return "teleportation"
                 
                 if bloc == "pic":
-                    bloc_rect = pygame.Rect(x * TAILLE_CELLULE, y * TAILLE_CELLULE, TAILLE_CELLULE, TAILLE_CELLULE)
-                    if hitbox.colliderect(bloc_rect):
+                    if touche:
                         self.son_mort.play()
                         return "mort"
         
@@ -377,7 +374,7 @@ class Joueur:
         self.controls = self.gestionnaire_config.obtenir_controles()
         
     def maj_volume_effets(self):
-        """Met à jour le volume de TOUS les effets sonores"""
+        """Met à jour le volume des effets sonores"""
         volumes = self.gestionnaire_config.obtenir_volumes()
         volume = volumes.get("effets", 50) / 100
         
@@ -420,7 +417,7 @@ class Joueur:
         if self.en_changement_couleur:
             if self.etape_changement == 0:
                 # Affiche la boule de couleur cible (effet visuel)
-                image_res = self.images_boules[self.couleur_precedente][self.couleur_cible]
+                image_res = self.obtenir_image_boule_changement()
             else:
                 self.couleur = self.couleur_cible
                 image_res = self.images[self.couleur][0]
@@ -430,21 +427,61 @@ class Joueur:
             image_res = frames[self.frame_index]
 
         if self.direction == -1:
-            cle = (self.couleur, self.frame_index)
-            img = self.cache_retournes.get(cle)
-            if img is None:
-                img = pygame.transform.flip(image_res, True, False)
-                self.cache_retournes[cle] = img
+            if self.en_changement_couleur and self.etape_changement == 0:
+                key = (self.couleur_precedente, self.couleur_cible)
+                keyf = (self.couleur_precedente, self.couleur_cible, 'flip')
+                img = self.combo_cache.get(keyf)
+                if img is None:
+                    base = self.combo_cache.get(key)
+                    if base is None:
+                        base = image_res
+                        self.combo_cache[key] = base
+                    img = pygame.transform.flip(base, True, False)
+                    self.combo_cache[keyf] = img
+            else:
+                cle = (self.couleur, self.frame_index)
+                img = self.cache_retournes.get(cle)
+                if img is None:
+                    img = pygame.transform.flip(image_res, True, False)
+                    self.cache_retournes[cle] = img
         else:
             img = image_res
 
-        ecran.blit(img, (self.x, self.y))
+        if self.en_changement_couleur:
+            facteur_ralenti_visuel = 0.03
+        else:
+            facteur_ralenti_visuel = 1.0
+        if facteur_ralenti_visuel < 1.0:
+            self.visual_x += (self.x - self.visual_x) * facteur_ralenti_visuel
+            self.visual_y += (self.y - self.visual_y) * facteur_ralenti_visuel
+            ecran.blit(img, (int(self.visual_x), int(self.visual_y)))
+        else:
+            self.visual_x = self.x
+            self.visual_y = self.y
+            ecran.blit(img, (self.x, self.y))
 
     def obtenir_image_courante(self):
         """Retourne la surface courante du joueur (flip appliqué si nécessaire)."""
         if self.en_changement_couleur:
             if self.etape_changement == 0:
-                return self.images_boules[self.couleur_precedente][self.couleur_cible]
+                key = (self.couleur_precedente, self.couleur_cible)
+                keyf = (self.couleur_precedente, self.couleur_cible, 'flip')
+                if self.direction == -1:
+                    img = self.combo_cache.get(keyf)
+                    if img is None:
+                        base = self.combo_cache.get(key)
+                        if base is None:
+                            base = self.obtenir_image_boule_changement()
+                            self.combo_cache[key] = base
+                        img = pygame.transform.flip(base, True, False)
+                        self.combo_cache[keyf] = img
+                    return img
+                else:
+                    img = self.combo_cache.get(key)
+                    if img is None:
+                        img = self.obtenir_image_boule_changement()
+                        self.combo_cache[key] = img
+                    return img
             return self.images[self.couleur][0]
         image_res = self.images[self.couleur][self.frame_index]
         if self.direction == -1:
@@ -469,3 +506,44 @@ class Joueur:
             masque = pygame.mask.from_surface(img)
             self.cache_masques[cle] = masque
         return masque
+
+    def obtenir_image_boule_changement(self):
+        """Retourne l'image tenue_précédente + orb_cible (avec cache)."""
+        prev = self.couleur_precedente
+        target = self.couleur_cible
+        key = (prev, target)
+
+        # retour depuis le cache si déjà constitué
+        combo = self.combo_cache.get(key)
+        if combo:
+            return combo
+
+        if prev and prev in self.images_boules and target in self.images_boules[prev]:
+            combo = self.images_boules[prev][target]
+        elif target in self.images_boules and target in self.images_boules[target]:
+            combo = self.images_boules[target][target]
+        else:
+            base = None
+            orb = None
+            if prev in self.images and len(self.images[prev]) > 0:
+                base = self.images[prev][0]
+            elif target in self.images and len(self.images[target]) > 0:
+                base = self.images[target][0]
+
+            if prev in self.images_boules and target in self.images_boules.get(prev, {}):
+                orb = self.images_boules[prev][target]
+            elif target in self.images_boules and target in self.images_boules.get(target, {}):
+                orb = self.images_boules[target][target]
+            elif target in self.images and len(self.images[target]) > 0:
+                orb = self.images[target][0]
+
+            surf = pygame.Surface((self.largeur, self.hauteur), pygame.SRCALPHA)
+            if base:
+                surf.blit(base, (0, 0))
+            if orb:
+                surf.blit(orb, (0, 0))
+            combo = surf
+
+        # cache et retour
+        self.combo_cache[key] = combo
+        return combo

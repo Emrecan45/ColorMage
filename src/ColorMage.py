@@ -542,7 +542,7 @@ class Game:
             resultat = None
             resultat_deplacement = self.joueur.deplacer(touches, self.niveau)
 
-            self.joueur._pousse_plateforme = False
+            self.joueur.pousse_plateforme = False
             self.niveau.maj_plateformes(self.temps_global)
             rc = self.niveau.appliquer_pousse_plateforme(self.joueur)
             if rc == "mort":
