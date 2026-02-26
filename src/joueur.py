@@ -329,10 +329,26 @@ class Joueur:
         for y in range(y_debut, y_fin + 1):
             for x in range(x_debut, x_fin + 1):
                 bloc = niveau.obtenir_bloc(x, y)
-                
-                if "change_" in bloc:
-                    bloc_rect = pygame.Rect(x * TAILLE_CELLULE, y * TAILLE_CELLULE, TAILLE_CELLULE, TAILLE_CELLULE)
+                bloc_rect = pygame.Rect(x * TAILLE_CELLULE, y * TAILLE_CELLULE, TAILLE_CELLULE, TAILLE_CELLULE)
+                player_mask = self.obtenir_masque_courant()
+                bloc_mask = None
+                if bloc == "pic" and getattr(niveau, 'image_pic', None) is not None:
+                    bloc_mask = pygame.mask.from_surface(niveau.image_pic)
+                else:
+                    bloc_mask = pygame.mask.Mask((TAILLE_CELLULE, TAILLE_CELLULE), fill=True)
+
+                offset = (int(bloc_rect.left - self.x), int(bloc_rect.top - self.y))
+
+                touche = False
+                if player_mask is not None and bloc_mask is not None:
+                    if player_mask.overlap(bloc_mask, offset) is not None:
+                        touche = True
+                else:
                     if hitbox.colliderect(bloc_rect):
+                        touche = True
+
+                if "change_" in bloc:
+                    if touche:
                         # ça prend juste 'couleur' dans 'change_couleur'
                         nouvelle_couleur = bloc.split("change_")[1]
                         
@@ -342,13 +358,11 @@ class Joueur:
                             return None
         
                 if bloc == "porte":
-                    bloc_rect = pygame.Rect(x * TAILLE_CELLULE, y * TAILLE_CELLULE, TAILLE_CELLULE, TAILLE_CELLULE)
-                    if hitbox.colliderect(bloc_rect):
+                    if touche:
                         return "teleportation"
                 
                 if bloc == "pic":
-                    bloc_rect = pygame.Rect(x * TAILLE_CELLULE, y * TAILLE_CELLULE, TAILLE_CELLULE, TAILLE_CELLULE)
-                    if hitbox.colliderect(bloc_rect):
+                    if touche:
                         self.son_mort.play()
                         return "mort"
         
@@ -360,7 +374,7 @@ class Joueur:
         self.controls = self.gestionnaire_config.obtenir_controles()
         
     def maj_volume_effets(self):
-        """Met à jour le volume de TOUS les effets sonores"""
+        """Met à jour le volume des effets sonores"""
         volumes = self.gestionnaire_config.obtenir_volumes()
         volume = volumes.get("effets", 50) / 100
         
