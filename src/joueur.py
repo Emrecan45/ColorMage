@@ -332,12 +332,22 @@ class Joueur:
                 bloc_rect = pygame.Rect(x * TAILLE_CELLULE, y * TAILLE_CELLULE, TAILLE_CELLULE, TAILLE_CELLULE)
                 player_mask = self.obtenir_masque_courant()
                 bloc_mask = None
-                if bloc == "pic" and getattr(niveau, 'image_pic', None) is not None:
+
+                # potions
+                if "change_" in bloc and hasattr(niveau, 'masks_potion') and niveau.masks_potion.get(bloc) is not None:
+                    bloc_mask = niveau.masks_potion.get(bloc)
+                    base_lift, bob = niveau.obtenir_decalage_potion(x, y)
+                    offset = (int(bloc_rect.left - self.x), int(bloc_rect.top - self.y - bob - base_lift))
+                
+                # pics
+                elif bloc == "pic" and getattr(niveau, 'image_pic', None) is not None:
                     bloc_mask = pygame.mask.from_surface(niveau.image_pic)
+                    offset = (int(bloc_rect.left - self.x), int(bloc_rect.top - self.y))
+                
+                # autres
                 else:
                     bloc_mask = pygame.mask.Mask((TAILLE_CELLULE, TAILLE_CELLULE), fill=True)
-
-                offset = (int(bloc_rect.left - self.x), int(bloc_rect.top - self.y))
+                    offset = (int(bloc_rect.left - self.x), int(bloc_rect.top - self.y))
 
                 touche = False
                 if player_mask is not None and bloc_mask is not None:

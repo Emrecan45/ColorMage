@@ -93,12 +93,10 @@ class Popup:
                 longueur_ligne = 40
             pygame.draw.line(self.img_mobile_bleu, couleur_lignes, (start_x, y), (start_x + longueur_ligne, y), 3)
 
-        # Portail de couleur
-        self.img_portail_couleur = pygame.Surface((taille_illu, taille_illu), pygame.SRCALPHA)
-        centre = taille_illu // 2
-        pygame.draw.circle(self.img_portail_couleur, (255, 0, 0, 80), (centre, centre), centre)
-        pygame.draw.circle(self.img_portail_couleur, (255, 0, 0), (centre, centre), centre - 8)
-        pygame.draw.circle(self.img_portail_couleur, (255, 100, 100), (centre, centre), centre - 16)
+        # Potion
+        potion_path = os.path.join("img", "change_rouge.png")
+        self.img_potion = pygame.image.load(potion_path).convert_alpha()
+        self.img_potion = pygame.transform.smoothscale(self.img_potion, (taille_illu, taille_illu))
 
         # Pic
         self.img_pic_tuto = pygame.image.load(os.path.join("img", "pic.png"))
@@ -112,10 +110,10 @@ class Popup:
         self.grimoires = {
             1: {
                 "titre": "Les bases",
-                "images": [self.img_portail_couleur, self.img_bloc_rouge, self.img_pic_tuto, self.img_porte_tuto],
+                "images": [self.img_potion, self.img_bloc_rouge, self.img_pic_tuto, self.img_porte_tuto],
                 "lore": "Le Prisme s'est brisé. Seuls ceux qui maîtrisent le chant des couleurs peuvent traverser ce monde.",
                 "lignes": [
-                    "- Traverse les portails pour changer ta couleur.",
+                    "- Attrape les potions pour changer ta couleur.",
                     "- Tu ne peux toucher que les blocs noirs ou de ta propre couleur.",
                     "- Les autres blocs sont immatériels : tu passeras au travers.",
                     "- Atteins le portail jaune pour t'échapper."
