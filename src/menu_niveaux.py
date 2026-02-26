@@ -906,7 +906,7 @@ class MenuNiveaux:
     def gerer_clic(self, pos):
         """Gère les clics selon l'état du menu"""
         # Ignorer les clics pendant les animations
-        if self.zoom_en_cours or self.mage_en_mouvement or self.teleportation_en_cours or self.transition_univers:
+        if self.zoom_en_cours or self.mage_en_mouvement or self.teleportation_en_cours or self.portail_actif or self.transition_univers:
             return None
         
         # Bouton Marché
