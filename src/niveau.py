@@ -125,7 +125,22 @@ class Niveau:
         self.image_pic = pygame.transform.scale(self.image_pic, (TAILLE_CELLULE, TAILLE_CELLULE))
         self.image_porte = pygame.image.load("img/porte.png")
         self.image_porte = pygame.transform.scale(self.image_porte, (TAILLE_CELLULE, TAILLE_CELLULE))
+        # Images des potions (anciennement les portails de couleur)
+        self.images_potion = {}
+        img_r = pygame.image.load("img/change_rouge.png").convert_alpha()
+        img_b = pygame.image.load("img/change_bleu.png").convert_alpha()
+        img_v = pygame.image.load("img/change_vert.png").convert_alpha()
 
+        if img_r:
+            self.images_potion['change_rouge'] = pygame.transform.smoothscale(img_r, (TAILLE_CELLULE, TAILLE_CELLULE))
+        if img_b:
+            self.images_potion['change_bleu'] = pygame.transform.smoothscale(img_b, (TAILLE_CELLULE, TAILLE_CELLULE))
+        if img_v:
+            self.images_potion['change_vert'] = pygame.transform.smoothscale(img_v, (TAILLE_CELLULE, TAILLE_CELLULE))
+        # Masques pour collision
+        self.masks_potion = {}
+        for k, surf in self.images_potion.items():
+            self.masks_potion[k] = pygame.mask.from_surface(surf)
         # Sons aléatoires pour le sorcier (tir) et le squelette (attaque)
         self.sons_sorcier_shot = []
         for i in range(1, 4):
@@ -148,6 +163,14 @@ class Niveau:
             phase = random.uniform(0, 2 * math.pi)
             self.etoiles_fond.append([x, y, taille, brillance, vitesse_scintillement, phase])
         self.dernier_tick_maj_plat = -1
+
+    def obtenir_decalage_potion(self, cell_x, cell_y):
+        """Bobbing vertical pour les potions"""
+        amplitude = TAILLE_CELLULE * 0.12
+        phase = (cell_x * 0.6) + (cell_y * 1.1) # ajouter un offset de phase pour avoir des potions qui bougent de manière décalée
+        bob_f = amplitude * math.sin(pygame.time.get_ticks() * 0.003 + phase)
+        base_lift = int(TAILLE_CELLULE * 0.45)
+        return base_lift, int(bob_f)
     
     def maj_volume_sons(self):
         """Met à jour le volume des sons d'ennemis"""
@@ -490,28 +513,14 @@ class Niveau:
                         ecran.blit(image_porte_haute, (x * TAILLE_CELLULE, y * TAILLE_CELLULE - TAILLE_CELLULE * 0.4))
                     
                     elif "change_" in bloc:
-                        # Portails = 3 cercles 
-                        couleur = COULEURS[bloc]
-                        centre_x = x * TAILLE_CELLULE + TAILLE_CELLULE // 2
-                        centre_y = y * TAILLE_CELLULE + TAILLE_CELLULE // 2
-                        rayon = TAILLE_CELLULE // 2 - 2
-                        
-                        # Couleur claire pour le cercle intérieur
-                        r = min(couleur[0] + 100, 255)
-                        g = min(couleur[1] + 100, 255)
-                        b = min(couleur[2] + 100, 255)
-                        couleur_claire = (r, g, b)
-                        
-                        # Cercle exterieur (transparent)
-                        surface_portail = pygame.Surface((TAILLE_CELLULE, TAILLE_CELLULE), pygame.SRCALPHA)
-                        pygame.draw.circle(surface_portail, (couleur[0], couleur[1], couleur[2], 80), (TAILLE_CELLULE // 2, TAILLE_CELLULE // 2), rayon)
-                        ecran.blit(surface_portail, (x * TAILLE_CELLULE, y * TAILLE_CELLULE))
-                        
-                        # Cercle moyen
-                        pygame.draw.circle(ecran, couleur, (centre_x, centre_y), rayon - 8)
-                        
-                        # Cercle intérieur
-                        pygame.draw.circle(ecran, couleur_claire, (centre_x, centre_y), rayon - 16)
+                        # Afficher la potion correspondante avec l'effet bobbing
+                        img_port = self.images_potion.get(bloc)
+                        base_lift, bob = self.obtenir_decalage_potion(x, y)
+                        if img_port:
+                            img2 = img_port
+                            px = x * TAILLE_CELLULE + (TAILLE_CELLULE - img2.get_width()) // 2
+                            py = int(y * TAILLE_CELLULE + (TAILLE_CELLULE - img2.get_height()) / 2 - bob - base_lift)
+                            ecran.blit(img2, (px, py))
                     
                     else:
                         # Blocs normaux

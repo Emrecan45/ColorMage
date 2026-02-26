@@ -125,6 +125,7 @@ class Joueur:
 
         self.frame_index = 0
         self.temps_derniere_frame = 0
+        self.temps_changement_couleur = 0
         self.delai_animation = 50
         self.en_animation = False
         self.type_animation = None
@@ -181,10 +182,11 @@ class Joueur:
         """Gère le déplacement du joueur"""
         self.etait_au_sol = self.au_sol
         self.pousse_plateforme = False
-        # empeche le joueur de bouger pendant l'animation de changement de couleur
-        if self.en_changement_couleur:
-            return None
-        # Entrées clavier
+        if self.en_changement_couleur and self.etape_changement < 3:
+            facteur_ralenti = 0.25 # ralenti pendant changement de couleur
+        else:
+            facteur_ralenti = 1.0
+
         self.vitesse_x = 0
         if self.controls['gauche'] != "":
             if touches[pygame.key.key_code(self.controls['gauche'])]:
@@ -203,12 +205,12 @@ class Joueur:
                 self.son_saut.play()
                 self.demarrer_animation("saut")
 
-        # Gravite
-        self.vitesse_y += GRAVITE
+        # Gravite (ralentie pendant le changement de couleur)
+        self.vitesse_y += GRAVITE * facteur_ralenti
         
         # Calcul nouvelles positions
-        nouveau_x = self.x + self.vitesse_x
-        nouveau_y = self.y + self.vitesse_y
+        nouveau_x = self.x + self.vitesse_x * facteur_ralenti
+        nouveau_y = self.y + self.vitesse_y * facteur_ralenti
         
         # Limites de l'ecran
         hitbox_gauche = nouveau_x + self.marge_x
@@ -284,7 +286,7 @@ class Joueur:
             self.etape_changement = 0
             self.couleur_precedente = self.couleur
             self.couleur_cible = nouvelle_couleur
-            self.temps_derniere_frame = pygame.time.get_ticks()
+            self.temps_changement_couleur = pygame.time.get_ticks()
             
             # Arrêter tous les sons de changement en cours et jouer un nouveau
             for son in self.sons_changement:
@@ -304,10 +306,9 @@ class Joueur:
         else:
             delai_etape = 100#ms
         
-        if temps_actuel - self.temps_derniere_frame >= delai_etape:
-            self.temps_derniere_frame = temps_actuel
+        if temps_actuel - self.temps_changement_couleur >= delai_etape:
+            self.temps_changement_couleur = temps_actuel
             self.etape_changement += 1
-
             
             if self.etape_changement >= 4:
                 # Fin de l'animation
@@ -332,12 +333,22 @@ class Joueur:
                 bloc_rect = pygame.Rect(x * TAILLE_CELLULE, y * TAILLE_CELLULE, TAILLE_CELLULE, TAILLE_CELLULE)
                 player_mask = self.obtenir_masque_courant()
                 bloc_mask = None
-                if bloc == "pic" and getattr(niveau, 'image_pic', None) is not None:
+
+                # potions
+                if "change_" in bloc and hasattr(niveau, 'masks_potion') and niveau.masks_potion.get(bloc) is not None:
+                    bloc_mask = niveau.masks_potion.get(bloc)
+                    base_lift, bob = niveau.obtenir_decalage_potion(x, y)
+                    offset = (int(bloc_rect.left - self.x), int(bloc_rect.top - self.y - bob - base_lift))
+                
+                # pics
+                elif bloc == "pic" and getattr(niveau, 'image_pic', None) is not None:
                     bloc_mask = pygame.mask.from_surface(niveau.image_pic)
+                    offset = (int(bloc_rect.left - self.x), int(bloc_rect.top - self.y))
+                
+                # autres
                 else:
                     bloc_mask = pygame.mask.Mask((TAILLE_CELLULE, TAILLE_CELLULE), fill=True)
-
-                offset = (int(bloc_rect.left - self.x), int(bloc_rect.top - self.y))
+                    offset = (int(bloc_rect.left - self.x), int(bloc_rect.top - self.y))
 
                 touche = False
                 if player_mask is not None and bloc_mask is not None:
@@ -447,18 +458,9 @@ class Joueur:
         else:
             img = image_res
 
-        if self.en_changement_couleur:
-            facteur_ralenti_visuel = 0.03
-        else:
-            facteur_ralenti_visuel = 1.0
-        if facteur_ralenti_visuel < 1.0:
-            self.visual_x += (self.x - self.visual_x) * facteur_ralenti_visuel
-            self.visual_y += (self.y - self.visual_y) * facteur_ralenti_visuel
-            ecran.blit(img, (int(self.visual_x), int(self.visual_y)))
-        else:
-            self.visual_x = self.x
-            self.visual_y = self.y
-            ecran.blit(img, (self.x, self.y))
+        self.visual_x = self.x
+        self.visual_y = self.y
+        ecran.blit(img, (self.x, self.y))
 
     def obtenir_image_courante(self):
         """Retourne la surface courante du joueur (flip appliqué si nécessaire)."""
