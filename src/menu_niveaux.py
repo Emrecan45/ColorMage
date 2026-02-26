@@ -906,8 +906,16 @@ class MenuNiveaux:
     def gerer_clic(self, pos):
         """Gère les clics selon l'état du menu"""
         # Ignorer les clics pendant les animations
-        if self.zoom_en_cours or self.mage_en_mouvement or self.teleportation_en_cours or self.portail_actif or self.transition_univers:
+        if self.zoom_en_cours or self.mage_en_mouvement or self.transition_univers:
             return None
+
+        # Si portail actif et c'est un départ (teleportation_en_cours), bloquer tout pendant l'animation
+        if self.portail_actif and self.teleportation_en_cours:
+            return None
+        # Si c'est un retour (pas de téléportation en cours) et le mage n'est pas encore visible, autoriser uniquement le bouton retour
+        if self.portail_actif and not self.teleportation_en_cours and not self.mage_visible:
+            if not self.bouton_retour.collidepoint(pos):
+                return None
         
         # Bouton Marché
         if self.etat_menu == "galaxie" and self.bouton_marche.collidepoint(pos):
