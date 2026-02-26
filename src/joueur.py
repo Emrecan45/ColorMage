@@ -21,6 +21,8 @@ class Joueur:
             self.y_initial = y - TAILLE_CELLULE
             self.x = x
             self.y = y
+        self.visual_x = self.x
+        self.visual_y = self.y
         self.largeur = TAILLE_CELLULE * 2
         self.hauteur = TAILLE_CELLULE * 2
         self.couleur = "gris"
@@ -146,6 +148,8 @@ class Joueur:
 
         self.x = self.x_initial
         self.y = self.y_initial
+        self.visual_x = self.x
+        self.visual_y = self.y
         self.couleur = "gris"
         self.vitesse_x = 0
         self.vitesse_y = 0
@@ -429,7 +433,18 @@ class Joueur:
         else:
             img = image_res
 
-        ecran.blit(img, (self.x, self.y))
+        if self.en_changement_couleur:
+            facteur_ralenti_visuel = 0.03
+        else:
+            facteur_ralenti_visuel = 1.0
+        if facteur_ralenti_visuel < 1.0:
+            self.visual_x += (self.x - self.visual_x) * facteur_ralenti_visuel
+            self.visual_y += (self.y - self.visual_y) * facteur_ralenti_visuel
+            ecran.blit(img, (int(self.visual_x), int(self.visual_y)))
+        else:
+            self.visual_x = self.x
+            self.visual_y = self.y
+            ecran.blit(img, (self.x, self.y))
 
     def obtenir_image_courante(self):
         """Retourne la surface courante du joueur (flip appliqué si nécessaire)."""
