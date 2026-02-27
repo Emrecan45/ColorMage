@@ -15,7 +15,7 @@ class Intro:
         
         # Chemin de la vidéo et de l'audio
         self.video_path = os.path.join("img", "video_intro.mp4")
-        self.audio_path = os.path.join("audio", "intro.mp3")
+        self.audio_path = os.path.join("audio", "intro.wav")
         
         # État
         self.terminee = False

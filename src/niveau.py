@@ -144,11 +144,11 @@ class Niveau:
         # Sons aléatoires pour le sorcier (tir) et le squelette (attaque)
         self.sons_sorcier_shot = []
         for i in range(1, 4):
-            son = pygame.mixer.Sound(os.path.join("audio", "sorcier_shot" + str(i) + ".mp3"))
+            son = pygame.mixer.Sound(os.path.join("audio", "sorcier_shot" + str(i) + ".wav"))
             self.sons_sorcier_shot.append(son)
         self.sons_squelette_tape = []
         for i in range(1, 4):
-            son = pygame.mixer.Sound(os.path.join("audio", "squelette_tape" + str(i) + ".wav"))
+            son = pygame.mixer.Sound(os.path.join("audio", "squelette_tape" + str(i) + ".ogg"))
             self.sons_squelette_tape.append(son)
         self.maj_volume_sons()
 

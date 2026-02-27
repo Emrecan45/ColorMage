@@ -27,7 +27,7 @@ class Profil:
         self.pseudo = self.gestionnaire_config.obtenir_pseudo()
         
         # Son des clics
-        self.son_select = pygame.mixer.Sound(os.path.join("audio", "select.mp3"))
+        self.son_select = pygame.mixer.Sound(os.path.join("audio", "select.wav"))
         self.maj_volume()
         
         # Générer les étoiles

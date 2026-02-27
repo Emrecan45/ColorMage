@@ -36,7 +36,7 @@ class Menu:
         
         # son des clics
         self.gestionnaire_config = ConfigManager()
-        self.son_select = pygame.mixer.Sound(os.path.join("audio", "select.mp3"))
+        self.son_select = pygame.mixer.Sound(os.path.join("audio", "select.wav"))
         self.maj_volume()
     
     def maj_volume(self):

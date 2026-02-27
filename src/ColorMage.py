@@ -38,7 +38,7 @@ class Game:
         
         
         # Musique du jeu
-        music_path = os.path.join("audio", "main_theme.mp3")
+        music_path = os.path.join("audio", "main_theme.ogg")
         pygame.mixer.music.load(music_path)
         # Appliquer le volume sauvegardé (de 0 à 100 converti en 0.0 à 1.0)
         volume_musique = volumes.get("musique", 50) / 100
@@ -108,15 +108,15 @@ class Game:
         self.temps_global = 0
         
         # Sons pour slimes et pièces
-        self.son_hurt = pygame.mixer.Sound(os.path.join("audio", "hurt.mp3"))
-        self.son_piece = pygame.mixer.Sound(os.path.join("audio", "piece.mp3"))
+        self.son_hurt = pygame.mixer.Sound(os.path.join("audio", "hurt.wav"))
+        self.son_piece = pygame.mixer.Sound(os.path.join("audio", "piece.wav"))
 
         # Son d'explosion
-        self.son_explosion = pygame.mixer.Sound(os.path.join("audio", "explosion.mp3"))
+        self.son_explosion = pygame.mixer.Sound(os.path.join("audio", "explosion.wav"))
         
         # Sons de pause/unpause
-        self.son_pause = pygame.mixer.Sound(os.path.join("audio", "pause.mp3"))
-        self.son_unpause = pygame.mixer.Sound(os.path.join("audio", "unpause.mp3"))
+        self.son_pause = pygame.mixer.Sound(os.path.join("audio", "pause.wav"))
+        self.son_unpause = pygame.mixer.Sound(os.path.join("audio", "unpause.wav"))
 
         # Appliquer le volume des effets sonores depuis les paramètres
         volumes = self.gestionnaire_config.obtenir_volumes()
@@ -159,6 +159,7 @@ class Game:
         self.son_piece.set_volume(vol_effets)
         self.son_pause.set_volume(vol_effets)
         self.son_unpause.set_volume(vol_effets)
+        self.son_explosion.set_volume(vol_effets)
         self.niveau.maj_volume_sons()
         self.joueur.maj_volume_effets()
         self.menu.maj_volume()
@@ -207,7 +208,11 @@ class Game:
                             self.portail_entree_animation = 0
                             self.etat = "jeu"
                             self.joueur_visible = False
-                            
+                            self.explosion_actif = False
+                            self.explosion_frame = 0
+                            self.explosion_timer = 0
+                            self.popup_actif = None
+                            self.son_explosion.stop()
                             self.niveau.reset(self.niveau_actuel, self.ecran)
                             self.joueur.reset(self.niveau)
                             self.joueur.maj_controles()
@@ -340,7 +345,11 @@ class Game:
                             self.portail_entree_animation = 0
                             self.etat = "jeu"
                             self.joueur_visible = False
-                            
+                            self.explosion_actif = False
+                            self.explosion_frame = 0
+                            self.explosion_timer = 0
+                            self.popup_actif = None
+                            self.son_explosion.stop()
                             self.niveau.reset(self.niveau_actuel, self.ecran)
                             self.joueur.reset(self.niveau)
                             self.joueur.maj_controles()
@@ -375,7 +384,11 @@ class Game:
                                 self.etat = "jeu"
                                 self.joueur_visible = False
                                 self.pieces_en_cours = []
-                                
+                                self.explosion_actif = False
+                                self.explosion_frame = 0
+                                self.explosion_timer = 0
+                                self.popup_actif = None
+                                self.son_explosion.stop()
                                 self.niveau.reset(self.niveau_actuel, self.ecran)
                                 self.joueur.reset(self.niveau)
                                 self.joueur.maj_controles()
@@ -465,7 +478,7 @@ class Game:
             try:
                 planete = self.menu_niveaux.planetes[nouvelle_planete]
                 nom_planete = planete["nom"].lower()
-                chemin_musique = os.path.join("audio", nom_planete + ".wav")
+                chemin_musique = os.path.join("audio", nom_planete + ".ogg")
                 if os.path.exists(chemin_musique):
                     pygame.mixer.music.stop()
                     pygame.mixer.music.load(chemin_musique)
@@ -490,7 +503,7 @@ class Game:
             # Restaurer la musique principale
             try:
                 pygame.mixer.music.stop()
-                pygame.mixer.music.load(os.path.join("audio", "main_theme.mp3"))
+                pygame.mixer.music.load(os.path.join("audio", "main_theme.ogg"))
                 vol = self.gestionnaire_config.obtenir_volumes().get("musique", 50) / 100
                 pygame.mixer.music.set_volume(vol)
                 pygame.mixer.music.play(-1)
@@ -584,11 +597,12 @@ class Game:
                 self.explosion_timer = temps_actuel
                 self.explosion_frame += 1
                 if self.explosion_frame >= len(self.explosion_frames):
-                        self.explosion_actif = False
+                    self.explosion_actif = False
+                    if self.etat == "jeu":
                         self.popup_actif = "defaite"
-                        self.joueur.son_mort.play()
-                        self.chrono.arreter()
-                        self.est_record = False
+                    self.joueur.son_mort.play()
+                    self.chrono.arreter()
+                    self.est_record = False
             return 
             
         if self.etat == "jeu":

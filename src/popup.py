@@ -18,13 +18,13 @@ class Popup:
         
         # son des clics
         self.gestionnaire_config = ConfigManager()
-        self.son_select = pygame.mixer.Sound(os.path.join("audio", "select.mp3"))
+        self.son_select = pygame.mixer.Sound(os.path.join("audio", "select.wav"))
         
         # Sons de portail (changement de couleur) pour clic sur nouvelle planète
         self.sons_portail = [
-            pygame.mixer.Sound(os.path.join("audio", "color_change1.mp3")),
-            pygame.mixer.Sound(os.path.join("audio", "color_change2.mp3")),
-            pygame.mixer.Sound(os.path.join("audio", "color_change3.mp3"))
+            pygame.mixer.Sound(os.path.join("audio", "color_change1.wav")),
+            pygame.mixer.Sound(os.path.join("audio", "color_change2.wav")),
+            pygame.mixer.Sound(os.path.join("audio", "color_change3.wav"))
         ]
         
         # Configuration des planètes (doit correspondre à menu_niveaux)

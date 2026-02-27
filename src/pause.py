@@ -16,7 +16,7 @@ class Pause:
         
         # son des clics
         self.gestionnaire_config = ConfigManager()
-        self.son_select = pygame.mixer.Sound(os.path.join("audio", "select.mp3"))
+        self.son_select = pygame.mixer.Sound(os.path.join("audio", "select.wav"))
         
         # Appliquer le volume d'effets sauvegardé
         volumes = self.gestionnaire_config.obtenir_volumes()
