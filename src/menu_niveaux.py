@@ -183,12 +183,12 @@ class MenuNiveaux:
         """Génère les positions des plaques de niveaux sur une planète"""
         self.plaques_positions = []
         centre_x = LARGEUR_ECRAN // 2
-        base_y = HAUTEUR_ECRAN - 150
+        centre_y = HAUTEUR_ECRAN // 2 + 50
         
         # Créer un chemin sinueux pour les plaques
         for i in range(self.niveaux_par_planete):
             x = centre_x - 250 + i * 130
-            y = base_y - abs(math.sin(i * 0.8)) * 50 - i * 15
+            y = centre_y - abs(math.sin(i * 0.8)) * 50 - i * 15
             self.plaques_positions.append((x, y))
     
     def maj_volume(self):
@@ -565,13 +565,13 @@ class MenuNiveaux:
             b = int(30 + ratio * couleur[2] * 0.3)
             pygame.draw.line(ecran, (r, g, b), (0, y), (LARGEUR_ECRAN, y))
         
-        # Étoiles (moins visibles mais animées)
-        for etoile in self.etoiles[:50]:
+        # Étoiles
+        for etoile in self.etoiles:
             x, y, taille, brillance_base, vitesse, phase = etoile
             if y < HAUTEUR_ECRAN * 0.6:
                 # Scintillement animé même dans la vue planète
-                brillance = int(brillance_base * 0.3 * (0.5 + 0.5 * math.sin(self.temps_global * vitesse + phase)))
-                brillance = max(30, min(128, brillance))
+                brillance = int(brillance_base * (0.5 + 0.5 * math.sin(self.temps_global * vitesse + phase)))
+                brillance = max(50, min(255, brillance))
                 pygame.draw.circle(ecran, (brillance, brillance, brillance), (x, y), taille)
         
         # Sol de la planète
