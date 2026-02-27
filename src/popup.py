@@ -73,25 +73,26 @@ class Popup:
         pygame.draw.rect(self.img_bloc_rouge, COULEURS.get("rouge"), (0, 0, taille_illu, taille_illu))
 
        # Bloc mobile (plateforme mobile)
-        self.img_bloc_bleu = pygame.Surface((taille_illu, taille_illu), pygame.SRCALPHA)
-        pygame.draw.rect(self.img_bloc_bleu, COULEURS.get("bleu"), (0, 0, taille_illu, taille_illu))
-        self.img_mobile_bleu = pygame.Surface((taille_illu + 60, taille_illu), pygame.SRCALPHA)
-        self.img_mobile_bleu.blit(self.img_bloc_bleu, (0, 0))
+        self.img_bloc_bleu = pygame.Surface((taille_illu * 2, taille_illu * 2 // 2), pygame.SRCALPHA)
+        pygame.draw.rect(self.img_bloc_bleu, COULEURS.get("bleu"), (0, 0, taille_illu * 2, taille_illu * 2 // 2))
 
-        # speed lines
-        couleur_lignes = (230, 230, 230)
-        for i in range(5):
-            y = 5 + i * 15
-            if i == 1 or i == 3: 
-                start_x = taille_illu - 10
-                longueur_ligne = 50
-            elif i == 2:
-                start_x = taille_illu - 5
-                longueur_ligne = 60
-            else:
-                start_x = taille_illu - 20
-                longueur_ligne = 40
-            pygame.draw.line(self.img_mobile_bleu, couleur_lignes, (start_x, y), (start_x + longueur_ligne, y), 3)
+        # Effet de mouvement pour bloc mobile
+        effet_path = os.path.join("img", "mouvement_effet.png")
+        img_effet = pygame.image.load(effet_path).convert_alpha()
+        target_h = taille_illu * 2
+        target_w = int(img_effet.get_width() * (target_h / img_effet.get_height()))
+        largeur_surface = self.img_bloc_bleu.get_width() + target_w - 20
+        hauteur_surface = max(taille_illu * 2, target_h)
+        self.img_mobile_bleu = pygame.Surface((largeur_surface, hauteur_surface), pygame.SRCALPHA)
+
+        x_off = 0
+        y_off = (hauteur_surface - self.img_bloc_bleu.get_height()) // 2
+        self.img_mobile_bleu.blit(self.img_bloc_bleu, (x_off, y_off))
+
+        img_effet = pygame.transform.smoothscale(img_effet, (target_w, target_h))
+        x_effet = self.img_bloc_bleu.get_width() - 20
+        y_effet = (hauteur_surface - target_h) // 2
+        self.img_mobile_bleu.blit(img_effet, (x_effet, y_effet))
 
         # Potion
         potion_path = os.path.join("img", "change_rouge.png")
@@ -366,6 +367,8 @@ class Popup:
             y_images = popup_rect.top + 70
             texte_y_base = y_images + 105
 
+            if numero_niveau == 2:
+                y_images -= 30 # Remonte l'image pour les blocs mobiles
             if numero_niveau in [3, 4]:
                 y_images -= 15  # Remonte l'image pour le sorcier et le squelette
 
@@ -493,6 +496,8 @@ class Popup:
                 images = grimoire["images"]
                 if numero in (3, 4, 5):
                     hauteur_cible = 160
+                elif numero == 2:
+                    hauteur_cible = 170
                 else:
                     hauteur_cible = 110
                 images_redimensionnees = []
@@ -537,6 +542,8 @@ class Popup:
                 images = grimoire["images"]
                 if numero in (3, 4, 5):
                     hauteur_cible = 160
+                elif numero == 2:
+                    hauteur_cible = 170
                 else:
                     hauteur_cible = 110
                 images_redimensionnees = []
