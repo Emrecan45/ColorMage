@@ -63,7 +63,7 @@ class PlateformeMobile:
         
         # taille de la plateforme (1 cellule)
         self.largeur = TAILLE_CELLULE
-        self.hauteur = TAILLE_CELLULE
+        self.hauteur = int(TAILLE_CELLULE // 2)
         
         # couleur (par defaut noir)
         self.couleur = "noir"
@@ -407,7 +407,8 @@ class Niveau:
                     self.grille[y][x] = "vide"
             else:
                 for pos in positions:
-                    x, y = pos
+                    x = pos[0]
+                    y = pos[1]
                     self.grille[y][x] = type_bloc
         
         return self.grille
@@ -538,6 +539,8 @@ class Niveau:
                 if proj is not None:
                     self.projectiles.append(proj)
                     random.choice(self.sons_sorcier_shot).play()
+                # appliquer le déplacement de la plateforme si le sorcier est sur/contre une plateforme
+                self.appliquer_pousse_plateforme_sur_entite(sorcier)
                 sorcier.dessiner(ecran)
 
             for squelette in list(self.squelettes):
@@ -546,6 +549,7 @@ class Niveau:
                 # Jouer un son quand le squelette commence à attaquer
                 if squelette.state == "attacking" and ancien_etat == "pre_attack":
                     random.choice(self.sons_squelette_tape).play()
+                self.appliquer_pousse_plateforme_sur_entite(squelette)
                 squelette.dessiner(ecran)
 
             proj_list = list(self.projectiles)
@@ -562,6 +566,7 @@ class Niveau:
                 if not slime.alive:
                     self.slimes.remove(slime)
                 else:
+                    self.appliquer_pousse_plateforme_sur_entite(slime)
                     slime.dessiner(ecran)
 
             for piece in list(self.pieces):
@@ -569,6 +574,7 @@ class Niveau:
                 if not piece.alive:
                     self.pieces.remove(piece)
                 else:
+                    self.appliquer_pousse_plateforme_sur_entite(piece)
                     piece.dessiner(ecran)
         else:
             for plat in self.platformes_mobiles:
@@ -636,6 +642,40 @@ class Niveau:
         self.dernier_tick_maj_plat = tick
         for plat in self.platformes_mobiles:
             plat.maj()
+
+    def appliquer_pousse_plateforme_sur_entite(self, entite):
+        """Applique le déplacement d'une plateforme mobile à une entité si elle est en contact ou debout dessus."""
+       
+        required_attrs = ('rect', 'height', 'marge_y_bas', 'marge_y_haut', 'marge_x')
+        for a in required_attrs:
+            if not hasattr(entite, a):
+                return # l'entité n'a pas les attributs = ne pas appliquer de déplacement
+
+        rect_ent = entite.rect
+        for plat in self.platformes_mobiles:
+            rect_plat = plat.obtenir_rect()
+            dx = plat.dernier_dx
+            dy = plat.dernier_dy
+
+            # collision directe
+            if rect_ent.colliderect(rect_plat):
+                entite.x += dx
+                entite.y += dy
+                entite.rect.move_ip(dx, dy)
+                continue
+
+            # debout dessus
+            ent_height = entite.height
+            marge_bas = entite.marge_y_bas
+            ent_y = entite.y
+            pieds_bottom = ent_y + ent_height - marge_bas
+            tolerance = 6
+            chevauchement_horizontal = not (rect_ent.right <= rect_plat.left or rect_ent.left >= rect_plat.right)
+            if chevauchement_horizontal and (rect_plat.top - tolerance <= pieds_bottom <= rect_plat.top + 2):
+                entite.x += dx
+                entite.y += dy
+                entite.rect.move_ip(dx, dy)
+        return
 
     def appliquer_pousse_plateforme(self, joueur):
         """collision"""
