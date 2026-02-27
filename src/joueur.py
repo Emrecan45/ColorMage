@@ -263,7 +263,6 @@ class Joueur:
 
         # tomber dans le vide
         if self.y > (HAUTEUR_GRILLE * TAILLE_CELLULE):
-            self.son_mort.play()
             return "mort"
         
         # chute
@@ -374,7 +373,6 @@ class Joueur:
                 
                 if bloc == "pic":
                     if touche:
-                        self.son_mort.play()
                         return "mort"
         
         return None

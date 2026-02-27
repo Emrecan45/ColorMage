@@ -108,7 +108,6 @@ class Parametres:
         des_touches_txt = self.font_2.render("des touches", True, (255, 255, 255))
         ecran.blit(des_touches_txt, (LARGEUR_ECRAN // 2 - des_touches_txt.get_width() // 2 - 110, HAUTEUR_ECRAN // 2 - 90))
 
-
         # ---------volume musique
         musique_txt = self.font_3.render("Musique", True, (255, 255, 255))
         ecran.blit(musique_txt, (LARGEUR_ECRAN // 2 - musique_txt.get_width() // 2 + 160, HAUTEUR_ECRAN // 2 - 40))
@@ -116,7 +115,6 @@ class Parametres:
         # remplissage de la jauge
         largeur_remplie = int((self.val_jauge_musique / 100) * self.jauge_musique.width)
         pygame.draw.rect(ecran, (0, 200, 0), (self.jauge_musique.x, self.jauge_musique.y, largeur_remplie, self.jauge_musique.height))
-
 
         # ----------volume général
         general_txt = self.font_3.render("Effets sonores", True, (255, 255, 255))
@@ -149,7 +147,6 @@ class Parametres:
         text_rect = droite_assign_txt.get_rect(center=self.droite_field.center)
         ecran.blit(droite_assign_txt, text_rect)
 
-
         # ---------touche gauche
         gauche_txt = self.font_3.render("Gauche", True, (255, 255, 255))
         ecran.blit(gauche_txt, (LARGEUR_ECRAN // 3 + 50 - gauche_txt.get_width() // 2, HAUTEUR_ECRAN // 2 + 30))
@@ -169,7 +166,6 @@ class Parametres:
             gauche_assign_txt = self.font_3.render(self.gauche_assign, True, (255, 255, 255))
         text_rect = gauche_assign_txt.get_rect(center=self.gauche_field.center)
         ecran.blit(gauche_assign_txt, text_rect)
-        
         
         # --------touche sauter
         sauter_txt = self.font_3.render("Sauter", True, (255, 255, 255))
@@ -191,9 +187,6 @@ class Parametres:
         text_rect = sauter_assign_txt.get_rect(center=self.sauter_field.center)
         ecran.blit(sauter_assign_txt, text_rect)
         
-        
-        
-        # -------bouton retour
         # -------bouton réinitialiser
         if self.bouton_reset_param.collidepoint(pygame.mouse.get_pos()):
             pygame.draw.rect(ecran, (150, 50, 50), self.bouton_reset_param, border_radius=10)
