@@ -23,7 +23,7 @@ class Parametres:
         self.volumes = self.gestionnaire_config.obtenir_volumes()
         
         # son des clics
-        self.son_select = pygame.mixer.Sound(os.path.join("audio", "select.mp3"))
+        self.son_select = pygame.mixer.Sound(os.path.join("audio", "select.wav"))
         volumes = self.gestionnaire_config.obtenir_volumes()
         self.son_select.set_volume(volumes.get("effets", 50) / 100)
         

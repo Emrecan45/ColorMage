@@ -48,13 +48,13 @@ class Joueur:
         self.controls = self.gestionnaire_config.obtenir_controles()
         
         # Chargement des bruitages
-        self.son_saut = pygame.mixer.Sound(os.path.join("audio", "jump.mp3"))
-        self.son_mort = pygame.mixer.Sound(os.path.join("audio", "death.mp3"))
-        self.son_victoire = pygame.mixer.Sound(os.path.join("audio", "win.mp3"))
+        self.son_saut = pygame.mixer.Sound(os.path.join("audio", "jump.wav"))
+        self.son_mort = pygame.mixer.Sound(os.path.join("audio", "death.wav"))
+        self.son_victoire = pygame.mixer.Sound(os.path.join("audio", "win.wav"))
         
-        son_change_couleur1 = pygame.mixer.Sound(os.path.join("audio", "color_change1.mp3"))
-        son_change_couleur2 = pygame.mixer.Sound(os.path.join("audio", "color_change2.mp3"))
-        son_change_couleur3 = pygame.mixer.Sound(os.path.join("audio", "color_change3.mp3"))
+        son_change_couleur1 = pygame.mixer.Sound(os.path.join("audio", "color_change1.wav"))
+        son_change_couleur2 = pygame.mixer.Sound(os.path.join("audio", "color_change2.wav"))
+        son_change_couleur3 = pygame.mixer.Sound(os.path.join("audio", "color_change3.wav"))
         # Liste des sons de changements de couleur
         self.sons_changement = [son_change_couleur1, son_change_couleur2, son_change_couleur3]
         
