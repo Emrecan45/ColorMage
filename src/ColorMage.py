@@ -95,22 +95,62 @@ class Game:
         # Pièces collectées pendant le niveau en cours (sauvegardées seulement à la victoire)
         self.pieces_en_cours = []
         
+        # Animation d'explosion à la mort
+        self._charger_frames_explosion()
+        self.explosion_actif = False
+        self.explosion_frame = 0
+        self.explosion_x = 0
+        self.explosion_y = 0
+        self.explosion_timer = 0
+        self.explosion_delai = 60  # ms par frame
+        
         # Timer global pour les animations
         self.temps_global = 0
         
         # Sons pour slimes et pièces
         self.son_hurt = pygame.mixer.Sound(os.path.join("audio", "hurt.mp3"))
         self.son_piece = pygame.mixer.Sound(os.path.join("audio", "piece.mp3"))
+
+        # Son d'explosion
+        self.son_explosion = pygame.mixer.Sound(os.path.join("audio", "explosion.mp3"))
+        
         # Sons de pause/unpause
         self.son_pause = pygame.mixer.Sound(os.path.join("audio", "pause.mp3"))
         self.son_unpause = pygame.mixer.Sound(os.path.join("audio", "unpause.mp3"))
+
+        # Appliquer le volume des effets sonores depuis les paramètres
         volumes = self.gestionnaire_config.obtenir_volumes()
         vol_effets = volumes.get("effets", 50) / 100
         self.son_hurt.set_volume(vol_effets)
         self.son_piece.set_volume(vol_effets)
         self.son_pause.set_volume(vol_effets)
         self.son_unpause.set_volume(vol_effets)
-    
+        self.son_explosion.set_volume(vol_effets)
+
+    def _charger_frames_explosion(self):
+        """Charge les frames du spritesheet d'explosion"""
+        chemin = os.path.join("img", "explosion.png")
+        spritesheet = pygame.image.load(chemin).convert_alpha()
+        frame_w, frame_h = 64, 59
+        nb_frames = 9
+        taille_affichage = 150
+        self.explosion_frames = []
+        for i in range(nb_frames):
+            frame = spritesheet.subsurface(pygame.Rect(i * frame_w, 0, frame_w, frame_h))
+            frame = pygame.transform.scale(frame, (taille_affichage, taille_affichage))
+            self.explosion_frames.append(frame)
+
+    def _demarrer_explosion(self, x_centre, y_centre):
+        """Déclenche l'explosion"""
+        self.son_explosion.play()
+        self.explosion_actif = True
+        self.explosion_frame = 0
+        self.explosion_timer = pygame.time.get_ticks()
+        taille = self.explosion_frames[0].get_width()
+        self.explosion_x = x_centre - taille // 2
+        self.explosion_y = y_centre - taille // 2
+        self.joueur_visible = False
+
     def maj_volume_effets(self):
         """Met à jour le volume des effets sonores depuis la config"""
         volumes = self.gestionnaire_config.obtenir_volumes()
@@ -536,6 +576,20 @@ class Game:
                 if self.niveau_actuel == niveau_max:
                     self.gestionnaire_config.maj_niveau_actuel(self.niveau_actuel + 1)
             return  # Ne pas mettre à jour le jeu pendant l'animation
+        
+        # Animation d'explosion
+        if self.explosion_actif:
+            temps_actuel = pygame.time.get_ticks()
+            if temps_actuel - self.explosion_timer >= self.explosion_delai:
+                self.explosion_timer = temps_actuel
+                self.explosion_frame += 1
+                if self.explosion_frame >= len(self.explosion_frames):
+                        self.explosion_actif = False
+                        self.popup_actif = "defaite"
+                        self.joueur.son_mort.play()
+                        self.chrono.arreter()
+                        self.est_record = False
+            return 
             
         if self.etat == "jeu":
             touches = pygame.key.get_pressed()
@@ -547,16 +601,17 @@ class Game:
             rc = self.niveau.appliquer_pousse_plateforme(self.joueur)
             if rc == "mort":
                 # Écrasement
-                self.joueur.son_mort.play()
                 self.pieces_en_cours = []
-                self.popup_actif = "defaite"
-                self.chrono.arreter()
-                self.est_record = False
+                cx = self.joueur.x + self.joueur.largeur // 2
+                cy = self.joueur.y + self.joueur.hauteur // 2
+                self._demarrer_explosion(cx, cy)
                 return
             if resultat_deplacement == "mort":
                 resultat = "mort"
             # tomber dans le vide
+            mort_vide = False
             if self.joueur.y > (HAUTEUR_GRILLE * TAILLE_CELLULE):
+                mort_vide = True
                 resultat = "mort"
             self.joueur.animer()
             # Stocke l'interaction du joueur
@@ -583,7 +638,6 @@ class Game:
             for sorcier in sorcier_list:
                 sor_rect = sorcier.rect
                 if player_hitbox.colliderect(sor_rect):
-                    self.joueur.son_mort.play()
                     resultat = "mort"
                     break
 
@@ -604,7 +658,6 @@ class Game:
                     offset = (int(self.joueur.x - getattr(squelette, 'current_draw_x', squelette.x)),
                               int(self.joueur.y - getattr(squelette, 'current_draw_y', squelette.y)))
                     if squ_mask.overlap(player_mask, offset) is not None:
-                        self.joueur.son_mort.play()
                         resultat = "mort"
                         break
                     else:
@@ -612,7 +665,6 @@ class Game:
                         continue
                 else:
                     # si pas de masque
-                    self.joueur.son_mort.play()
                     resultat = "mort"
                     break
 
@@ -634,7 +686,6 @@ class Game:
                     self.joueur.vitesse_y = -17
                     self.joueur.au_sol = False
                 else:
-                    self.joueur.son_mort.play()
                     resultat = "mort"
                     break
 
@@ -693,7 +744,6 @@ class Game:
                     collided = True
 
                 if collided:
-                    self.joueur.son_mort.play()
                     proj.alive = False
                     resultat = "mort"
                     break
@@ -710,9 +760,15 @@ class Game:
             elif resultat == "mort":
                 # Les pièces collectées pendant cette tentative sont perdues
                 self.pieces_en_cours = []
-                self.popup_actif = "defaite"
-                self.chrono.arreter()
-                self.est_record = False
+                if mort_vide:
+                    self.popup_actif = "defaite"
+                    self.joueur.son_mort.play()
+                    self.chrono.arreter()
+                    self.est_record = False
+                else:
+                    cx = self.joueur.x + self.joueur.largeur // 2
+                    cy = self.joueur.y + self.joueur.hauteur // 2
+                    self._demarrer_explosion(cx, cy)
 
     def afficher(self):
         """Dessine tous les éléments"""
@@ -738,6 +794,11 @@ class Game:
             # Dessiner le joueur seulement s'il est visible ET pas d'animation de portail ET si aucun popup n'est affiché
             if self.joueur_visible and not self.portail_entree_actif and not self.portail_sortie_actif and self.popup_actif is None:
                 self.joueur.dessiner(self.ecran)
+            
+            # Dessiner l'explosion
+            if self.explosion_actif and self.explosion_frame < len(self.explosion_frames):
+                self.ecran.blit(self.explosion_frames[self.explosion_frame],
+                                (self.explosion_x, self.explosion_y))
             
             self.pause.dessiner_bouton(self.ecran)
             self.chrono.dessiner(self.ecran)
