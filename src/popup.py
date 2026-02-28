@@ -160,7 +160,7 @@ class Popup:
                 "lignes": [
                     "- Ils bloquent le chemin. Saute-leur dessus pour les vaincre !",
                     "- Verts : Fragiles, 1 seul saut suffit.",
-                    "- Violets : Résistants, il faut 3 sauts pour les détruire.",
+                    "- Violets : Résistants, il faut 2 sauts pour les détruire.",
                     "- Utilise le rebond sur leur tête pour atteindre des hauteurs."
                 ]
             }

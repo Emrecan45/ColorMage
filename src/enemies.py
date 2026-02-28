@@ -548,7 +548,7 @@ class Squelette:
 
 class Slime:
     """Slime qui reste sur place avec animation.
-    Vert = 1 PV, Violet = 3 PV.
+    Vert = 1 PV, Violet = 2 PV.
     Quand le joueur saute dessus : rebond + dégâts au slime
     """
     def __init__(self, x, y, couleur="vert"):
@@ -559,7 +559,7 @@ class Slime:
 
         # PV selon la couleur
         if couleur == "violet":
-            self.pv = 3
+            self.pv = 2
         else:
             self.pv = 1
 
