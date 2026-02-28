@@ -575,7 +575,9 @@ class Slime:
         self.sprite_h = 24
 
         # Taille d'affichage
-        self.taille_affichage = TAILLE_CELLULE
+        self.taille_affichage = int(TAILLE_CELLULE * 1.5)
+        self.y = int(self.y + TAILLE_CELLULE - self.taille_affichage)
+        self.x = int(self.x + (TAILLE_CELLULE - self.taille_affichage) / 2)
 
         # Charger toutes les frames
         self.toutes_frames = []
