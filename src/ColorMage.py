@@ -216,6 +216,7 @@ class Game:
                             self.niveau.reset(self.niveau_actuel, self.ecran)
                             self.joueur.reset(self.niveau)
                             self.joueur.maj_controles()
+                            self.joueur.son_spawn.play()
                             self.chrono.demarrer()
                             meilleur_temps = self.gestionnaire_config.obtenir_meilleur_temps(self.niveau_actuel)
                             self.chrono.definir_meilleur_temps(meilleur_temps)
@@ -353,6 +354,7 @@ class Game:
                             self.niveau.reset(self.niveau_actuel, self.ecran)
                             self.joueur.reset(self.niveau)
                             self.joueur.maj_controles()
+                            self.joueur.son_spawn.play()
                             self.chrono.demarrer()
                             meilleur_temps = self.gestionnaire_config.obtenir_meilleur_temps(self.niveau_actuel)
                             self.chrono.definir_meilleur_temps(meilleur_temps)
@@ -392,6 +394,7 @@ class Game:
                                 self.niveau.reset(self.niveau_actuel, self.ecran)
                                 self.joueur.reset(self.niveau)
                                 self.joueur.maj_controles()
+                                self.joueur.son_spawn.play()
                                 self.chrono.demarrer()
                                 meilleur_temps = self.gestionnaire_config.obtenir_meilleur_temps(self.niveau_actuel)
                                 self.chrono.definir_meilleur_temps(meilleur_temps)
@@ -431,6 +434,8 @@ class Game:
         self.portail_entree_actif = True
         self.portail_entree_animation = 0
         self.joueur_visible = False
+        # Jouer le son de spawn
+        self.joueur.son_spawn.play()
         self.etat = "jeu"
     
     def traiter_action_popup(self, action):
@@ -458,6 +463,8 @@ class Game:
             self.portail_entree_actif = True
             self.portail_entree_animation = 0
             self.joueur_visible = False
+            # Jouer le son de spawn
+            self.joueur.son_spawn.play()
             self.etat = "jeu"
         elif action == "planete_suivante":
             # Aller à la planète suivante avec animation de zoom
@@ -528,6 +535,7 @@ class Game:
             self.portail_entree_animation = 0
             self.joueur_visible = False
             self.est_record = False
+            self.joueur.son_spawn.play()
             self.etat = "jeu"
         elif action == "quitter":
             self.chrono.arreter()
@@ -565,6 +573,7 @@ class Game:
             self.portail_sortie_animation += 1
             if self.portail_sortie_animation == 30:
                 # Le joueur disparaît dans le portail
+                self.joueur.son_finish.play()
                 self.joueur_visible = False
             elif self.portail_sortie_animation >= 60:
                 # Fin de l'animation, montrer le popup de victoire
@@ -697,7 +706,7 @@ class Game:
                     self.son_hurt.play()
                     slime.recevoir_degats()
                     # Rebond du joueur
-                    self.joueur.vitesse_y = -18
+                    self.joueur.vitesse_y = -17
                     self.joueur.au_sol = False
                 else:
                     resultat = "mort"
@@ -769,6 +778,7 @@ class Game:
                 self.portail_sortie_animation = 0
                 self.portail_sortie_x = self.joueur.x + self.joueur.largeur // 2
                 self.portail_sortie_y = self.joueur.y + self.joueur.hauteur // 2
+                self.joueur.son_finish.play()
 
             # Cas de défaite
             elif resultat == "mort":
