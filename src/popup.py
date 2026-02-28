@@ -158,10 +158,10 @@ class Popup:
                 "images": [self.img_slime, self.img_slime_violet],
                 "lore": "Des résidus de magie condensés. Leurs noyaux sont durs, mais leur corps est élastique.",
                 "lignes": [
-                    "- Ils bloquent le chemin. Saute-leur dessus pour les vaincre !",
-                    "- Verts : Fragiles, 1 seul saut suffit.",
-                    "- Violets : Résistants, il faut 3 sauts pour les détruire.",
-                    "- Utilise le rebond sur leur tête pour atteindre des hauteurs."
+                    "- Utilise le rebond sur leur tête pour atteindre des hauteurs.",
+                    "- Verts : Fragiles, 1 seul suffit pour les détruire.",
+                    "- Violets : Résistants, il faut 2 sauts pour les détruire.",
+                    "- Attention : toucher un slime ailleurs que sur la tête est mortel !"
                 ]
             }
         }

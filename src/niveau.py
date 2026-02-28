@@ -745,15 +745,20 @@ class Niveau:
                 cle = (dx, dy)
                 if cle not in dx_deja_applique:
                     old_x = joueur.x
+                    old_y = joueur.y
                     joueur.x += dx
+                    if dy != 0:
+                        joueur.y += dy
+
                     rect_test = pygame.Rect(joueur.x + joueur.marge_x, joueur.y + joueur.marge_y_haut, joueur.largeur - 2 * joueur.marge_x, joueur.hauteur - joueur.marge_y_haut - joueur.marge_y_bas)
                     if self.collision(rect_test, joueur.couleur):
                         joueur.x = old_x
+                        joueur.y = old_y
                     else:
                         joueur.pousse_plateforme = True
                     dx_deja_applique.add(cle)
 
-                if joueur.vitesse_y >= 0:
-                    joueur.au_sol = True
+                    if joueur.vitesse_y >= 0:
+                        joueur.au_sol = True
 
-                rect_joueur.topleft = (joueur.x + joueur.marge_x, joueur.y + joueur.marge_y_haut)
+                    rect_joueur.topleft = (joueur.x + joueur.marge_x, joueur.y + joueur.marge_y_haut)
