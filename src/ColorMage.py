@@ -61,6 +61,7 @@ class Game:
         
         # Pause
         self.pause = Pause()
+        self.pause.game = self
         
         # Parametres
         self.parametres = Parametres(self.joueur, self.gestionnaire_config, self.niveau, self)

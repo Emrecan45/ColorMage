@@ -3,6 +3,8 @@ import sys
 import os
 from config import LARGEUR_ECRAN, HAUTEUR_ECRAN
 from config_manager import ConfigManager
+from parametres import Parametres
+from popup import Popup
 
 class Pause:
     """Gère le menu de pause avec bouton et options"""
@@ -33,7 +35,7 @@ class Pause:
         
         # Dimensions du popup
         self.largeur_popup = 600
-        self.hauteur_popup = 400
+        self.hauteur_popup = 520
         self.popup_rect = pygame.Rect(
             (LARGEUR_ECRAN - self.largeur_popup) // 2, 
             (HAUTEUR_ECRAN - self.hauteur_popup) // 2, 
@@ -47,9 +49,10 @@ class Pause:
         
         self.bouton_recommencer = pygame.Rect(0, 0, 260, 60)
         self.bouton_recommencer.center = (self.popup_rect.centerx, self.popup_rect.top + 250)
-        
+        self.bouton_parametres = pygame.Rect(0, 0, 260, 60)
+        self.bouton_parametres.center = (self.popup_rect.centerx, self.popup_rect.top + 340)
         self.bouton_quitter = pygame.Rect(0, 0, 260, 60)
-        self.bouton_quitter.center = (self.popup_rect.centerx, self.popup_rect.top + 340)
+        self.bouton_quitter.center = (self.popup_rect.centerx, self.popup_rect.top + 430)
     
     def maj_volume(self):
         """Met à jour le volume du son de sélection"""
@@ -96,6 +99,7 @@ class Pause:
         boutons = [
             (self.bouton_continuer, "Continuer"),
             (self.bouton_recommencer, "Recommencer"),
+            (self.bouton_parametres, "Paramètres"),
             (self.bouton_quitter, "Quitter")
         ]
         
@@ -129,6 +133,8 @@ class Pause:
             return "continuer"
         elif self.bouton_recommencer.collidepoint(pos):
             return "recommencer"
+        elif self.bouton_parametres.collidepoint(pos):
+            return "parametres"
         elif self.bouton_quitter.collidepoint(pos):
             return "quitter"
         return None
@@ -160,8 +166,51 @@ class Pause:
                     action = self.gerer_clic(event.pos)
                     self.maj_volume()
                     self.son_select.play()
-                    if action:
-                        en_pause = False
+                    if action == "parametres":
+                        game_ref = getattr(self, 'game', None)
+                        if game_ref is not None:
+                            cm = game_ref.gestionnaire_config
+                        else:
+                            cm = self.gestionnaire_config
+                        param = Parametres(joueur, cm, niveau, game_ref)
+                        popup = Popup()
+                        en_params = True
+                        while en_params:
+                            for ev in pygame.event.get():
+                                if ev.type == pygame.QUIT:
+                                    pygame.quit()
+                                    sys.exit()
+                                resultat = param.gerer_events(ev)
+                                if resultat == "quitter":
+                                    en_params = False
+                                    break
+                                elif resultat == "demander_reset_param":
+                                    resultat_popup = popup.afficher_popup_confirmation_reset(ecran, param, "parametres")
+                                    if resultat_popup == "confirmer":
+                                        self.gestionnaire_config.reinitialiser_parametres()
+                                        param = Parametres(joueur, self.gestionnaire_config, niveau, game_ref)
+                                        pygame.mixer.music.set_volume(0.5)
+                                        joueur.maj_controles()
+                                        joueur.maj_volume_effets()
+                                        niveau.maj_volume_sons()
+                            draw_background(ecran)
+                            niveau.dessiner(ecran, 0, update_entities=False)
+                            squelettes = niveau.squelettes
+                            for s in squelettes:
+                                s.dessiner(ecran)
+                            joueur.dessiner(ecran)
+                            param.afficher_parametres(ecran)
+                            pygame.display.flip()
+                        if game_ref is not None:
+                            game_ref.maj_volume_effets()
+                            game_ref.parametres = Parametres(game_ref.joueur, game_ref.gestionnaire_config, game_ref.niveau, game_ref)
+                        joueur.maj_controles()
+                        joueur.maj_volume_effets()
+                        niveau.maj_volume_sons()
+                        self.maj_volume()
+                    else:
+                        if action:
+                            en_pause = False
                 
                 if event.type == pygame.KEYDOWN:
                     if event.key == pygame.K_ESCAPE or event.key == pygame.K_p:
@@ -173,16 +222,9 @@ class Pause:
             draw_background(ecran)
             niveau.dessiner(ecran, 0, update_entities=False)
             # Dessiner les squelettes sans les mettre à jour
-            try:
-                squelettes = niveau.squelettes
-            except AttributeError:
-                squelettes = []
-            else:
-                for s in squelettes:
-                    try:
-                        s.dessiner(ecran)
-                    except Exception:
-                        pass
+            squelettes = niveau.squelettes
+            for s in squelettes:
+                s.dessiner(ecran)
             joueur.dessiner(ecran)
             self.dessiner_bouton(ecran)
             chrono.dessiner(ecran)
