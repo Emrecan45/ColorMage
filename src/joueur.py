@@ -51,6 +51,10 @@ class Joueur:
         self.son_saut = pygame.mixer.Sound(os.path.join("audio", "jump.wav"))
         self.son_mort = pygame.mixer.Sound(os.path.join("audio", "death.wav"))
         self.son_victoire = pygame.mixer.Sound(os.path.join("audio", "win.wav"))
+
+        # Sons de spawn et de fin de niveau
+        self.son_spawn = pygame.mixer.Sound(os.path.join("audio", "spawn.wav"))
+        self.son_finish = pygame.mixer.Sound(os.path.join("audio", "finish.wav"))
         
         son_change_couleur1 = pygame.mixer.Sound(os.path.join("audio", "color_change1.wav"))
         son_change_couleur2 = pygame.mixer.Sound(os.path.join("audio", "color_change2.wav"))
@@ -391,6 +395,8 @@ class Joueur:
         self.son_saut.set_volume(volume)
         self.son_mort.set_volume(volume)
         self.son_victoire.set_volume(volume)
+        self.son_spawn.set_volume(volume)
+        self.son_finish.set_volume(volume)
         
         # Mettre à jour tous les sons de changement de couleur
         for son in self.sons_changement:
