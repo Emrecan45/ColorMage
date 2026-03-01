@@ -71,7 +71,7 @@ class Profil:
         
         espacement = 25
         stat_hauteur = 70
-        bouton_hauteur = 50
+        bouton_hauteur = 70
         avatar_taille = 200
         stats_largeur = 280
         
@@ -232,10 +232,10 @@ class Profil:
         # Cadre du pseudo
         pseudo_zone = pygame.Rect(LARGEUR_ECRAN // 2 - 150, 155, 300, 50)
         if self.edition_pseudo:
-            pygame.draw.rect(ecran, (80, 80, 100), pseudo_zone, border_radius=10)
+            pygame.draw.rect(ecran, COULEUR_SURVOL, pseudo_zone, border_radius=10)
             pygame.draw.rect(ecran, (255, 200, 50), pseudo_zone, 3, border_radius=10)
         else:
-            pygame.draw.rect(ecran, (60, 60, 80), pseudo_zone, border_radius=10)
+            pygame.draw.rect(ecran, COULEUR_BOUTON, pseudo_zone, border_radius=10)
             pygame.draw.rect(ecran, COULEUR_BORDURE, pseudo_zone, 3, border_radius=10)
         
         # Afficher le pseudo avec curseur clignotant si en édition
@@ -264,9 +264,9 @@ class Profil:
         
         # Bouton changement d'avatar
         if self.bouton_change.collidepoint(mouse_pos):
-            couleur_btn_change = (100, 100, 110)
+            couleur_btn_change = COULEUR_SURVOL
         else:
-            couleur_btn_change = (80, 80, 90)
+            couleur_btn_change = COULEUR_BOUTON
         pygame.draw.rect(ecran, couleur_btn_change, self.bouton_change, border_radius=10)
         pygame.draw.rect(ecran, COULEUR_BORDURE, self.bouton_change, 3, border_radius=10)
         if self.icone_change:
@@ -282,7 +282,7 @@ class Profil:
         ecran.blit(sous_titre_stats, (self.zone_niveau_max.centerx - sous_titre_stats.get_width() // 2, self.zone_niveau_max.y - 25))
         
         # Zone niveau maximum / planète
-        pygame.draw.rect(ecran, (80, 80, 90), self.zone_niveau_max, border_radius=10)
+        pygame.draw.rect(ecran, COULEUR_BOUTON, self.zone_niveau_max, border_radius=10)
         pygame.draw.rect(ecran, COULEUR_BORDURE, self.zone_niveau_max, 3, border_radius=10)
         niveau_txt = self.font_3.render("Progression", True, (200, 200, 200))
         niveau_y = self.zone_niveau_max.y + 10
@@ -292,7 +292,7 @@ class Profil:
         ecran.blit(progression_txt, (self.zone_niveau_max.x + 15, progression_y))
         
         # Zone temps total (records)
-        pygame.draw.rect(ecran, (80, 80, 90), self.zone_temps_total, border_radius=10)
+        pygame.draw.rect(ecran, COULEUR_BOUTON, self.zone_temps_total, border_radius=10)
         pygame.draw.rect(ecran, COULEUR_BORDURE, self.zone_temps_total, 3, border_radius=10)
         temps_label = self.font_3.render("Temps total (records)", True, (200, 200, 200))
         temps_label_y = self.zone_temps_total.y + 10
@@ -302,7 +302,7 @@ class Profil:
         ecran.blit(temps_txt, (self.zone_temps_total.x + 15, temps_txt_y))
         
         # Zone pièces collectées
-        pygame.draw.rect(ecran, (80, 80, 90), self.zone_cibles, border_radius=10)
+        pygame.draw.rect(ecran, COULEUR_BOUTON, self.zone_cibles, border_radius=10)
         pygame.draw.rect(ecran, COULEUR_BORDURE, self.zone_cibles, 3, border_radius=10)
         pieces_label = self.font_3.render("Pièces", True, (200, 200, 200))
         pieces_label_y = self.zone_cibles.y + 10

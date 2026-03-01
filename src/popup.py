@@ -852,7 +852,14 @@ class Popup:
         bouton_annuler.center = (popup_rect.centerx + 110, popup_rect.top + 270)
         
         # Messages selon le type de reset
-        if type_reset == "parametres":
+        if type_reset == "import":
+            lignes = [
+                "Voulez-vous vraiment importer",
+                "cette sauvegarde ?",
+                "",
+                "Votre sauvegarde actuelle sera écrasée."
+            ]
+        elif type_reset == "parametres":
             lignes = [
                 "Voulez-vous vraiment réinitialiser",
                 "les paramètres ?",

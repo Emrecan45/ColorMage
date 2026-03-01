@@ -124,6 +124,11 @@ class Game:
         # Alerte
         self.alerte = Alerte()
 
+        # Vérifier si la sauvegarde a été corrompue (modifiée à la main)
+        if self.gestionnaire_config.sauvegarde_corrompue:
+            self.alerte.afficher("Sauvegarde corrompue, progression réinitialisée !")
+            self.gestionnaire_config.sauvegarde_corrompue = False
+
         # Appliquer le volume des effets sonores depuis les paramètres
         volumes = self.gestionnaire_config.obtenir_volumes()
         vol_effets = volumes.get("effets", 50) / 100
@@ -293,6 +298,7 @@ class Game:
                                 self.profil.edition_pseudo = False
                             elif self.etat == "param":
                                 self.parametres.son_select.play()
+                                self.parametres.champ_actif = None
                             self.etat = "menu"
                 if self.etat == "menu":
                     if evenement.type == pygame.MOUSEBUTTONDOWN:
@@ -323,10 +329,10 @@ class Game:
                             # Recharger le menu des niveaux avec la nouvelle config
                             self.menu_niveaux = MenuNiveaux()
                             
-                            # Recharger le profil (avec la tenue par défaut)
+                            # Recharger le profil (avec l'avatar par défaut)
                             self.profil.recharger_donnees()
-                            self.profil.tenue_actuelle = 0
-                            self.profil.charger_image_mage()
+                            self.profil.avatar_actuel = 0
+                            self.profil.charger_avatar()
 
                 elif self.etat == "param":
                     action = self.parametres.gerer_events(evenement)
@@ -344,6 +350,17 @@ class Game:
                             pygame.mixer.music.set_volume(0.5)
                             # Mettre à jour les contrôles du joueur
                             self.joueur.maj_controles()
+                    elif action == "demander_import":
+                        # Afficher popup de confirmation pour import
+                        resultat = self.popup.afficher_popup_confirmation_reset(self.ecran, self.parametres, "import")
+                        if resultat == "confirmer":
+                            resultat_import = self.parametres.importer_fichier()
+                            if resultat_import == "import_ok":
+                                # Redémarrer le jeu
+                                pygame.quit()
+                                os.execv(sys.executable, [sys.executable] + sys.argv)
+                        else:
+                            self.parametres.fichier_import_en_attente = None
 
                 elif self.etat == "selection":
                     if evenement.type == pygame.MOUSEBUTTONDOWN:

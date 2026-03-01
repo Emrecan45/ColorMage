@@ -172,7 +172,7 @@ class Pause:
                             cm = game_ref.gestionnaire_config
                         else:
                             cm = self.gestionnaire_config
-                        param = Parametres(joueur, cm, niveau, game_ref)
+                        param = Parametres(joueur, cm, niveau, game_ref, depuis_partie=True)
                         popup = Popup()
                         en_params = True
                         while en_params:
@@ -188,7 +188,7 @@ class Pause:
                                     resultat_popup = popup.afficher_popup_confirmation_reset(ecran, param, "parametres")
                                     if resultat_popup == "confirmer":
                                         self.gestionnaire_config.reinitialiser_parametres()
-                                        param = Parametres(joueur, self.gestionnaire_config, niveau, game_ref)
+                                        param = Parametres(joueur, self.gestionnaire_config, niveau, game_ref, depuis_partie=True)
                                         pygame.mixer.music.set_volume(0.5)
                                         joueur.maj_controles()
                                         joueur.maj_volume_effets()
