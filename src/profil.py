@@ -225,6 +225,10 @@ class Profil:
         
         mouse_pos = pygame.mouse.get_pos()
         
+        # Sous-titre "Pseudo"
+        sous_titre_pseudo = self.font_3.render("Pseudo", True, (180, 180, 180))
+        ecran.blit(sous_titre_pseudo, (LARGEUR_ECRAN // 2 - sous_titre_pseudo.get_width() // 2, 88))
+        
         # Cadre du pseudo
         pseudo_zone = pygame.Rect(LARGEUR_ECRAN // 2 - 150, 110, 300, 50)
         if self.edition_pseudo:
@@ -248,6 +252,10 @@ class Profil:
                                pseudo_zone.centery - pseudo_txt.get_height() // 2))
         self.pseudo_rect = pseudo_zone
         
+        # Sous-titre "Avatar"
+        sous_titre_avatar = self.font_3.render("Avatar", True, (180, 180, 180))
+        ecran.blit(sous_titre_avatar, (self.cadre_avatar.centerx - sous_titre_avatar.get_width() // 2, self.cadre_avatar.y - 25))
+        
         # Cadre de l'avatar
         avatar_x = self.cadre_avatar.x + 3
         avatar_y = self.cadre_avatar.y + 3
@@ -268,6 +276,10 @@ class Profil:
         
         # Statistiques
         stats = self.calculer_statistiques()
+        
+        # Sous-titre "Statistiques"
+        sous_titre_stats = self.font_3.render("Statistiques", True, (180, 180, 180))
+        ecran.blit(sous_titre_stats, (self.zone_niveau_max.centerx - sous_titre_stats.get_width() // 2, self.zone_niveau_max.y - 25))
         
         # Zone niveau maximum / planète
         pygame.draw.rect(ecran, (80, 80, 90), self.zone_niveau_max, border_radius=10)

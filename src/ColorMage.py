@@ -15,6 +15,7 @@ from menu_niveaux import MenuNiveaux
 from chronometre import Chronometre
 from profil import Profil
 from intro import Intro
+from alerte import Alerte
 
 class Game:
     """Classe principale gérant le jeu"""
@@ -118,6 +119,9 @@ class Game:
         # Sons de pause/unpause
         self.son_pause = pygame.mixer.Sound(os.path.join("audio", "pause.wav"))
         self.son_unpause = pygame.mixer.Sound(os.path.join("audio", "unpause.wav"))
+        
+        # Alerte
+        self.alerte = Alerte()
 
         # Appliquer le volume des effets sonores depuis les paramètres
         volumes = self.gestionnaire_config.obtenir_volumes()
@@ -483,18 +487,15 @@ class Game:
             self.menu_niveaux.planete_selectionnee = nouvelle_planete
             
             # Charger la musique de la nouvelle planète
-            try:
-                planete = self.menu_niveaux.planetes[nouvelle_planete]
-                nom_planete = planete["nom"].lower()
-                chemin_musique = os.path.join("audio", nom_planete + ".ogg")
-                if os.path.exists(chemin_musique):
-                    pygame.mixer.music.stop()
-                    pygame.mixer.music.load(chemin_musique)
-                    vol = self.gestionnaire_config.obtenir_volumes().get("musique", 50) / 100
-                    pygame.mixer.music.set_volume(vol)
-                    pygame.mixer.music.play(-1)
-            except Exception:
-                pass
+            planete = self.menu_niveaux.planetes[nouvelle_planete]
+            nom_planete = planete["nom"].lower()
+            chemin_musique = os.path.join("audio", nom_planete + ".ogg")
+            if os.path.exists(chemin_musique):
+                pygame.mixer.music.stop()
+                pygame.mixer.music.load(chemin_musique)
+                vol = self.gestionnaire_config.obtenir_volumes().get("musique", 50) / 100
+                pygame.mixer.music.set_volume(vol)
+                pygame.mixer.music.play(-1)
             
             self.menu_niveaux.etat_menu = "galaxie"
             self.menu_niveaux.zoom_en_cours = True
@@ -509,14 +510,11 @@ class Game:
             nouvel_univers = (self.niveau_actuel - 1) // niveaux_par_univers
             
             # Restaurer la musique principale
-            try:
-                pygame.mixer.music.stop()
-                pygame.mixer.music.load(os.path.join("audio", "main_theme.ogg"))
-                vol = self.gestionnaire_config.obtenir_volumes().get("musique", 50) / 100
-                pygame.mixer.music.set_volume(vol)
-                pygame.mixer.music.play(-1)
-            except Exception:
-                pass
+            pygame.mixer.music.stop()
+            pygame.mixer.music.load(os.path.join("audio", "main_theme.ogg"))
+            vol = self.gestionnaire_config.obtenir_volumes().get("musique", 50) / 100
+            pygame.mixer.music.set_volume(vol)
+            pygame.mixer.music.play(-1)
             
             # Revenir à la vue galaxie de l'univers précédent
             self.menu_niveaux.etat_menu = "galaxie"
@@ -598,6 +596,13 @@ class Game:
                 niveau_max = self.gestionnaire_config.obtenir_niveau_actuel()
                 if self.niveau_actuel == niveau_max:
                     self.gestionnaire_config.maj_niveau_actuel(self.niveau_actuel + 1)
+                
+                # Vérifier si de nouveaux avatars sont débloqués
+                for avatar in self.profil.avatars:
+                    niv = avatar.get("niveau_associe")
+                    if niv is not None and niv == self.niveau_actuel:
+                        self.alerte.afficher("Nouvel avatar disponible !")
+                        break
             return  # Ne pas mettre à jour le jeu pendant l'animation
         
         # Animation d'explosion
@@ -721,12 +726,8 @@ class Game:
                     self.son_piece.play()
                     piece.alive = False
                     # Stocker temporairement la piece collectee
-                    try:
-                        cx = piece.cell_x
-                        cy = piece.cell_y
-                    except AttributeError:
-                        cx = int(piece.x // TAILLE_CELLULE)
-                        cy = int(piece.y // TAILLE_CELLULE)
+                    cx = int(piece.x // TAILLE_CELLULE)
+                    cy = int(piece.y // TAILLE_CELLULE)
                     self.pieces_en_cours.append([cx, cy])
 
             for proj in proj_iter:
@@ -825,7 +826,8 @@ class Game:
                 self.ecran.blit(self.explosion_frames[self.explosion_frame],
                                 (self.explosion_x, self.explosion_y))
             
-            self.pause.dessiner_bouton(self.ecran)
+            if self.popup_actif is None:
+                self.pause.dessiner_bouton(self.ecran)
             self.chrono.dessiner(self.ecran)
             
             # Afficher le popup s'il y en a un
@@ -840,6 +842,9 @@ class Game:
         
         elif self.etat == "profil":
             self.profil.afficher_profil(self.ecran)
+        
+        # Alerte par-dessus tout
+        self.alerte.dessiner(self.ecran)
         
         pygame.display.flip()
     

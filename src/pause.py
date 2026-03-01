@@ -228,7 +228,6 @@ class Pause:
             for s in squelettes:
                 s.dessiner(ecran)
             joueur.dessiner(ecran)
-            self.dessiner_bouton(ecran)
             chrono.dessiner(ecran)
             
             # Dessiner le popup de pause avec le numéro de niveau
