@@ -47,9 +47,11 @@ class Intro:
             frame_delay = 1000.0 / fps  # Délai entre frames en millisecondes
             
             # Jouer l'audio séparément
+            volumes = self.gestionnaire_config.obtenir_volumes()
+            volume_effets = volumes.get("effets", 50) / 100
             pygame.mixer.music.stop()
             pygame.mixer.music.load(self.audio_path)
-            pygame.mixer.music.set_volume(0.3)
+            pygame.mixer.music.set_volume(volume_effets)
             pygame.mixer.music.play()
             
             temps_debut = pygame.time.get_ticks()

@@ -42,160 +42,100 @@ class Profil:
         
         self.temps_global = 0
         
-        # Tenues disponibles (couleur, fichier, pose en colonne/ligne)
-        # Spritesheet: 4 colonnes x 3 lignes, chaque sprite = 192x196
-        # pose_x = (colonne - 1) * 192, pose_y = (ligne - 1) * 196
-        # offset_y = décalage pour compenser la position visuelle du mage dans le sprite
-        self.tenues = [
-            # Gris - 3 poses (offset positif = descendre l'image)
-            {"nom": "Gris 1", "fichier": "joueur_gris.png", "pose_x": 0, "pose_y": 0, "offset_y": 4},        # L1 C1
-            {"nom": "Gris 2", "fichier": "joueur_gris.png", "pose_x": 576, "pose_y": 196, "offset_y": 7.5},   # L2 C4
-            {"nom": "Gris 3", "fichier": "joueur_gris.png", "pose_x": 192, "pose_y": 392, "offset_y": 10},  # L3 C2
-            # Vert - 3 poses
-            {"nom": "Vert 1", "fichier": "joueur_vert.png", "pose_x": 0, "pose_y": 0, "offset_y": 4},       # L1 C1
-            {"nom": "Vert 2", "fichier": "joueur_vert.png", "pose_x": 576, "pose_y": 196, "offset_y": 7.5},  # L2 C4
-            {"nom": "Vert 3", "fichier": "joueur_vert.png", "pose_x": 192, "pose_y": 392, "offset_y": 10}, # L3 C2
-            # Bleu - 3 poses
-            {"nom": "Bleu 1", "fichier": "joueur_bleu.png", "pose_x": 0, "pose_y": 0, "offset_y": 4},       # L1 C1
-            {"nom": "Bleu 2", "fichier": "joueur_bleu.png", "pose_x": 576, "pose_y": 196, "offset_y": 7.5},  # L2 C4
-            {"nom": "Bleu 3", "fichier": "joueur_bleu.png", "pose_x": 192, "pose_y": 392, "offset_y": 10}, # L3 C2
-            # Rouge - 3 poses
-            {"nom": "Rouge 1", "fichier": "joueur_rouge.png", "pose_x": 0, "pose_y": 0, "offset_y": 4},     # L1 C1
-            {"nom": "Rouge 2", "fichier": "joueur_rouge.png", "pose_x": 576, "pose_y": 196, "offset_y": 7.5}, # L2 C4
-            {"nom": "Rouge 3", "fichier": "joueur_rouge.png", "pose_x": 192, "pose_y": 392, "offset_y": 10}, # L3 C2
-            # Sorcier - 2 poses
-            {"nom": "Sorcier 1", "fichier": "ennemy.png", "pose_x": 0 * 192, "pose_y": 0 * 192, "pose_w": 192, "pose_h": 192, "offset_y": 5, "niveau_associe": 3},
-            {"nom": "Sorcier 2", "fichier": "ennemy.png", "pose_x": 3 * 192, "pose_y": 0 * 192, "pose_w": 192, "pose_h": 192, "offset_y": 5, "niveau_associe": 3},
-            # Squelette - 4 poses
-            {"nom": "Squelette 1", "fichier": "ennemy.png", "pose_x": 2 * 192, "pose_y": 4 * 192, "pose_w": 192, "pose_h": 192, "offset_y": 5, "niveau_associe": 4},
-            {"nom": "Squelette 2", "fichier": "ennemy.png", "pose_x": 4 * 192, "pose_y": 4 * 192, "pose_w": 192, "pose_h": 192, "offset_y": 5, "niveau_associe": 4},
-            {"nom": "Squelette 3", "fichier": "ennemy.png", "pose_x": 0 * 192, "pose_y": 5 * 192, "pose_w": 192, "pose_h": 192, "offset_y": 5, "niveau_associe": 4},
-            {"nom": "Squelette 4", "fichier": "ennemy.png", "pose_x": 2 * 192, "pose_y": 5 * 192, "pose_w": 192, "pose_h": 192, "offset_y": 5, "niveau_associe": 4},
-            # Slimes
-            {"nom": "Slime Vert", "fichier": "slime_vert.png", "pose_x": 0, "pose_y": 24, "pose_w": 24, "pose_h": 24, "offset_y": 0, "niveau_associe": 5},
-            {"nom": "Slime Violet", "fichier": "slime_violet.png", "pose_x": 0, "pose_y": 24, "pose_w": 24, "pose_h": 24, "offset_y": 0, "niveau_associe": 5},
+        # Avatars disponibles (images dans img/avatars/)
+        # niveau_associe = niveau dont l'ennemi doit être vaincu pour débloquer
+        self.avatars = [
+            {"nom": "Mage 1", "fichier": "mage1.png"},
+            {"nom": "Mage 2", "fichier": "mage2.png"},
+            {"nom": "Mage 3", "fichier": "mage3.png"},
+            {"nom": "Mage 4", "fichier": "mage4.png"},
+            {"nom": "Grimoire", "fichier": "grimoire.png"},
+            {"nom": "Sorcier", "fichier": "sorcier.png", "niveau_associe": 3},
+            {"nom": "Squelette", "fichier": "squelette.png", "niveau_associe": 4},
+            {"nom": "Slime Vert", "fichier": "slime_vert.png", "niveau_associe": 5},
+            {"nom": "Slime Violet", "fichier": "slime_violet.png", "niveau_associe": 5},
         ]
         
-        self.tenue_actuelle = self.gestionnaire_config.config.get("tenue_profil", 0)
-        for idx in range(len(self.tenues)):
-            if self.tenue_est_debloquee(idx):
-                self.tenue_actuelle = idx
+        self.avatar_actuel = self.gestionnaire_config.config.get("avatar_profil", 0)
+        for idx in range(len(self.avatars)):
+            if self.avatar_est_debloque(idx):
+                self.avatar_actuel = idx
                 break
         
         # Charger l'icône de changement
-        try:
-            self.icone_change = pygame.image.load("img/change.png")
-            self.icone_change = pygame.transform.scale(self.icone_change, (40, 40))
-        except:
-            self.icone_change = None
-        
-        # Charger l'image du mage selon la tenue actuelle
-        self.charger_image_mage()
+        self.icone_change = pygame.image.load("img/change.png")
+        self.icone_change = pygame.transform.scale(self.icone_change, (40, 40))
         
         # Positions centrées
         centre_x = LARGEUR_ECRAN // 2
         
-        # Layout : mage + bouton à gauche, 3 stats à droite
-        # Mage = hauteur de 2 stats, Bouton = hauteur de 1 stat
-        espacement = 25  # Espacement vertical plus grand
+        espacement = 25
         stat_hauteur = 70
-        bouton_hauteur = stat_hauteur  # Même hauteur que la 3ème stat
-        mage_hauteur = 2 * stat_hauteur + espacement  # Hauteur de 2 stats + espacement entre elles
-        mage_largeur = 200
+        bouton_hauteur = 50
+        avatar_taille = 200
         stats_largeur = 280
         
-        # Position de départ (centrée horizontalement, plus bas du titre)
-        gauche_x = centre_x - (mage_largeur + espacement + stats_largeur) // 2
-        droite_x = gauche_x + mage_largeur + espacement
-        top_y = 240  # Plus bas du titre
+        # Position de départ
+        gauche_x = centre_x - (avatar_taille + espacement + stats_largeur) // 2
+        droite_x = gauche_x + avatar_taille + espacement
+        top_y = 280
         
-        # Zone d'affichage du mage (hauteur = 2 stats)
-        self.cadre_mage = pygame.Rect(gauche_x, top_y, mage_largeur, mage_hauteur)
+        # Zone d'affichage de l'avatar
+        self.cadre_avatar = pygame.Rect(gauche_x, top_y, avatar_taille, avatar_taille)
         
-        # Bouton changement de tenue (sous le mage, même largeur, même hauteur que 3ème stat)
-        self.bouton_change = pygame.Rect(gauche_x, top_y + mage_hauteur + espacement, mage_largeur, bouton_hauteur)
+        # Bouton changement d'avatar
+        self.bouton_change = pygame.Rect(gauche_x, top_y + avatar_taille + espacement, avatar_taille, bouton_hauteur)
         
-        # Champ pseudo (éditable, centré, plus espacé du titre)
+        # Charger l'avatar actuel
+        self.charger_avatar()
+        
+        # Champ pseudo
         self.pseudo_rect = pygame.Rect(centre_x - 150, 140, 300, 50)
         self.edition_pseudo = False
         self.pseudo_avant_edition = ""  # Pour restaurer si vide
         self.curseur_visible = True
         self.temps_curseur = 0
         
-        # Bouton reset sauvegarde de retour (aligné avec parametres)
+        # Bouton reset sauvegarde de retour
         self.bouton_reset_save = pygame.Rect(centre_x - 125, HAUTEUR_ECRAN // 2 + 200, 250, 50)
         
-        # Bouton retour en bas (aligné avec parametres)
+        # Bouton retour en bas
         self.bouton_retour = pygame.Rect(centre_x - 125, HAUTEUR_ECRAN // 2 + 270, 250, 50)
         
         # Zones de stats
+        hauteur_totale = avatar_taille + espacement + bouton_hauteur  # 275
+        espacement_stats = (hauteur_totale - 3 * stat_hauteur) // 2
         self.zone_niveau_max = pygame.Rect(droite_x, top_y, stats_largeur, stat_hauteur)
-        self.zone_temps_total = pygame.Rect(droite_x, top_y + stat_hauteur + espacement, stats_largeur, stat_hauteur)
-        self.zone_cibles = pygame.Rect(droite_x, top_y + 2 * (stat_hauteur + espacement), stats_largeur, stat_hauteur)
+        self.zone_temps_total = pygame.Rect(droite_x, top_y + stat_hauteur + espacement_stats, stats_largeur, stat_hauteur)
+        self.zone_cibles = pygame.Rect(droite_x, top_y + 2 * (stat_hauteur + espacement_stats), stats_largeur, stat_hauteur)
     
-    def charger_image_mage(self):
-        """Charge l'image du mage selon la tenue actuelle"""
-        try:
-            tenue = self.tenues[self.tenue_actuelle]
-            image_path = f"img/{tenue['fichier']}"
-            self.image_mage_original = pygame.image.load(image_path)
-            # Si c'est une spritesheet de joueur (fichier commençant par 'joueur_'), on découpe
-            if tenue['fichier'].startswith('joueur_'):
-                sprite_largeur = 192
-                sprite_hauteur = 195  # Réduit de 1 pixel pour éviter de capturer la ligne suivante
-                mage_surface = pygame.Surface((sprite_largeur, sprite_hauteur), pygame.SRCALPHA)
-                mage_surface.blit(self.image_mage_original, (0, 0), 
-                                (tenue['pose_x'], tenue['pose_y'], sprite_largeur, sprite_hauteur))
-                self.image_mage = pygame.transform.scale(mage_surface, (150, 150))
-            else:
-                # Pour les autres fichiers (ennemis, icones...), on tente d'extraire
-                # une sous-image si des coordonnées sont fournies, sinon on met l'image entière à l'échelle
-                pose_w = tenue.get('pose_w')
-                pose_h = tenue.get('pose_h')
-                pose_x = tenue.get('pose_x', 0)
-                pose_y = tenue.get('pose_y', 0)
-                if pose_w and pose_h:
-                    try:
-                        frame_surface = pygame.Surface((pose_w, pose_h), pygame.SRCALPHA)
-                        frame_surface.blit(self.image_mage_original, (0, 0), (pose_x, pose_y, pose_w, pose_h))
-                        self.image_mage = pygame.transform.scale(frame_surface, (150, 150))
-                    except Exception:
-                        # Fallback to full image if crop fails
-                        try:
-                            self.image_mage = pygame.transform.scale(self.image_mage_original, (150, 150))
-                        except Exception:
-                            self.image_mage = self.image_mage_original
-                else:
-                    try:
-                        self.image_mage = pygame.transform.scale(self.image_mage_original, (150, 150))
-                    except Exception:
-                        self.image_mage = self.image_mage_original
-            # Stocker l'offset vertical pour cette pose
-            self.mage_offset_y = tenue.get('offset_y', 0)
-        except:
-            self.image_mage = None
-            self.mage_offset_y = 0
+    def charger_avatar(self):
+        """Charge l'image d'avatar actuelle"""
+        avatar = self.avatars[self.avatar_actuel]
+        chemin = os.path.join("img", "avatars", avatar["fichier"])
+        image = pygame.image.load(chemin)
+        taille = self.cadre_avatar.width - 6
+        self.image_avatar = pygame.transform.scale(image, (taille, taille))
 
-    def tenue_est_debloquee(self, index):
-        """Déblocage"""
-        tenue = self.tenues[index]
-        niveau = tenue.get('niveau_associe')
+    def avatar_est_debloque(self, index):
+        """Vérifie si un avatar est débloqué"""
+        avatar = self.avatars[index]
+        niveau = avatar.get("niveau_associe")
         if niveau is None:
             return True
         return self.gestionnaire_config.page_vue(niveau) and self.gestionnaire_config.obtenir_meilleur_temps(niveau) is not None
     
-    def changer_tenue(self):
-        """Change la tenue du mage"""
-        s = self.tenue_actuelle
-        n = len(self.tenues)
+    def changer_avatar(self):
+        """Passe à l'avatar débloqué suivant"""
+        s = self.avatar_actuel
+        n = len(self.avatars)
         for i in range(1, n + 1):
             idx = (s + i) % n
-            if self.tenue_est_debloquee(idx):
-                self.tenue_actuelle = idx
+            if self.avatar_est_debloque(idx):
+                self.avatar_actuel = idx
                 break
-        self.charger_image_mage()
-        # Sauvegarder le choix
-        self.gestionnaire_config.config["tenue_profil"] = self.tenue_actuelle
+        self.charger_avatar()
+        self.gestionnaire_config.config["avatar_profil"] = self.avatar_actuel
         self.gestionnaire_config.sauvegarder_config()
     
     def maj_volume(self):
@@ -231,7 +171,10 @@ class Profil:
         meilleurs_temps = config.get("meilleurs_temps", {})
         
         # Temps total de jeu (somme des meilleurs temps)
-        temps_total_ms = sum(meilleurs_temps.values()) if meilleurs_temps else 0
+        if meilleurs_temps:
+            temps_total_ms = sum(meilleurs_temps.values())
+        else:
+            temps_total_ms = 0
         
         # nombre de pièces collectées
         pieces_total = config.get("pieces_total", 0)
@@ -276,14 +219,18 @@ class Profil:
         ecran.fill((10, 10, 30))
         self.dessiner_etoiles(ecran)
         
-        # Titre "Profil" (même hauteur que sélection du monde)
+        # Titre "Profil"
         titre = self.font_titre.render("Profil", True, (255, 255, 255))
         ecran.blit(titre, (LARGEUR_ECRAN // 2 - titre.get_width() // 2, 30))
         
         mouse_pos = pygame.mouse.get_pos()
         
-        # Cadre du pseudo (en haut au centre, plus espacé)
-        pseudo_zone = pygame.Rect(LARGEUR_ECRAN // 2 - 150, 110, 300, 50)
+        # Sous-titre "Pseudo"
+        sous_titre_pseudo = self.font_3.render("Pseudo", True, (180, 180, 180))
+        ecran.blit(sous_titre_pseudo, (LARGEUR_ECRAN // 2 - sous_titre_pseudo.get_width() // 2, 130))
+        
+        # Cadre du pseudo
+        pseudo_zone = pygame.Rect(LARGEUR_ECRAN // 2 - 150, 155, 300, 50)
         if self.edition_pseudo:
             pygame.draw.rect(ecran, (80, 80, 100), pseudo_zone, border_radius=10)
             pygame.draw.rect(ecran, (255, 200, 50), pseudo_zone, 3, border_radius=10)
@@ -292,7 +239,12 @@ class Profil:
             pygame.draw.rect(ecran, COULEUR_BORDURE, pseudo_zone, 3, border_radius=10)
         
         # Afficher le pseudo avec curseur clignotant si en édition
-        texte_pseudo = self.pseudo if self.pseudo else ("" if self.edition_pseudo else "Cliquez pour éditer")
+        if self.pseudo:
+            texte_pseudo = self.pseudo
+        elif self.edition_pseudo:
+            texte_pseudo = ""
+        else:
+            texte_pseudo = "Cliquez pour éditer"
         if self.edition_pseudo and self.curseur_visible:
             texte_pseudo += "|"
         pseudo_txt = self.font_1.render(texte_pseudo, True, (255, 255, 255))
@@ -300,17 +252,21 @@ class Profil:
                                pseudo_zone.centery - pseudo_txt.get_height() // 2))
         self.pseudo_rect = pseudo_zone
         
-        # Cadre du mage (à gauche) - juste la bordure, fond transparent
-        pygame.draw.rect(ecran, COULEUR_BORDURE, self.cadre_mage, 3, border_radius=10)
+        # Sous-titre "Avatar"
+        sous_titre_avatar = self.font_3.render("Avatar", True, (180, 180, 180))
+        ecran.blit(sous_titre_avatar, (self.cadre_avatar.centerx - sous_titre_avatar.get_width() // 2, self.cadre_avatar.y - 25))
         
-        if self.image_mage:
-            mage_x = self.cadre_mage.centerx - self.image_mage.get_width() // 2
-            # Positionner le mage au bas du cadre (posé sur la bordure blanche) + offset pour compenser la position dans le sprite
-            mage_y = self.cadre_mage.bottom - self.image_mage.get_height() - 5 + self.mage_offset_y
-            ecran.blit(self.image_mage, (mage_x, mage_y))
+        # Cadre de l'avatar
+        avatar_x = self.cadre_avatar.x + 3
+        avatar_y = self.cadre_avatar.y + 3
+        ecran.blit(self.image_avatar, (avatar_x, avatar_y))
+        pygame.draw.rect(ecran, COULEUR_BORDURE, self.cadre_avatar, 3, border_radius=10)
         
-        # Bouton changement de tenue (sous le mage)
-        couleur_btn_change = (100, 100, 110) if self.bouton_change.collidepoint(mouse_pos) else (80, 80, 90)
+        # Bouton changement d'avatar
+        if self.bouton_change.collidepoint(mouse_pos):
+            couleur_btn_change = (100, 100, 110)
+        else:
+            couleur_btn_change = (80, 80, 90)
         pygame.draw.rect(ecran, couleur_btn_change, self.bouton_change, border_radius=10)
         pygame.draw.rect(ecran, COULEUR_BORDURE, self.bouton_change, 3, border_radius=10)
         if self.icone_change:
@@ -321,7 +277,11 @@ class Profil:
         # Statistiques
         stats = self.calculer_statistiques()
         
-        # Zone niveau maximum / planète - fond gris
+        # Sous-titre "Statistiques"
+        sous_titre_stats = self.font_3.render("Statistiques", True, (180, 180, 180))
+        ecran.blit(sous_titre_stats, (self.zone_niveau_max.centerx - sous_titre_stats.get_width() // 2, self.zone_niveau_max.y - 25))
+        
+        # Zone niveau maximum / planète
         pygame.draw.rect(ecran, (80, 80, 90), self.zone_niveau_max, border_radius=10)
         pygame.draw.rect(ecran, COULEUR_BORDURE, self.zone_niveau_max, 3, border_radius=10)
         niveau_txt = self.font_3.render("Progression", True, (200, 200, 200))
@@ -331,7 +291,7 @@ class Profil:
         progression_y = self.zone_niveau_max.y + self.zone_niveau_max.height - progression_txt.get_height() - 12 + 6
         ecran.blit(progression_txt, (self.zone_niveau_max.x + 15, progression_y))
         
-        # Zone temps total (records) - fond gris
+        # Zone temps total (records)
         pygame.draw.rect(ecran, (80, 80, 90), self.zone_temps_total, border_radius=10)
         pygame.draw.rect(ecran, COULEUR_BORDURE, self.zone_temps_total, 3, border_radius=10)
         temps_label = self.font_3.render("Temps total (records)", True, (200, 200, 200))
@@ -341,7 +301,7 @@ class Profil:
         temps_txt_y = self.zone_temps_total.y + self.zone_temps_total.height - temps_txt.get_height() - 12 + 6
         ecran.blit(temps_txt, (self.zone_temps_total.x + 15, temps_txt_y))
         
-        # Zone pièces collectées - fond gris
+        # Zone pièces collectées
         pygame.draw.rect(ecran, (80, 80, 90), self.zone_cibles, border_radius=10)
         pygame.draw.rect(ecran, COULEUR_BORDURE, self.zone_cibles, 3, border_radius=10)
         pieces_label = self.font_3.render("Pièces", True, (200, 200, 200))
@@ -351,21 +311,24 @@ class Profil:
         pieces_txt_y = self.zone_cibles.y + self.zone_cibles.height - pieces_txt.get_height() - 12 + 6
         ecran.blit(pieces_txt, (self.zone_cibles.x + 15, pieces_txt_y))
         
-        # Bouton réinitialiser sauvegarde (en rouge, au dessus de retour)
+        # Bouton réinitialiser sauvegarde
         if self.bouton_reset_save.collidepoint(mouse_pos):
             pygame.draw.rect(ecran, (150, 50, 50), self.bouton_reset_save, border_radius=10)
         else:
             pygame.draw.rect(ecran, (120, 30, 30), self.bouton_reset_save, border_radius=10)
         pygame.draw.rect(ecran, COULEUR_BORDURE, self.bouton_reset_save, 3, border_radius=10)
-        reset_txt = self.font_2.render("Réinitialiser", True, (255, 255, 255))
+        reset_txt = self.font_1.render("Réinitialiser", True, (255, 255, 255))
         ecran.blit(reset_txt, (self.bouton_reset_save.centerx - reset_txt.get_width() // 2,
                               self.bouton_reset_save.centery - reset_txt.get_height() // 2))
         
-        # Bouton retour (en bas)
-        couleur_retour = COULEUR_SURVOL if self.bouton_retour.collidepoint(mouse_pos) else COULEUR_BOUTON
+        # Bouton retour
+        if self.bouton_retour.collidepoint(mouse_pos):
+            couleur_retour = COULEUR_SURVOL
+        else:
+            couleur_retour = COULEUR_BOUTON
         pygame.draw.rect(ecran, couleur_retour, self.bouton_retour, border_radius=10)
         pygame.draw.rect(ecran, COULEUR_BORDURE, self.bouton_retour, 3, border_radius=10)
-        retour_txt = self.font_2.render("Retour", True, (255, 255, 255))
+        retour_txt = self.font_1.render("Retour", True, (255, 255, 255))
         ecran.blit(retour_txt, (self.bouton_retour.centerx - retour_txt.get_width() // 2,
                                self.bouton_retour.centery - retour_txt.get_height() // 2))
         
@@ -395,10 +358,10 @@ class Profil:
                 self.pseudo = self.gestionnaire_config.obtenir_pseudo()
                 return "reset_save"
             
-            # Clic sur le bouton changement de tenue
+            # Clic sur le bouton changement d'avatar
             if self.bouton_change.collidepoint(evenement.pos):
                 self.son_select.play()
-                self.changer_tenue()
+                self.changer_avatar()
                 return None
             
             # Clic ailleurs = désactiver l'édition du pseudo
@@ -433,11 +396,11 @@ class Profil:
     def recharger_donnees(self):
         """Recharge les données du profil depuis la config"""
         self.pseudo = self.gestionnaire_config.obtenir_pseudo()
-        if not self.tenue_est_debloquee(self.tenue_actuelle):
-            for idx in range(len(self.tenues)):
-                if self.tenue_est_debloquee(idx):
-                    self.tenue_actuelle = idx
+        if not self.avatar_est_debloque(self.avatar_actuel):
+            for idx in range(len(self.avatars)):
+                if self.avatar_est_debloque(idx):
+                    self.avatar_actuel = idx
                     break
-            self.gestionnaire_config.config["tenue_profil"] = self.tenue_actuelle
+            self.gestionnaire_config.config["avatar_profil"] = self.avatar_actuel
             self.gestionnaire_config.sauvegarder_config()
-        self.charger_image_mage()
+        self.charger_avatar()

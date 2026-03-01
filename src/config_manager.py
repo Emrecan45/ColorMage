@@ -95,7 +95,7 @@ class ConfigManager:
                 "niveau_actuel": self.niveau_actuel,
                 "meilleurs_temps": self.meilleurs_temps,
                 "pseudo": self.config.get("pseudo", "Joueur"),
-                "tenue_profil": self.config.get("tenue_profil", 0),
+                "avatar_profil": self.config.get("avatar_profil", 0),
                 "pieces_total": self.config.get("pieces_total", 0),
                 "pieces_collectees": self.config.get("pieces_collectees", {}),
                 "pages_vues": self.config.get("pages_vues", [])
@@ -195,7 +195,7 @@ class ConfigManager:
         # Reset la progression
         self.config["niveau_actuel"] = 1
         self.config["meilleurs_temps"] = {}
-        self.config["tenue_profil"] = 0  # Reset la tenue du profil
+        self.config["avatar_profil"] = 0  # Reset l'avatar du profil
         self.config["pieces_total"] = 0
         self.config["pieces_collectees"] = {}
         self.config["pages_vues"] = []
