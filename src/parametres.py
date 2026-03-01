@@ -10,10 +10,11 @@ from config_manager import ConfigManager
 class Parametres:
     """Affiche les parametres et retourne l'action choisie"""
     
-    def __init__(self, joueur = None, gestionnaire_config=None, niveau=None, game=None):
+    def __init__(self, joueur = None, gestionnaire_config=None, niveau=None, game=None, depuis_partie=False):
         self.joueur = joueur
         self.niveau = niveau
         self.game = game
+        self.depuis_partie = depuis_partie
         # charge les touches du joueur et les volumes
         if gestionnaire_config is None:
             self.gestionnaire_config = ConfigManager()
@@ -31,6 +32,7 @@ class Parametres:
         self.font_1 = pygame.font.SysFont(None, 80)
         self.font_2 = pygame.font.SysFont(None, 50)
         self.font_3 = pygame.font.SysFont(None, 40)
+        self.font_sous_titre = pygame.font.SysFont(None, 35)
  
         # Générer les étoiles
         self.etoiles = []
@@ -46,7 +48,10 @@ class Parametres:
         self.temps_global = 0
 
         # Position du bloc de contenu
-        self.bloc_y = 375
+        if self.depuis_partie:
+            self.bloc_y = 330
+        else:
+            self.bloc_y = 435
 
         # droite
         self.droite_field = pygame.Rect(LARGEUR_ECRAN // 3 + 150, self.bloc_y - 30, 90, 50)
@@ -63,8 +68,18 @@ class Parametres:
         # Variable pour savoir quel champ est actuellement en cours d'attribution
         self.champ_actif = None  # Peut être "droite", "gauche", "sauter" ou None
 
-        self.bouton_reset_param = pygame.Rect(LARGEUR_ECRAN // 2 - 125, HAUTEUR_ECRAN // 2 + 200, 250, 50)
-        self.bouton_retour = pygame.Rect(LARGEUR_ECRAN // 2 - 125, HAUTEUR_ECRAN // 2 + 270, 250, 50)
+        # Boutons exporter / importer sauvegarde
+        if not self.depuis_partie:
+            self.bouton_exporter = pygame.Rect(LARGEUR_ECRAN // 2 - 172, 210, 150, 60)
+            self.bouton_importer = pygame.Rect(LARGEUR_ECRAN // 2 + 23, 210, 150, 60)
+        else:
+            self.bouton_exporter = None
+            self.bouton_importer = None
+
+        self.bouton_reset_param = pygame.Rect(LARGEUR_ECRAN // 2 - 125, 635, 250, 50)
+        self.bouton_retour = pygame.Rect(LARGEUR_ECRAN // 2 - 125, 700, 250, 50)
+        self.fichier_import_en_attente = None
+
         self.jauge_musique = pygame.Rect(LARGEUR_ECRAN // 2 + 35, self.bloc_y, 250, 15)
         self.jauge_general = pygame.Rect(LARGEUR_ECRAN // 2 + 35, self.bloc_y + 110, 250, 15)
         
@@ -102,18 +117,24 @@ class Parametres:
         titre_txt = self.font_1.render("Paramètres", True, (255, 255, 255))
         ecran.blit(titre_txt, (LARGEUR_ECRAN // 2 - titre_txt.get_width() // 2, 30))
 
-        volume_txt = self.font_2.render("Volumes", True, (255, 255, 255))
-        ecran.blit(volume_txt, (LARGEUR_ECRAN // 2 - volume_txt.get_width() // 2 + 160, self.bloc_y - 120))
+        # Sous-titre "Sauvegarde"
+        if not self.depuis_partie:
+            sous_titre_save = self.font_sous_titre.render("Sauvegarde", True, (180, 180, 180))
+            ecran.blit(sous_titre_save, (LARGEUR_ECRAN // 2 - sous_titre_save.get_width() // 2, self.bouton_exporter.y - 45))
 
-        configuration_txt = self.font_2.render("Configuration", True, (255, 255, 255))
-        ecran.blit(configuration_txt, (LARGEUR_ECRAN // 2 - configuration_txt.get_width() // 2 - 110, self.bloc_y - 120))
+        # Sous-titres volumes
+        volume_txt = self.font_sous_titre.render("Volumes", True, (180, 180, 180))
+        ecran.blit(volume_txt, (LARGEUR_ECRAN // 2 - volume_txt.get_width() // 2 + 160, self.bloc_y - 100))
+
+        configuration_txt = self.font_sous_titre.render("Configuration", True, (180, 180, 180))
+        ecran.blit(configuration_txt, (LARGEUR_ECRAN // 2 - configuration_txt.get_width() // 2 - 110, self.bloc_y - 100))
         
-        des_touches_txt = self.font_2.render("des touches", True, (255, 255, 255))
-        ecran.blit(des_touches_txt, (LARGEUR_ECRAN // 2 - des_touches_txt.get_width() // 2 - 110, self.bloc_y - 90))
+        des_touches_txt = self.font_sous_titre.render("des touches", True, (180, 180, 180))
+        ecran.blit(des_touches_txt, (LARGEUR_ECRAN // 2 - des_touches_txt.get_width() // 2 - 110, self.bloc_y - 72))
 
         # ---------volume musique
         musique_txt = self.font_3.render("Musique", True, (255, 255, 255))
-        ecran.blit(musique_txt, (LARGEUR_ECRAN // 2 - musique_txt.get_width() // 2 + 160, self.bloc_y - 40))
+        ecran.blit(musique_txt, (LARGEUR_ECRAN // 2 - musique_txt.get_width() // 2 + 160, self.bloc_y - 30))
         pygame.draw.rect(ecran, (100, 100, 100), self.jauge_musique)
         # remplissage de la jauge
         largeur_remplie = int((self.val_jauge_musique / 100) * self.jauge_musique.width)
@@ -190,6 +211,28 @@ class Parametres:
         text_rect = sauter_assign_txt.get_rect(center=self.sauter_field.center)
         ecran.blit(sauter_assign_txt, text_rect)
         
+        # -------boutons exporter/importer
+        if not self.depuis_partie:
+            # Bouton exporter
+            if self.bouton_exporter.collidepoint(pygame.mouse.get_pos()):
+                pygame.draw.rect(ecran, COULEUR_SURVOL, self.bouton_exporter, border_radius=10)
+            else:
+                pygame.draw.rect(ecran, COULEUR_BOUTON, self.bouton_exporter, border_radius=10)
+            pygame.draw.rect(ecran, COULEUR_BORDURE, self.bouton_exporter, 3, border_radius=10)
+            export_txt = self.font_3.render("Exporter", True, (255, 255, 255))
+            ecran.blit(export_txt, (self.bouton_exporter.centerx - export_txt.get_width() // 2,
+                                    self.bouton_exporter.centery - export_txt.get_height() // 2))
+
+            # Bouton importer
+            if self.bouton_importer.collidepoint(pygame.mouse.get_pos()):
+                pygame.draw.rect(ecran, COULEUR_SURVOL, self.bouton_importer, border_radius=10)
+            else:
+                pygame.draw.rect(ecran, COULEUR_BOUTON, self.bouton_importer, border_radius=10)
+            pygame.draw.rect(ecran, COULEUR_BORDURE, self.bouton_importer, 3, border_radius=10)
+            import_txt = self.font_3.render("Importer", True, (255, 255, 255))
+            ecran.blit(import_txt, (self.bouton_importer.centerx - import_txt.get_width() // 2,
+                                    self.bouton_importer.centery - import_txt.get_height() // 2))
+
         # -------bouton réinitialiser
         if self.bouton_reset_param.collidepoint(pygame.mouse.get_pos()):
             pygame.draw.rect(ecran, (150, 50, 50), self.bouton_reset_param, border_radius=10)
@@ -265,6 +308,18 @@ class Parametres:
                 self.sauvegarder_controles()
                 self.champ_actif = None
                 return "quitter"
+            elif not self.depuis_partie and self.bouton_exporter.collidepoint(evenement.pos):
+                self.son_select.play()
+                self.exporter_fichier()
+                return None
+            elif not self.depuis_partie and self.bouton_importer.collidepoint(evenement.pos):
+                self.son_select.play()
+                # Ouvrir le sélecteur de fichier
+                chemin = self.choisir_fichier_import()
+                if chemin:
+                    self.fichier_import_en_attente = chemin
+                    return "demander_import"
+                return None
             elif self.bouton_reset_param.collidepoint(evenement.pos):
                 self.son_select.play()
                 # Demander confirmation avant reset
@@ -320,3 +375,81 @@ class Parametres:
                 self.sauvegarder_controles()
 
         return None
+
+    def exporter_fichier(self):
+        """Copie le save.json dans le dossier Téléchargements"""
+        source = self.gestionnaire_config.chemin_config
+        dossier_downloads = os.path.join(os.path.expanduser("~"), "Downloads")
+        nom_base = "ColorMage_save"
+        extension = ".json"
+        destination = os.path.join(dossier_downloads, nom_base + extension)
+        # Si le fichier existe deja, ajouter un numero
+        compteur = 1
+        while os.path.isfile(destination):
+            destination = os.path.join(dossier_downloads, nom_base + " (" + str(compteur) + ")" + extension)
+            compteur += 1
+        with open(source, "r", encoding="utf-8") as f:
+            contenu = f.read()
+        with open(destination, "w", encoding="utf-8") as f:
+            f.write(contenu)
+        if self.game is not None:
+            self.game.alerte.afficher("Sauvegarde exportée !")
+
+    def choisir_fichier_import(self):
+        """Ouvre un sélecteur de fichier et retourne le chemin choisi"""
+        import tkinter as tk
+        from tkinter import filedialog
+        root = tk.Tk()
+        root.withdraw()
+        root.attributes("-topmost", True)
+        chemin = filedialog.askopenfilename(
+            title="Choisir une sauvegarde",
+            filetypes=[("Fichier JSON", "*.json")],
+            initialdir=os.path.join(os.path.expanduser("~"), "Downloads")
+        )
+        root.destroy()
+        if chemin:
+            return chemin
+        return None
+
+    def importer_fichier(self):
+        """Importe la sauvegarde depuis le fichier choisi"""
+        source = self.fichier_import_en_attente
+        self.fichier_import_en_attente = None
+        if not source or not os.path.isfile(source):
+            if self.game is not None:
+                self.game.alerte.afficher("Fichier introuvable !")
+            return
+        with open(source, "r", encoding="utf-8") as f:
+            contenu = f.read()
+        nouvelle_config = json.loads(contenu)
+        cles_requises = ["controles", "volumes", "niveau_actuel"]
+        valide = True
+        for cle in cles_requises:
+            if cle not in nouvelle_config:
+                valide = False
+                break
+        if not valide:
+            if self.game is not None:
+                self.game.alerte.afficher("Fichier invalide !")
+            return
+        # Vérifier la signature anti triche
+        if "signature" in nouvelle_config:
+            if not self.gestionnaire_config.verifier_signature(nouvelle_config):
+                if self.game is not None:
+                    self.game.alerte.afficher("Sauvegarde corrompue !")
+                return
+        else:
+            if self.game is not None:
+                self.game.alerte.afficher("Sauvegarde non signée !")
+            return
+        self.gestionnaire_config.sauvegarder_config(nouvelle_config)
+        self.controls = self.gestionnaire_config.obtenir_controles()
+        self.volumes = self.gestionnaire_config.obtenir_volumes()
+        self.droite_assign = self.controls.get("droite", "right")
+        self.gauche_assign = self.controls.get("gauche", "left")
+        self.sauter_assign = self.controls.get("sauter", "up")
+        self.val_jauge_musique = self.volumes.get("musique", 50)
+        self.val_jauge_general = self.volumes.get("effets", 50)
+        pygame.mixer.music.set_volume(self.val_jauge_musique / 100)
+        return "import_ok"

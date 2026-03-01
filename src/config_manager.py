@@ -1,6 +1,8 @@
 import json
 import os
 import locale
+import hashlib
+import hmac
 
 from datetime import datetime
 
@@ -24,12 +26,31 @@ class ConfigManager:
         os.makedirs(chemin_base, exist_ok=True)
         
         self.chemin_config = os.path.join(chemin_base, "save.json")
+        self.sauvegarde_corrompue = False
         self.config = self.charger_config()
         self.controles = self.config.get("controles", {})
         self.volumes = self.config.get("volumes", {})
         self.niveau_actuel = self.config.get("niveau_actuel", 1)
         self.meilleurs_temps = self.config.get("meilleurs_temps", {})
     
+    def generer_signature(self, config):
+        """Génère un HMAC-SHA256 de la config"""
+        copie = {}
+        for cle in config:
+            if cle != "signature":
+                copie[cle] = config[cle]
+        donnees = json.dumps(copie, sort_keys=True, ensure_ascii=False)
+        signature = hmac.new(b"CM_s3cr3t_k3y_2026!", donnees.encode("utf-8"), hashlib.sha256)
+        return signature.hexdigest()
+
+    def verifier_signature(self, config):
+        """Vérifie que la signature correspond aux données"""
+        signature = config.get("signature", None)
+        if signature is None:
+            return False
+        attendue = self.generer_signature(config)
+        return hmac.compare_digest(signature, attendue)
+
     def charger_config(self):
         """Charge la configuration depuis le fichier ou crée un fichier par défaut"""
         # Configuration par défaut
@@ -71,6 +92,16 @@ class ConfigManager:
                     if cle not in config["volumes"]:
                         config["volumes"][cle] = config_defaut["volumes"][cle]
                 
+                if "signature" in config:
+                    if not self.verifier_signature(config):
+                        self.sauvegarde_corrompue = True
+                else:
+                    self.sauvegarde_corrompue = False
+                
+                config["signature"] = self.generer_signature(config)
+                with open(self.chemin_config, "w", encoding="utf-8") as fw:
+                    json.dump(config, fw, ensure_ascii=False)
+                
                 return config
         
         # Sinon, créer le fichier avec config par défaut
@@ -100,6 +131,8 @@ class ConfigManager:
                 "pieces_collectees": self.config.get("pieces_collectees", {}),
                 "pages_vues": self.config.get("pages_vues", [])
             }
+        # Ajouter la signature anti triche
+        config["signature"] = self.generer_signature(config)
         with open(self.chemin_config, "w", encoding="utf-8") as f:
             json.dump(config, f, ensure_ascii=False)
         self.config = config
