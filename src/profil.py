@@ -78,7 +78,7 @@ class Profil:
         # Position de départ
         gauche_x = centre_x - (avatar_taille + espacement + stats_largeur) // 2
         droite_x = gauche_x + avatar_taille + espacement
-        top_y = 240  # Plus bas du titre
+        top_y = 280
         
         # Zone d'affichage de l'avatar
         self.cadre_avatar = pygame.Rect(gauche_x, top_y, avatar_taille, avatar_taille)
@@ -227,10 +227,10 @@ class Profil:
         
         # Sous-titre "Pseudo"
         sous_titre_pseudo = self.font_3.render("Pseudo", True, (180, 180, 180))
-        ecran.blit(sous_titre_pseudo, (LARGEUR_ECRAN // 2 - sous_titre_pseudo.get_width() // 2, 88))
+        ecran.blit(sous_titre_pseudo, (LARGEUR_ECRAN // 2 - sous_titre_pseudo.get_width() // 2, 130))
         
         # Cadre du pseudo
-        pseudo_zone = pygame.Rect(LARGEUR_ECRAN // 2 - 150, 110, 300, 50)
+        pseudo_zone = pygame.Rect(LARGEUR_ECRAN // 2 - 150, 155, 300, 50)
         if self.edition_pseudo:
             pygame.draw.rect(ecran, (80, 80, 100), pseudo_zone, border_radius=10)
             pygame.draw.rect(ecran, (255, 200, 50), pseudo_zone, 3, border_radius=10)
@@ -317,7 +317,7 @@ class Profil:
         else:
             pygame.draw.rect(ecran, (120, 30, 30), self.bouton_reset_save, border_radius=10)
         pygame.draw.rect(ecran, COULEUR_BORDURE, self.bouton_reset_save, 3, border_radius=10)
-        reset_txt = self.font_2.render("Réinitialiser", True, (255, 255, 255))
+        reset_txt = self.font_1.render("Réinitialiser", True, (255, 255, 255))
         ecran.blit(reset_txt, (self.bouton_reset_save.centerx - reset_txt.get_width() // 2,
                               self.bouton_reset_save.centery - reset_txt.get_height() // 2))
         
@@ -328,7 +328,7 @@ class Profil:
             couleur_retour = COULEUR_BOUTON
         pygame.draw.rect(ecran, couleur_retour, self.bouton_retour, border_radius=10)
         pygame.draw.rect(ecran, COULEUR_BORDURE, self.bouton_retour, 3, border_radius=10)
-        retour_txt = self.font_2.render("Retour", True, (255, 255, 255))
+        retour_txt = self.font_1.render("Retour", True, (255, 255, 255))
         ecran.blit(retour_txt, (self.bouton_retour.centerx - retour_txt.get_width() // 2,
                                self.bouton_retour.centery - retour_txt.get_height() // 2))
         
