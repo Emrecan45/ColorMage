@@ -165,8 +165,8 @@ class Pause:
                 if event.type == pygame.MOUSEBUTTONDOWN:
                     action = self.gerer_clic(event.pos)
                     self.maj_volume()
-                    self.son_select.play()
                     if action == "parametres":
+                        self.son_select.play()
                         game_ref = getattr(self, 'game', None)
                         if game_ref is not None:
                             cm = game_ref.gestionnaire_config
@@ -209,6 +209,8 @@ class Pause:
                         niveau.maj_volume_sons()
                         self.maj_volume()
                     else:
+                        if action and action != "continuer":
+                            self.son_select.play()
                         if action:
                             en_pause = False
                 
