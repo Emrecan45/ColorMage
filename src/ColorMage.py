@@ -28,7 +28,8 @@ class Game:
         self.gestionnaire_config = ConfigManager()
         
         # Créer l'écran
-        self.ecran = pygame.display.set_mode((LARGEUR_ECRAN, HAUTEUR_ECRAN)) 
+        self.plein_ecran = False
+        self.ecran = pygame.display.set_mode((LARGEUR_ECRAN, HAUTEUR_ECRAN), pygame.SCALED | pygame.RESIZABLE)
         pygame.display.set_caption("ColorMage")
         
         # Lancer l'intro
@@ -172,12 +173,34 @@ class Game:
         self.profil.maj_volume()
         self.pause.maj_volume()
         self.popup.maj_volume()
+
+    def basculer_plein_ecran(self):
+        """Bascule entre plein écran et fenêtré"""
+        self.plein_ecran = not self.plein_ecran
+        pygame.display.quit()
+        pygame.display.init()
+        if self.plein_ecran:
+            self.ecran = pygame.display.set_mode((LARGEUR_ECRAN, HAUTEUR_ECRAN), pygame.FULLSCREEN | pygame.SCALED)
+        else:
+            self.ecran = pygame.display.set_mode((LARGEUR_ECRAN, HAUTEUR_ECRAN), pygame.SCALED | pygame.RESIZABLE)
+        pygame.display.set_caption("ColorMage")
     
     def gerer_evenements(self):
         """Gère les événements pygame"""
         for evenement in pygame.event.get():
             if evenement.type == pygame.QUIT:
                 self.en_cours = False
+
+            # F11 / Alt+Entrée pour basculer plein écran / fenêtré
+            if evenement.type == pygame.KEYDOWN:
+                if evenement.key == pygame.K_F11:
+                    self.basculer_plein_ecran()
+                elif evenement.key == pygame.K_RETURN and (evenement.mod & pygame.KMOD_ALT):
+                    self.basculer_plein_ecran()
+
+            if evenement.type == pygame.WINDOWMAXIMIZED:
+                if not self.plein_ecran:
+                    self.basculer_plein_ecran()
 
             if self.popup_actif is not None:
                 if evenement.type == pygame.MOUSEBUTTONDOWN and evenement.button == 1:
