@@ -304,6 +304,7 @@ class Game:
                     if evenement.type == pygame.MOUSEBUTTONDOWN:
                         action = self.menu.gerer_clic(evenement.pos)
                         if action == "jouer":
+                            self.menu_niveaux.recharger_donnees()
                             self.etat = "selection"
                         elif action == "grimoire":
                             self.popup.afficher_grimoire_complet(self.ecran)
@@ -541,6 +542,7 @@ class Game:
             self.menu_niveaux.zoom_en_cours = True
             self.menu_niveaux.zoom_direction = 1
             self.menu_niveaux.zoom_animation = 0
+            self.menu_niveaux.recharger_donnees()
             self.etat = "selection"
         elif action == "univers_suivant":
             # Aller à l'univers suivant avec animation de swipe
@@ -560,6 +562,7 @@ class Game:
             self.menu_niveaux.etat_menu = "galaxie"
             # Démarrer l'animation de swipe vers le nouvel univers
             self.menu_niveaux.changer_univers(1)  # +1 pour aller vers la droite
+            self.menu_niveaux.recharger_donnees()
             self.etat = "selection"
         elif action == "rejouer":
             self.pieces_en_cours = []
@@ -593,7 +596,9 @@ class Game:
             if niveau is not None:
                 self.lancer_niveau(niveau)
                 return
-        
+            self.menu_niveaux.maj()
+            return
+
         # Ne pas mettre à jour si un popup est actif
         if self.popup_actif is not None:
             return None
