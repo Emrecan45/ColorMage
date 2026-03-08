@@ -3,7 +3,7 @@ import sys
 import os
 import random
 import math
-from config import LARGEUR_ECRAN, HAUTEUR_ECRAN, VERSION_JEU, COULEUR_BOUTON, COULEUR_SURVOL, COULEUR_BORDURE
+from config import LARGEUR_ECRAN, HAUTEUR_ECRAN, VERSION_JEU, COULEUR_BOUTON, COULEUR_SURVOL, COULEUR_BORDURE, resource_path
 from config_manager import ConfigManager
 
 class Menu:
@@ -14,12 +14,12 @@ class Menu:
         self.font_2 = pygame.font.SysFont(None, 40)
         
         # Charger l'image de fond
-        self.fond = pygame.image.load("img/fond_menu1.png")
+        self.fond = pygame.image.load(resource_path("img/fond_menu1.png"))
         self.fond = pygame.transform.scale(self.fond, (LARGEUR_ECRAN, HAUTEUR_ECRAN))
         
         # Charger l'icône de profil (conserver les proportions)
         try:
-            self.icone_profil = pygame.image.load("img/profile.png")
+            self.icone_profil = pygame.image.load(resource_path("img/profile.png"))
             # L'image fait 677x369, on garde les proportions pour 55px de haut
             ratio = self.icone_profil.get_width() / self.icone_profil.get_height()
             nouvelle_hauteur = 55
@@ -36,7 +36,7 @@ class Menu:
         
         # son des clics
         self.gestionnaire_config = ConfigManager()
-        self.son_select = pygame.mixer.Sound(os.path.join("audio", "select.wav"))
+        self.son_select = pygame.mixer.Sound(resource_path(os.path.join("audio", "select.wav")))
         self.maj_volume()
     
     def maj_volume(self):

@@ -1,7 +1,7 @@
 import pygame
 import sys
 import os
-from config import LARGEUR_ECRAN, HAUTEUR_ECRAN
+from config import LARGEUR_ECRAN, HAUTEUR_ECRAN, resource_path
 from config_manager import ConfigManager
 from parametres import Parametres
 from popup import Popup
@@ -13,12 +13,12 @@ class Pause:
         self.largeur_bouton = 70
         self.hauteur_bouton = 70
         self.marge = 15
-        self.image_pause = pygame.image.load("img/pause.png")
+        self.image_pause = pygame.image.load(resource_path("img/pause.png"))
         self.image_pause = pygame.transform.scale(self.image_pause, (self.largeur_bouton, self.hauteur_bouton))
         
         # son des clics
         self.gestionnaire_config = ConfigManager()
-        self.son_select = pygame.mixer.Sound(os.path.join("audio", "select.wav"))
+        self.son_select = pygame.mixer.Sound(resource_path(os.path.join("audio", "select.wav")))
         
         # Appliquer le volume d'effets sauvegardé
         volumes = self.gestionnaire_config.obtenir_volumes()

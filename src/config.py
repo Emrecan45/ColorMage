@@ -1,3 +1,14 @@
+import sys
+import os
+
+def resource_path(relative_path):
+    """Retourne le chemin absolu vers une ressource, compatible avec PyInstaller."""
+    try:
+        base_path = sys._MEIPASS
+    except AttributeError:
+        base_path = os.path.abspath(".")
+    return os.path.join(base_path, relative_path)
+
 # Version du jeu
 VERSION_JEU = "v2.2"
 
