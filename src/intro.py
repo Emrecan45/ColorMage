@@ -1,7 +1,7 @@
 import pygame
 import os
 import cv2
-from config import LARGEUR_ECRAN, HAUTEUR_ECRAN
+from config import LARGEUR_ECRAN, HAUTEUR_ECRAN, resource_path
 
 class Intro:
     """Classe pour gérer l'intro vidéo du jeu"""
@@ -14,8 +14,8 @@ class Intro:
         self.afficher_chargement()
         
         # Chemin de la vidéo et de l'audio
-        self.video_path = os.path.join("img", "video_intro.mp4")
-        self.audio_path = os.path.join("audio", "intro.wav")
+        self.video_path = resource_path(os.path.join("img", "video_intro.mp4"))
+        self.audio_path = resource_path(os.path.join("audio", "intro.wav"))
         
         # État
         self.terminee = False
