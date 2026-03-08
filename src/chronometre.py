@@ -11,6 +11,8 @@ class Chronometre:
         self.actif = False
         self.en_pause = False
         self.font = pygame.font.SysFont(None, 48)
+        self.font_petit = pygame.font.SysFont(None, 36)
+        self.meilleur_temps = None
     
     def demarrer(self):
         """Démarre le chronomètre"""
@@ -39,6 +41,14 @@ class Chronometre:
             temps_pause = pygame.time.get_ticks() - self.temps_pause_debut
             self.temps_pause_total += temps_pause
             self.en_pause = False
+    
+    def definir_meilleur_temps(self, temps_ms):
+        """Définit le meilleur temps à afficher
+        
+        Args:
+            temps_ms: Meilleur temps en millisecondes (ou None)
+        """
+        self.meilleur_temps = temps_ms
     
     def obtenir_temps(self):
         """Retourne le temps écoulé en millisecondes"""
@@ -70,10 +80,17 @@ class Chronometre:
         return texte
     
     def dessiner(self, ecran, x=20, y=20):
-        """Dessine le chronomètre à l'écran"""
+        """Dessine le chronomètre à l'écran avec le meilleur temps"""
         if self.actif or self.en_pause:
             temps_ecoule = self.obtenir_temps()
             texte_chrono = self.formater_temps(temps_ecoule)
             
-            surface_chrono = self.font.render(texte_chrono, True, (255, 255, 255))
+            # Afficher le temps actuel
+            surface_chrono = self.font.render("Temps : " + texte_chrono, True, (255, 255, 255))
             ecran.blit(surface_chrono, (x, y))
+            
+            # Afficher le meilleur temps s'il existe
+            if self.meilleur_temps is not None:
+                texte_meilleur = self.formater_temps(self.meilleur_temps)
+                surface_meilleur = self.font_petit.render("Meilleur temps : " + texte_meilleur, True, (255, 215, 0))
+                ecran.blit(surface_meilleur, (x, y + 50))

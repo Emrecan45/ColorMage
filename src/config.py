@@ -1,10 +1,10 @@
 # Version du jeu
-VERSION_JEU = "v1.2.1"
+VERSION_JEU = "v2.2"
 
 # Dimensions
 TAILLE_CELLULE = 50
 LARGEUR_GRILLE = 30
-HAUTEUR_GRILLE = 15
+HAUTEUR_GRILLE = 17
 
 LARGEUR_ECRAN = TAILLE_CELLULE * LARGEUR_GRILLE
 HAUTEUR_ECRAN = TAILLE_CELLULE * HAUTEUR_GRILLE
@@ -14,7 +14,7 @@ COULEURS = {
     "gris": (100, 100, 100),
     "rouge": (255, 0, 0),
     "bleu": (0, 0, 255),
-    "vert": (0, 255, 0),
+    "vert": (41, 148, 45),
     "vide": (255, 255, 255),
     "porte": (255, 255, 0),
     "change_rouge": (255, 0, 0),
