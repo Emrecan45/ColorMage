@@ -18,6 +18,7 @@ class MenuNiveaux:
         self.gestionnaire_config = ConfigManager()
         self.config = self.gestionnaire_config.charger_config()
         self.niveau_max_debloque = self.config["niveau_actuel"]
+        self._pieces_total_cache = self.config.get("pieces_total", 0)
         self.niveaux_par_planete = 5
         
         # Système d'univers
@@ -631,7 +632,7 @@ class MenuNiveaux:
     
     def dessiner_compteur_pieces(self, ecran):
         """Dessine le compteur de pièces en haut à droite"""
-        total = self.gestionnaire_config.obtenir_pieces_total()
+        total = self._pieces_total_cache
         texte = self.font_2.render(str(total), True, (255, 255, 255))
         marge_droite = 40
         y_align = 30
@@ -769,16 +770,6 @@ class MenuNiveaux:
     
     def afficher_selection(self, ecran):
         """Affiche le menu de sélection des niveaux"""
-        self.maj_volume()
-        self.temps_global += 1
-        
-        self.config = self.gestionnaire_config.charger_config()
-        self.niveau_max_debloque = self.config["niveau_actuel"]
-        
-        # Mettre à jour les animations
-        self.maj_animations()
-        
-        # Afficher selon l'état
         if self.zoom_en_cours:
             self.afficher_transition_zoom(ecran)
         elif self.etat_menu == "marche":
@@ -787,9 +778,19 @@ class MenuNiveaux:
             self.afficher_galaxie(ecran)
         else:
             self.afficher_planete(ecran)
-        
-        pygame.display.flip()
-    
+
+    def maj(self):
+        """Met à jour les animations du menu"""
+        self.temps_global += 1
+        self.maj_animations()
+
+    def recharger_donnees(self):
+        """Recharge les données depuis le disque"""
+        self.config = self.gestionnaire_config.charger_config()
+        self.niveau_max_debloque = self.config.get("niveau_actuel", self.niveau_max_debloque)
+        self._pieces_total_cache = self.config.get("pieces_total", 0)
+        self.maj_volume()
+
     def maj_animations(self):
         """Met à jour toutes les animations"""
         # Animation de zoom
@@ -1092,6 +1093,8 @@ class MenuNiveaux:
     
     def preparer_retour_niveau(self, numero_niveau):
         """Prépare l'animation de retour depuis un niveau"""
+        # Recharger la config (niveau débloqué, pièces, etc.)
+        self.recharger_donnees()
         # Calculer l'univers, la planète et la plaque
         niveaux_par_univers = self.nombre_planetes_par_univers * self.niveaux_par_planete
         univers_index = (numero_niveau - 1) // niveaux_par_univers
