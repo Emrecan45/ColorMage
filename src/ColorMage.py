@@ -191,7 +191,7 @@ class Game:
         else:
             self.ecran = pygame.display.set_mode((LARGEUR_ECRAN, HAUTEUR_ECRAN), pygame.SCALED | pygame.RESIZABLE)
         pygame.display.set_caption("ColorMage")
-        icone = pygame.image.load(resource_path("img/logo.png"))
+        icone = pygame.image.load(resource_path("img/logo.ico"))
         pygame.display.set_icon(icone)
     
     def gerer_evenements(self):
