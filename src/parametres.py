@@ -110,8 +110,6 @@ class Parametres:
         self.dessiner_etoiles(ecran)
         
         # version du jeu
-        version_txt = self.font_3.render(VERSION_JEU, True, (255, 255, 255))
-        ecran.blit(version_txt, (LARGEUR_ECRAN - version_txt.get_width() - 20, HAUTEUR_ECRAN - version_txt.get_height() - 20))
 
         # titres
         titre_txt = self.font_1.render("Paramètres", True, (255, 255, 255))
