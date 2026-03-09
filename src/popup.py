@@ -290,7 +290,7 @@ class Popup:
             return "quitter"
         return None
 
-    def afficher_popup_grimoire(self, ecran, numero_niveau, draw_background=None):
+    def afficher_popup_grimoire(self, ecran, numero_niveau, draw_background=None, alerte=None):
         """Affiche un popup grimoire pour un niveau donné
         Freeze jusqu'à ce que le joueur clique OK.
         """
@@ -397,7 +397,8 @@ class Popup:
             pygame.draw.rect(ecran, (255, 255, 255), bouton_ok, 2, border_radius=10)
             ok_surface = font_bouton.render("C'est parti !", True, (255, 255, 255))
             ecran.blit(ok_surface, (bouton_ok.centerx - ok_surface.get_width() // 2, bouton_ok.centery - ok_surface.get_height() // 2))
-            
+            if alerte:
+                alerte.dessiner(ecran)
             pygame.display.flip()
             pygame.time.Clock().tick(60)
 
@@ -415,7 +416,7 @@ class Popup:
                     silhouette.set_at((px, py), (20, 20, 30, a))
         return silhouette
 
-    def afficher_grimoire_complet(self, ecran):
+    def afficher_grimoire_complet(self, ecran, alerte=None):
         """Affiche le grimoire complet et les infos non débloqués apparaissent en silhouette noire hehe"""
         # Collecter tous les pages disponibles
         numeros = list(self.grimoires.keys())
@@ -618,7 +619,8 @@ class Popup:
             pygame.draw.rect(ecran, COULEUR_BORDURE, bouton_fermer, 3, border_radius=10)
             fermer_txt = font_button.render("Fermer", True, (255, 255, 255))
             ecran.blit(fermer_txt, (bouton_fermer.centerx - fermer_txt.get_width() // 2, bouton_fermer.centery - fermer_txt.get_height() // 2))
-            
+            if alerte:
+                alerte.dessiner(ecran)
             pygame.display.flip()
             pygame.time.Clock().tick(60)
 
@@ -828,7 +830,7 @@ class Popup:
             texte_y = rect.y + (rect.height - texte_surface.get_height()) // 2
             ecran.blit(texte_surface, (texte_x, texte_y))
 
-    def afficher_popup_confirmation_reset(self, ecran, parametres=None, type_reset="sauvegarde"):
+    def afficher_popup_confirmation_reset(self, ecran, parametres=None, type_reset="sauvegarde", alerte=None):
         """Affiche un popup de confirmation pour la réinitialisation
         
         Args:
@@ -947,5 +949,6 @@ class Popup:
                                       bouton_confirmer.centery - confirmer_text.get_height() // 2))
             ecran.blit(annuler_text, (bouton_annuler.centerx - annuler_text.get_width() // 2, 
                                     bouton_annuler.centery - annuler_text.get_height() // 2))
-            
+            if alerte:
+                alerte.dessiner(ecran)
             pygame.display.flip()

@@ -228,7 +228,7 @@ class Game:
                         self.maj_volume_effets()
                         self.son_pause.play()
                         self.chrono.pause()
-                        action = self.pause.afficher_pause(self.ecran, self.joueur, self.niveau, self.niveau_actuel, self.chrono, draw_background=self.dessiner_fond_niveau)
+                        action = self.pause.afficher_pause(self.ecran, self.joueur, self.niveau, self.niveau_actuel, self.chrono, draw_background=self.dessiner_fond_niveau, alerte=self.alerte)
                         
                         # Reprendre le chronomètre
                         if action == "continuer":
@@ -307,7 +307,7 @@ class Game:
                             self.menu_niveaux.recharger_donnees()
                             self.etat = "selection"
                         elif action == "grimoire":
-                            self.popup.afficher_grimoire_complet(self.ecran)
+                            self.popup.afficher_grimoire_complet(self.ecran, alerte=self.alerte)
                         elif action == "parametres":
                             self.etat = "param"
                         elif action == "profil":
@@ -322,7 +322,7 @@ class Game:
                         self.etat = "menu"
                     elif action == "reset_save":
                         # Afficher le popup de confirmation
-                        confirmation = self.popup.afficher_popup_confirmation_reset(self.ecran, self.profil)
+                        confirmation = self.popup.afficher_popup_confirmation_reset(self.ecran, self.profil, alerte=self.alerte)
                         if confirmation == "confirmer":
                             # Réinitialiser la sauvegarde (uniquement progression)
                             self.gestionnaire_config.reinitialiser_sauvegarde()
@@ -341,7 +341,7 @@ class Game:
                         self.etat = "menu"
                     elif action == "demander_reset_param":
                         # Afficher popup de confirmation pour reset paramètres
-                        resultat = self.popup.afficher_popup_confirmation_reset(self.ecran, self.parametres, "parametres")
+                        resultat = self.popup.afficher_popup_confirmation_reset(self.ecran, self.parametres, "parametres", alerte=self.alerte)
                         if resultat == "confirmer":
                             # Reset des paramètres
                             self.gestionnaire_config.reinitialiser_parametres()
@@ -353,7 +353,7 @@ class Game:
                             self.joueur.maj_controles()
                     elif action == "demander_import":
                         # Afficher popup de confirmation pour import
-                        resultat = self.popup.afficher_popup_confirmation_reset(self.ecran, self.parametres, "import")
+                        resultat = self.popup.afficher_popup_confirmation_reset(self.ecran, self.parametres, "import", alerte=self.alerte)
                         if resultat == "confirmer":
                             resultat_import = self.parametres.importer_fichier()
                             if resultat_import == "import_ok":
@@ -379,7 +379,7 @@ class Game:
                         self.maj_volume_effets()
                         self.son_pause.play()
                         self.chrono.pause()
-                        action = self.pause.afficher_pause(self.ecran, self.joueur, self.niveau, self.niveau_actuel, self.chrono, draw_background=self.dessiner_fond_niveau)
+                        action = self.pause.afficher_pause(self.ecran, self.joueur, self.niveau, self.niveau_actuel, self.chrono, draw_background=self.dessiner_fond_niveau, alerte=self.alerte)
                         
                         # Reprendre le chronomètre
                         if action == "continuer":
@@ -418,7 +418,7 @@ class Game:
                             self.son_pause.play()
                             self.chrono.pause()
                             
-                            action = self.pause.afficher_pause(self.ecran, self.joueur, self.niveau, self.niveau_actuel, self.chrono, draw_background=self.dessiner_fond_niveau)
+                            action = self.pause.afficher_pause(self.ecran, self.joueur, self.niveau, self.niveau_actuel, self.chrono, draw_background=self.dessiner_fond_niveau, alerte=self.alerte)
                             
                             # Reprendre le chronomètre
                             if action == "continuer":
@@ -470,7 +470,7 @@ class Game:
             self.niveau.dessiner(self.ecran, self.temps_global, update_entities=False)
             for piece in list(self.niveau.pieces):
                 piece.dessiner(self.ecran)
-            self.popup.afficher_popup_grimoire(self.ecran, numero)
+            self.popup.afficher_popup_grimoire(self.ecran, numero, alerte=self.alerte)
             self.gestionnaire_config.marquer_page_vue(numero)
             self.chrono.demarrer()
             meilleur_temps = self.gestionnaire_config.obtenir_meilleur_temps(numero)
@@ -500,7 +500,7 @@ class Game:
             if not self.gestionnaire_config.page_vue(self.niveau_actuel):
                 self.dessiner_fond_niveau(self.ecran)
                 self.niveau.dessiner(self.ecran, self.temps_global, update_entities=False)
-                self.popup.afficher_popup_grimoire(self.ecran, self.niveau_actuel)
+                self.popup.afficher_popup_grimoire(self.ecran, self.niveau_actuel, alerte=self.alerte)
                 self.gestionnaire_config.marquer_page_vue(self.niveau_actuel)
                 self.chrono.demarrer()
                 meilleur_temps = self.gestionnaire_config.obtenir_meilleur_temps(self.niveau_actuel)
