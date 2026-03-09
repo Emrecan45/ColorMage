@@ -52,8 +52,12 @@ class Profil:
             {"nom": "Grimoire", "fichier": "grimoire.png"},
             {"nom": "Sorcier", "fichier": "sorcier.png", "niveau_associe": 3},
             {"nom": "Squelette", "fichier": "squelette.png", "niveau_associe": 4},
-            {"nom": "Slime Vert", "fichier": "slime_vert.png", "niveau_associe": 5},
+            {"nom": "Slime Vert1", "fichier": "slime_vert1.png", "niveau_associe": 5},
             {"nom": "Slime Violet", "fichier": "slime_violet.png", "niveau_associe": 5},
+            {"nom": "Mage 5", "fichier": "mage5.png", "niveau_associe": 6},
+            {"nom": "Slime Vert2", "fichier": "slime_vert2.png", "niveau_associe": 7},
+            {"nom": "Mage 6", "fichier": "mage6.png", "niveau_associe": 8},
+            {"nom": "Pyrolord", "fichier": "pyrolord.png", "niveau_associe": 10},
         ]
         
         self.avatar_actuel = self.gestionnaire_config.config.get("avatar_profil", 0)
