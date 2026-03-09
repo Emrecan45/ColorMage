@@ -3,7 +3,7 @@ import json
 import os
 import random
 import math
-from config import TAILLE_CELLULE, COULEURS, GRAVITE, VITESSE_DEPLACEMENT, FORCE_SAUT, LARGEUR_GRILLE, HAUTEUR_GRILLE
+from config import TAILLE_CELLULE, COULEURS, GRAVITE, VITESSE_DEPLACEMENT, FORCE_SAUT, LARGEUR_GRILLE, HAUTEUR_GRILLE, resource_path
 from config_manager import ConfigManager
 
 
@@ -48,17 +48,17 @@ class Joueur:
         self.controls = self.gestionnaire_config.obtenir_controles()
         
         # Chargement des bruitages
-        self.son_saut = pygame.mixer.Sound(os.path.join("audio", "jump.wav"))
-        self.son_mort = pygame.mixer.Sound(os.path.join("audio", "death.wav"))
-        self.son_victoire = pygame.mixer.Sound(os.path.join("audio", "win.wav"))
+        self.son_saut = pygame.mixer.Sound(resource_path(os.path.join("audio", "jump.wav")))
+        self.son_mort = pygame.mixer.Sound(resource_path(os.path.join("audio", "death.wav")))
+        self.son_victoire = pygame.mixer.Sound(resource_path(os.path.join("audio", "win.wav")))
 
         # Sons de spawn et de fin de niveau
-        self.son_spawn = pygame.mixer.Sound(os.path.join("audio", "spawn.wav"))
-        self.son_finish = pygame.mixer.Sound(os.path.join("audio", "finish.wav"))
+        self.son_spawn = pygame.mixer.Sound(resource_path(os.path.join("audio", "spawn.wav")))
+        self.son_finish = pygame.mixer.Sound(resource_path(os.path.join("audio", "finish.wav")))
         
-        son_change_couleur1 = pygame.mixer.Sound(os.path.join("audio", "color_change1.wav"))
-        son_change_couleur2 = pygame.mixer.Sound(os.path.join("audio", "color_change2.wav"))
-        son_change_couleur3 = pygame.mixer.Sound(os.path.join("audio", "color_change3.wav"))
+        son_change_couleur1 = pygame.mixer.Sound(resource_path(os.path.join("audio", "color_change1.wav")))
+        son_change_couleur2 = pygame.mixer.Sound(resource_path(os.path.join("audio", "color_change2.wav")))
+        son_change_couleur3 = pygame.mixer.Sound(resource_path(os.path.join("audio", "color_change3.wav")))
         # Liste des sons de changements de couleur
         self.sons_changement = [son_change_couleur1, son_change_couleur2, son_change_couleur3]
         
@@ -81,7 +81,7 @@ class Joueur:
         
         for couleur in couleurs:
             # Charger le spritesheet
-            chemin = "img/joueur_" + couleur + ".png"
+            chemin = resource_path("img/joueur_" + couleur + ".png")
             spritesheet = pygame.image.load(chemin)
             self.spritesheets[couleur] = spritesheet
             

@@ -2,7 +2,7 @@ import pygame
 import os
 import math
 import random
-from config import LARGEUR_ECRAN, HAUTEUR_ECRAN, VERSION_JEU, COULEUR_BOUTON, COULEUR_SURVOL, COULEUR_BORDURE
+from config import LARGEUR_ECRAN, HAUTEUR_ECRAN, VERSION_JEU, COULEUR_BOUTON, COULEUR_SURVOL, COULEUR_BORDURE, resource_path
 from config_manager import ConfigManager
 
 
@@ -58,7 +58,7 @@ class MenuNiveaux:
         self.transition_univers = False  # True pendant l'animation de swipe
         
         # Charger l'image du mage pour le menu
-        self.image_mage = pygame.image.load("img/joueur_gris.png")
+        self.image_mage = pygame.image.load(resource_path("img/joueur_gris.png"))
         sprite_largeur = 192
         sprite_hauteur = 196
         self.mage_sprite = self.image_mage.subsurface(pygame.Rect(0, 0, sprite_largeur, sprite_hauteur))
@@ -66,7 +66,7 @@ class MenuNiveaux:
         self.mage_sprite_flip = pygame.transform.flip(self.mage_sprite, True, False)
         
         # Charger l'icône de pièce
-        piece_sheet = pygame.image.load("img/piece.png")
+        piece_sheet = pygame.image.load(resource_path("img/piece.png"))
         piece_frame = piece_sheet.subsurface(pygame.Rect(0, 0, 16, 16))
         self.icone_piece = pygame.transform.scale(piece_frame, (48, 48))
         
@@ -149,26 +149,26 @@ class MenuNiveaux:
         # Bouton retour aligné avec les autres pages (centré, même hauteur)
         self.bouton_retour = pygame.Rect(LARGEUR_ECRAN // 2 - 125, HAUTEUR_ECRAN // 2 + 270, 250, 50)
         
-        self.image_cadenas = pygame.image.load("img/cadena.png")
+        self.image_cadenas = pygame.image.load(resource_path("img/cadena.png"))
         self.image_cadenas = pygame.transform.scale(self.image_cadenas, (30, 30))
     
         # son des clics
-        self.son_select = pygame.mixer.Sound(os.path.join("audio", "select.wav"))
+        self.son_select = pygame.mixer.Sound(resource_path(os.path.join("audio", "select.wav")))
         # Sons de portail (changement de couleur) pour clic sur planète
         self.sons_portail = [
-            pygame.mixer.Sound(os.path.join("audio", "color_change1.wav")),
-            pygame.mixer.Sound(os.path.join("audio", "color_change2.wav")),
-            pygame.mixer.Sound(os.path.join("audio", "color_change3.wav"))
+            pygame.mixer.Sound(resource_path(os.path.join("audio", "color_change1.wav"))),
+            pygame.mixer.Sound(resource_path(os.path.join("audio", "color_change2.wav"))),
+            pygame.mixer.Sound(resource_path(os.path.join("audio", "color_change3.wav")))
         ]
         # Sons de téléportation pour entrer/sortir d'une planète
         self.sons_teleport = []
         for i in range(1, 7):
-            son = pygame.mixer.Sound(os.path.join("audio", "teleport" + str(i) + ".wav"))
+            son = pygame.mixer.Sound(resource_path(os.path.join("audio", "teleport" + str(i) + ".wav")))
             self.sons_teleport.append(son)
         self.maj_volume()
         
         # Charger l'icône du marché
-        self.icone_marche = pygame.image.load(os.path.join("img", "market.png"))
+        self.icone_marche = pygame.image.load(resource_path(os.path.join("img", "market.png")))
         self.icone_marche = pygame.transform.scale(self.icone_marche, (48, 48))
         
         # Bouton Marché
@@ -668,7 +668,7 @@ class MenuNiveaux:
         if not self.musique_marche_active:
             try:
                 pygame.mixer.music.stop()
-                pygame.mixer.music.load(os.path.join("audio", "market.ogg"))
+                pygame.mixer.music.load(resource_path(os.path.join("audio", "market.ogg")))
                 vol = self.gestionnaire_config.obtenir_volumes().get("musique", 50) / 100
                 pygame.mixer.music.set_volume(vol)
                 pygame.mixer.music.play(-1)
@@ -703,13 +703,13 @@ class MenuNiveaux:
             if self.etat_menu == "planete":
                 planete = self.planetes[self.planete_selectionnee]
                 nom_planete = planete["nom"].lower()
-                chemin_musique = os.path.join("audio", nom_planete + ".ogg")
+                chemin_musique = resource_path(os.path.join("audio", nom_planete + ".ogg"))
                 if os.path.exists(chemin_musique):
                     pygame.mixer.music.load(chemin_musique)
                 else:
-                    pygame.mixer.music.load(os.path.join("audio", "main_theme.ogg"))
+                    pygame.mixer.music.load(resource_path(os.path.join("audio", "main_theme.ogg")))
             else:
-                pygame.mixer.music.load(os.path.join("audio", "main_theme.ogg"))
+                pygame.mixer.music.load(resource_path(os.path.join("audio", "main_theme.ogg")))
             vol = self.gestionnaire_config.obtenir_volumes().get("musique", 50) / 100
             pygame.mixer.music.set_volume(vol)
             pygame.mixer.music.play(-1)
@@ -937,7 +937,7 @@ class MenuNiveaux:
                 # Restaurer la musique principale
                 try:
                     pygame.mixer.music.stop()
-                    pygame.mixer.music.load(os.path.join("audio", "main_theme.ogg"))
+                    pygame.mixer.music.load(resource_path(os.path.join("audio", "main_theme.ogg")))
                     vol = self.gestionnaire_config.obtenir_volumes().get("musique", 50) / 100
                     pygame.mixer.music.set_volume(vol)
                     pygame.mixer.music.play(-1)
@@ -996,7 +996,7 @@ class MenuNiveaux:
                 # Charger la musique de la planète
                 try:
                     nom_planete = planete["nom"].lower()
-                    chemin_musique = os.path.join("audio", nom_planete + ".ogg")
+                    chemin_musique = resource_path(os.path.join("audio", nom_planete + ".ogg"))
                     if os.path.exists(chemin_musique):
                         pygame.mixer.music.stop()
                         pygame.mixer.music.load(chemin_musique)

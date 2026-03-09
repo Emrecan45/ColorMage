@@ -3,7 +3,7 @@ import json
 import random
 import math
 import os
-from config import LARGEUR_GRILLE, HAUTEUR_GRILLE, TAILLE_CELLULE, COULEURS, LARGEUR_ECRAN, HAUTEUR_ECRAN
+from config import LARGEUR_GRILLE, HAUTEUR_GRILLE, TAILLE_CELLULE, COULEURS, LARGEUR_ECRAN, HAUTEUR_ECRAN, resource_path
 from enemies import Sorcier
 from enemies import Squelette
 from enemies import Slime
@@ -121,15 +121,15 @@ class Niveau:
         # plateformes mobiles
         self.platformes_mobiles = []
         self.traversables = ["change_rouge", "change_bleu", "change_vert", "porte", "vide", "pic"]
-        self.image_pic = pygame.image.load("img/pic.png")
+        self.image_pic = pygame.image.load(resource_path("img/pic.png"))
         self.image_pic = pygame.transform.scale(self.image_pic, (TAILLE_CELLULE, TAILLE_CELLULE))
-        self.image_porte = pygame.image.load("img/porte.png")
+        self.image_porte = pygame.image.load(resource_path("img/porte.png"))
         self.image_porte = pygame.transform.scale(self.image_porte, (TAILLE_CELLULE, TAILLE_CELLULE))
         # Images des potions (anciennement les portails de couleur)
         self.images_potion = {}
-        img_r = pygame.image.load("img/change_rouge.png").convert_alpha()
-        img_b = pygame.image.load("img/change_bleu.png").convert_alpha()
-        img_v = pygame.image.load("img/change_vert.png").convert_alpha()
+        img_r = pygame.image.load(resource_path("img/change_rouge.png")).convert_alpha()
+        img_b = pygame.image.load(resource_path("img/change_bleu.png")).convert_alpha()
+        img_v = pygame.image.load(resource_path("img/change_vert.png")).convert_alpha()
 
         if img_r:
             self.images_potion['change_rouge'] = pygame.transform.smoothscale(img_r, (TAILLE_CELLULE, TAILLE_CELLULE))
@@ -144,11 +144,11 @@ class Niveau:
         # Sons aléatoires pour le sorcier (tir) et le squelette (attaque)
         self.sons_sorcier_shot = []
         for i in range(1, 4):
-            son = pygame.mixer.Sound(os.path.join("audio", "sorcier_shot" + str(i) + ".wav"))
+            son = pygame.mixer.Sound(resource_path(os.path.join("audio", "sorcier_shot" + str(i) + ".wav")))
             self.sons_sorcier_shot.append(son)
         self.sons_squelette_tape = []
         for i in range(1, 4):
-            son = pygame.mixer.Sound(os.path.join("audio", "squelette_tape" + str(i) + ".ogg"))
+            son = pygame.mixer.Sound(resource_path(os.path.join("audio", "squelette_tape" + str(i) + ".ogg")))
             self.sons_squelette_tape.append(son)
         self.maj_volume_sons()
 
@@ -193,7 +193,7 @@ class Niveau:
     def charger_depuis_json(self, numero):
         """Charge un niveau depuis un fichier JSON"""
         self.numero_niveau = numero
-        chemin = "niveaux/niveau_" + str(numero) + ".json"
+        chemin = resource_path("niveaux/niveau_" + str(numero) + ".json")
         with open(chemin, "r", encoding="utf-8") as f:
             data = json.load(f)
         self.creer_grille_vide()

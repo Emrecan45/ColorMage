@@ -3,7 +3,7 @@ import sys
 import os
 import random
 import math
-from config import LARGEUR_ECRAN, HAUTEUR_ECRAN, FPS, TAILLE_CELLULE, HAUTEUR_GRILLE
+from config import LARGEUR_ECRAN, HAUTEUR_ECRAN, FPS, TAILLE_CELLULE, HAUTEUR_GRILLE, resource_path
 from joueur import Joueur
 from niveau import Niveau
 from popup import Popup
@@ -29,6 +29,8 @@ class Game:
         
         # Créer l'écran
         self.plein_ecran = False
+        icone = pygame.image.load(resource_path("img/logo.ico"))
+        pygame.display.set_icon(icone)
         self.ecran = pygame.display.set_mode((LARGEUR_ECRAN, HAUTEUR_ECRAN), pygame.SCALED | pygame.RESIZABLE)
         pygame.display.set_caption("ColorMage")
         
@@ -40,7 +42,7 @@ class Game:
         
         
         # Musique du jeu
-        music_path = os.path.join("audio", "main_theme.ogg")
+        music_path = resource_path(os.path.join("audio", "main_theme.ogg"))
         pygame.mixer.music.load(music_path)
         # Appliquer le volume sauvegardé (de 0 à 100 converti en 0.0 à 1.0)
         volume_musique = volumes.get("musique", 50) / 100
@@ -111,15 +113,15 @@ class Game:
         self.temps_global = 0
         
         # Sons pour slimes et pièces
-        self.son_hurt = pygame.mixer.Sound(os.path.join("audio", "hurt.wav"))
-        self.son_piece = pygame.mixer.Sound(os.path.join("audio", "piece.wav"))
+        self.son_hurt = pygame.mixer.Sound(resource_path(os.path.join("audio", "hurt.wav")))
+        self.son_piece = pygame.mixer.Sound(resource_path(os.path.join("audio", "piece.wav")))
 
         # Son d'explosion
-        self.son_explosion = pygame.mixer.Sound(os.path.join("audio", "explosion.wav"))
+        self.son_explosion = pygame.mixer.Sound(resource_path(os.path.join("audio", "explosion.wav")))
         
         # Sons de pause/unpause
-        self.son_pause = pygame.mixer.Sound(os.path.join("audio", "pause.wav"))
-        self.son_unpause = pygame.mixer.Sound(os.path.join("audio", "unpause.wav"))
+        self.son_pause = pygame.mixer.Sound(resource_path(os.path.join("audio", "pause.wav")))
+        self.son_unpause = pygame.mixer.Sound(resource_path(os.path.join("audio", "unpause.wav")))
         
         # Alerte
         self.alerte = Alerte()
@@ -140,7 +142,7 @@ class Game:
 
     def _charger_frames_explosion(self):
         """Charge les frames du spritesheet d'explosion"""
-        chemin = os.path.join("img", "explosion.png")
+        chemin = resource_path(os.path.join("img", "explosion.png"))
         spritesheet = pygame.image.load(chemin).convert_alpha()
         frame_w, frame_h = 64, 59
         nb_frames = 9
@@ -189,6 +191,8 @@ class Game:
         else:
             self.ecran = pygame.display.set_mode((LARGEUR_ECRAN, HAUTEUR_ECRAN), pygame.SCALED | pygame.RESIZABLE)
         pygame.display.set_caption("ColorMage")
+        icone = pygame.image.load(resource_path("img/logo.ico"))
+        pygame.display.set_icon(icone)
     
     def gerer_evenements(self):
         """Gère les événements pygame"""
@@ -530,7 +534,7 @@ class Game:
             # Charger la musique de la nouvelle planète
             planete = self.menu_niveaux.planetes[nouvelle_planete]
             nom_planete = planete["nom"].lower()
-            chemin_musique = os.path.join("audio", nom_planete + ".ogg")
+            chemin_musique = resource_path(os.path.join("audio", nom_planete + ".ogg"))
             if os.path.exists(chemin_musique):
                 pygame.mixer.music.stop()
                 pygame.mixer.music.load(chemin_musique)
@@ -553,7 +557,7 @@ class Game:
             
             # Restaurer la musique principale
             pygame.mixer.music.stop()
-            pygame.mixer.music.load(os.path.join("audio", "main_theme.ogg"))
+            pygame.mixer.music.load(resource_path(os.path.join("audio", "main_theme.ogg")))
             vol = self.gestionnaire_config.obtenir_volumes().get("musique", 50) / 100
             pygame.mixer.music.set_volume(vol)
             pygame.mixer.music.play(-1)
