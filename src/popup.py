@@ -3,7 +3,7 @@ import sys
 import os
 import random
 import math
-from config import LARGEUR_ECRAN, HAUTEUR_ECRAN, TAILLE_CELLULE, COULEURS, COULEUR_BOUTON, COULEUR_SURVOL, COULEUR_BORDURE
+from config import LARGEUR_ECRAN, HAUTEUR_ECRAN, TAILLE_CELLULE, COULEURS, COULEUR_BOUTON, COULEUR_SURVOL, COULEUR_BORDURE, resource_path
 from config_manager import ConfigManager
 from chronometre import Chronometre
 from profil import Profil
@@ -18,13 +18,13 @@ class Popup:
         
         # son des clics
         self.gestionnaire_config = ConfigManager()
-        self.son_select = pygame.mixer.Sound(os.path.join("audio", "select.wav"))
+        self.son_select = pygame.mixer.Sound(resource_path(os.path.join("audio", "select.wav")))
         
         # Sons de portail (changement de couleur) pour clic sur nouvelle planète
         self.sons_portail = [
-            pygame.mixer.Sound(os.path.join("audio", "color_change1.wav")),
-            pygame.mixer.Sound(os.path.join("audio", "color_change2.wav")),
-            pygame.mixer.Sound(os.path.join("audio", "color_change3.wav"))
+            pygame.mixer.Sound(resource_path(os.path.join("audio", "color_change1.wav"))),
+            pygame.mixer.Sound(resource_path(os.path.join("audio", "color_change2.wav"))),
+            pygame.mixer.Sound(resource_path(os.path.join("audio", "color_change3.wav")))
         ]
         
         # Configuration des planètes (doit correspondre à menu_niveaux)
@@ -42,7 +42,7 @@ class Popup:
         self.hauteur_popup = 450
 
         # Charger les images des mobs pour le grimoire
-        ennemy_path = os.path.join("img", "ennemy.png")
+        ennemy_path = resource_path(os.path.join("img", "ennemy.png"))
         self.ennemy_sheet = pygame.image.load(ennemy_path)
         sprite_w = 192
         sprite_h = 192
@@ -56,12 +56,12 @@ class Popup:
         self.img_squelette = pygame.transform.scale(self.ennemy_sheet.subsurface(squelette_rect), (100, 100))
         
         # Slime vert
-        slime_vert_sheet = pygame.image.load(os.path.join("img", "slime_vert.png"))
+        slime_vert_sheet = pygame.image.load(resource_path(os.path.join("img", "slime_vert.png")))
         slime_vert_rect = pygame.Rect(0, 24, 24, 24)
         self.img_slime = pygame.transform.scale(slime_vert_sheet.subsurface(slime_vert_rect), (80, 80))
         
         # Slime violet
-        slime_violet_sheet = pygame.image.load(os.path.join("img", "slime_violet.png"))
+        slime_violet_sheet = pygame.image.load(resource_path(os.path.join("img", "slime_violet.png")))
         slime_violet_rect = pygame.Rect(0, 24, 24, 24)
         self.img_slime_violet = pygame.transform.scale(slime_violet_sheet.subsurface(slime_violet_rect), (80, 80))
 
@@ -77,7 +77,7 @@ class Popup:
         pygame.draw.rect(self.img_bloc_bleu, COULEURS.get("bleu"), (0, 0, taille_illu * 2, taille_illu * 2 // 2))
 
         # Effet de mouvement pour bloc mobile
-        effet_path = os.path.join("img", "mouvement_effet.png")
+        effet_path = resource_path(os.path.join("img", "mouvement_effet.png"))
         img_effet = pygame.image.load(effet_path).convert_alpha()
         target_h = taille_illu * 2
         target_w = int(img_effet.get_width() * (target_h / img_effet.get_height()))
@@ -95,16 +95,16 @@ class Popup:
         self.img_mobile_bleu.blit(img_effet, (x_effet, y_effet))
 
         # Potion
-        potion_path = os.path.join("img", "change_rouge.png")
+        potion_path = resource_path(os.path.join("img", "change_rouge.png"))
         self.img_potion = pygame.image.load(potion_path).convert_alpha()
         self.img_potion = pygame.transform.smoothscale(self.img_potion, (taille_illu, taille_illu))
 
         # Pic
-        self.img_pic_tuto = pygame.image.load(os.path.join("img", "pic.png"))
+        self.img_pic_tuto = pygame.image.load(resource_path(os.path.join("img", "pic.png")))
         self.img_pic_tuto = pygame.transform.scale(self.img_pic_tuto, (taille_illu, taille_illu))
 
         # Porte
-        self.img_porte_tuto = pygame.image.load(os.path.join("img", "porte.png"))
+        self.img_porte_tuto = pygame.image.load(resource_path(os.path.join("img", "porte.png")))
         self.img_porte_tuto = pygame.transform.scale(self.img_porte_tuto, (taille_illu, taille_illu))
 
         # pages du grimoire (par niveau)
@@ -209,7 +209,7 @@ class Popup:
 
     def niveau_existe(self, numero_niveau):
         """Vérifie si un fichier de niveau existe"""
-        chemin = "niveaux/niveau_" + str(numero_niveau) + ".json"
+        chemin = resource_path("niveaux/niveau_" + str(numero_niveau) + ".json")
         try:
             with open(chemin, "r") as f:
                 pass
@@ -290,7 +290,7 @@ class Popup:
             return "quitter"
         return None
 
-    def afficher_popup_grimoire(self, ecran, numero_niveau, draw_background=None):
+    def afficher_popup_grimoire(self, ecran, numero_niveau, draw_background=None, alerte=None):
         """Affiche un popup grimoire pour un niveau donné
         Freeze jusqu'à ce que le joueur clique OK.
         """
@@ -397,7 +397,8 @@ class Popup:
             pygame.draw.rect(ecran, (255, 255, 255), bouton_ok, 2, border_radius=10)
             ok_surface = font_bouton.render("C'est parti !", True, (255, 255, 255))
             ecran.blit(ok_surface, (bouton_ok.centerx - ok_surface.get_width() // 2, bouton_ok.centery - ok_surface.get_height() // 2))
-            
+            if alerte:
+                alerte.dessiner(ecran)
             pygame.display.flip()
             pygame.time.Clock().tick(60)
 
@@ -415,7 +416,7 @@ class Popup:
                     silhouette.set_at((px, py), (20, 20, 30, a))
         return silhouette
 
-    def afficher_grimoire_complet(self, ecran):
+    def afficher_grimoire_complet(self, ecran, alerte=None):
         """Affiche le grimoire complet et les infos non débloqués apparaissent en silhouette noire hehe"""
         # Collecter tous les pages disponibles
         numeros = list(self.grimoires.keys())
@@ -566,7 +567,7 @@ class Popup:
                     ecran.blit(sil, (x_depart_images + decalage_x, y_images))
                     decalage_x = decalage_x + img.get_width() + 20
                 # Icône cadenas
-                cadenas_path = os.path.join("img", "cadena.png")
+                cadenas_path = resource_path(os.path.join("img", "cadena.png"))
                 font_cadenas = pygame.font.Font(None, 36)
                 texte_cadenas = font_cadenas.render("Continue ta progression pour débloquer !", True, (120, 120, 140))
                 if os.path.exists(cadenas_path):
@@ -618,7 +619,8 @@ class Popup:
             pygame.draw.rect(ecran, COULEUR_BORDURE, bouton_fermer, 3, border_radius=10)
             fermer_txt = font_button.render("Fermer", True, (255, 255, 255))
             ecran.blit(fermer_txt, (bouton_fermer.centerx - fermer_txt.get_width() // 2, bouton_fermer.centery - fermer_txt.get_height() // 2))
-            
+            if alerte:
+                alerte.dessiner(ecran)
             pygame.display.flip()
             pygame.time.Clock().tick(60)
 
@@ -828,7 +830,7 @@ class Popup:
             texte_y = rect.y + (rect.height - texte_surface.get_height()) // 2
             ecran.blit(texte_surface, (texte_x, texte_y))
 
-    def afficher_popup_confirmation_reset(self, ecran, parametres=None, type_reset="sauvegarde"):
+    def afficher_popup_confirmation_reset(self, ecran, parametres=None, type_reset="sauvegarde", alerte=None):
         """Affiche un popup de confirmation pour la réinitialisation
         
         Args:
@@ -947,5 +949,6 @@ class Popup:
                                       bouton_confirmer.centery - confirmer_text.get_height() // 2))
             ecran.blit(annuler_text, (bouton_annuler.centerx - annuler_text.get_width() // 2, 
                                     bouton_annuler.centery - annuler_text.get_height() // 2))
-            
+            if alerte:
+                alerte.dessiner(ecran)
             pygame.display.flip()

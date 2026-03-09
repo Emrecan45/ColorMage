@@ -92,7 +92,27 @@ python src/ColorMage.py
 
 ---
 
-## 🕹️ Contrôles
+## 🛠️ Compilation en exécutable
+
+Pour générer un exécutable :
+
+**Windows (PowerShell) :**
+```powershell
+pip install pyinstaller
+python -m PyInstaller --onefile --icon "img/logo.ico" --add-data "audio;audio" --add-data "img;img" --add-data "niveaux;niveaux" src/ColorMage.py
+```
+
+**Linux / macOS :**
+```bash
+pip3 install pyinstaller
+python3 -m PyInstaller --onefile --icon "img/logo.ico" --add-data "audio:audio" --add-data "img:img" --add-data "niveaux:niveaux" src/ColorMage.py
+```
+
+L'exécutable généré se trouve dans `dist/` et est autonome - aucune installation Python requise pour l'utilisateur final.
+
+---
+
+## �🕹️ Contrôles
 
 | Action | Touche (défaut) |
 |--------|-----------------|

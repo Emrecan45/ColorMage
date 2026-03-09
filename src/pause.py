@@ -1,7 +1,7 @@
 import pygame
 import sys
 import os
-from config import LARGEUR_ECRAN, HAUTEUR_ECRAN
+from config import LARGEUR_ECRAN, HAUTEUR_ECRAN, resource_path
 from config_manager import ConfigManager
 from parametres import Parametres
 from popup import Popup
@@ -13,12 +13,12 @@ class Pause:
         self.largeur_bouton = 70
         self.hauteur_bouton = 70
         self.marge = 15
-        self.image_pause = pygame.image.load("img/pause.png")
+        self.image_pause = pygame.image.load(resource_path("img/pause.png"))
         self.image_pause = pygame.transform.scale(self.image_pause, (self.largeur_bouton, self.hauteur_bouton))
         
         # son des clics
         self.gestionnaire_config = ConfigManager()
-        self.son_select = pygame.mixer.Sound(os.path.join("audio", "select.wav"))
+        self.son_select = pygame.mixer.Sound(resource_path(os.path.join("audio", "select.wav")))
         
         # Appliquer le volume d'effets sauvegardé
         volumes = self.gestionnaire_config.obtenir_volumes()
@@ -139,7 +139,7 @@ class Pause:
             return "quitter"
         return None
     
-    def afficher_pause(self, ecran, joueur, niveau, numero_niveau, chrono=None, draw_background=None):
+    def afficher_pause(self, ecran, joueur, niveau, numero_niveau, chrono=None, draw_background=None, alerte=None):
         """Affiche le menu de pause avec options
         
         Args:
@@ -148,6 +148,7 @@ class Pause:
             niveau: Instance du niveau
             numero_niveau: Numéro du niveau actuel
             chrono: chronomètre
+            alerte: instance Alerte à afficher par-dessus
         
         Returns:
             str: "continuer", "recommencer", ou "quitter"
@@ -185,7 +186,7 @@ class Pause:
                                     en_params = False
                                     break
                                 elif resultat == "demander_reset_param":
-                                    resultat_popup = popup.afficher_popup_confirmation_reset(ecran, param, "parametres")
+                                    resultat_popup = popup.afficher_popup_confirmation_reset(ecran, param, "parametres", alerte=alerte)
                                     if resultat_popup == "confirmer":
                                         self.gestionnaire_config.reinitialiser_parametres()
                                         param = Parametres(joueur, self.gestionnaire_config, niveau, game_ref, depuis_partie=True)
@@ -200,6 +201,8 @@ class Pause:
                                 s.dessiner(ecran)
                             joueur.dessiner(ecran)
                             param.afficher_parametres(ecran)
+                            if alerte:
+                                alerte.dessiner(ecran)
                             pygame.display.flip()
                         if game_ref is not None:
                             game_ref.maj_volume_effets()
@@ -232,7 +235,8 @@ class Pause:
             
             # Dessiner le popup de pause avec le numéro de niveau
             self.dessiner_popup(ecran, numero_niveau)
-            
+            if alerte:
+                alerte.dessiner(ecran)
             pygame.display.flip()
         
         # Exécuter l'action demandée

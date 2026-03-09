@@ -4,7 +4,7 @@ import os
 import random
 import math
 from datetime import datetime
-from config import LARGEUR_ECRAN, HAUTEUR_ECRAN, COULEUR_BOUTON, COULEUR_SURVOL, COULEUR_BORDURE
+from config import LARGEUR_ECRAN, HAUTEUR_ECRAN, COULEUR_BOUTON, COULEUR_SURVOL, COULEUR_BORDURE, resource_path
 from config_manager import ConfigManager
 
 class Profil:
@@ -27,7 +27,7 @@ class Profil:
         self.pseudo = self.gestionnaire_config.obtenir_pseudo()
         
         # Son des clics
-        self.son_select = pygame.mixer.Sound(os.path.join("audio", "select.wav"))
+        self.son_select = pygame.mixer.Sound(resource_path(os.path.join("audio", "select.wav")))
         self.maj_volume()
         
         # Générer les étoiles
@@ -52,8 +52,12 @@ class Profil:
             {"nom": "Grimoire", "fichier": "grimoire.png"},
             {"nom": "Sorcier", "fichier": "sorcier.png", "niveau_associe": 3},
             {"nom": "Squelette", "fichier": "squelette.png", "niveau_associe": 4},
-            {"nom": "Slime Vert", "fichier": "slime_vert.png", "niveau_associe": 5},
+            {"nom": "Slime Vert1", "fichier": "slime_vert1.png", "niveau_associe": 5},
             {"nom": "Slime Violet", "fichier": "slime_violet.png", "niveau_associe": 5},
+            {"nom": "Mage 5", "fichier": "mage5.png", "niveau_associe": 6},
+            {"nom": "Slime Vert2", "fichier": "slime_vert2.png", "niveau_associe": 7},
+            {"nom": "Mage 6", "fichier": "mage6.png", "niveau_associe": 8},
+            {"nom": "Pyrolord", "fichier": "pyrolord.png", "niveau_associe": 10},
         ]
         
         self.avatar_actuel = self.gestionnaire_config.config.get("avatar_profil", 0)
@@ -63,7 +67,7 @@ class Profil:
                 break
         
         # Charger l'icône de changement
-        self.icone_change = pygame.image.load("img/change.png")
+        self.icone_change = pygame.image.load(resource_path("img/change.png"))
         self.icone_change = pygame.transform.scale(self.icone_change, (40, 40))
         
         # Positions centrées
@@ -112,7 +116,7 @@ class Profil:
     def charger_avatar(self):
         """Charge l'image d'avatar actuelle"""
         avatar = self.avatars[self.avatar_actuel]
-        chemin = os.path.join("img", "avatars", avatar["fichier"])
+        chemin = resource_path(os.path.join("img", "avatars", avatar["fichier"]))
         image = pygame.image.load(chemin)
         taille = self.cadre_avatar.width - 6
         self.image_avatar = pygame.transform.scale(image, (taille, taille))

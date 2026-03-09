@@ -3,7 +3,7 @@ import sys
 import os
 import random
 import math
-from config import LARGEUR_ECRAN, HAUTEUR_ECRAN, FPS, TAILLE_CELLULE, HAUTEUR_GRILLE
+from config import LARGEUR_ECRAN, HAUTEUR_ECRAN, FPS, TAILLE_CELLULE, HAUTEUR_GRILLE, resource_path
 from joueur import Joueur
 from niveau import Niveau
 from popup import Popup
@@ -29,6 +29,8 @@ class Game:
         
         # Créer l'écran
         self.plein_ecran = False
+        icone = pygame.image.load(resource_path("img/logo.ico"))
+        pygame.display.set_icon(icone)
         self.ecran = pygame.display.set_mode((LARGEUR_ECRAN, HAUTEUR_ECRAN), pygame.SCALED | pygame.RESIZABLE)
         pygame.display.set_caption("ColorMage")
         
@@ -40,7 +42,7 @@ class Game:
         
         
         # Musique du jeu
-        music_path = os.path.join("audio", "main_theme.ogg")
+        music_path = resource_path(os.path.join("audio", "main_theme.ogg"))
         pygame.mixer.music.load(music_path)
         # Appliquer le volume sauvegardé (de 0 à 100 converti en 0.0 à 1.0)
         volume_musique = volumes.get("musique", 50) / 100
@@ -111,15 +113,15 @@ class Game:
         self.temps_global = 0
         
         # Sons pour slimes et pièces
-        self.son_hurt = pygame.mixer.Sound(os.path.join("audio", "hurt.wav"))
-        self.son_piece = pygame.mixer.Sound(os.path.join("audio", "piece.wav"))
+        self.son_hurt = pygame.mixer.Sound(resource_path(os.path.join("audio", "hurt.wav")))
+        self.son_piece = pygame.mixer.Sound(resource_path(os.path.join("audio", "piece.wav")))
 
         # Son d'explosion
-        self.son_explosion = pygame.mixer.Sound(os.path.join("audio", "explosion.wav"))
+        self.son_explosion = pygame.mixer.Sound(resource_path(os.path.join("audio", "explosion.wav")))
         
         # Sons de pause/unpause
-        self.son_pause = pygame.mixer.Sound(os.path.join("audio", "pause.wav"))
-        self.son_unpause = pygame.mixer.Sound(os.path.join("audio", "unpause.wav"))
+        self.son_pause = pygame.mixer.Sound(resource_path(os.path.join("audio", "pause.wav")))
+        self.son_unpause = pygame.mixer.Sound(resource_path(os.path.join("audio", "unpause.wav")))
         
         # Alerte
         self.alerte = Alerte()
@@ -140,7 +142,7 @@ class Game:
 
     def _charger_frames_explosion(self):
         """Charge les frames du spritesheet d'explosion"""
-        chemin = os.path.join("img", "explosion.png")
+        chemin = resource_path(os.path.join("img", "explosion.png"))
         spritesheet = pygame.image.load(chemin).convert_alpha()
         frame_w, frame_h = 64, 59
         nb_frames = 9
@@ -189,6 +191,8 @@ class Game:
         else:
             self.ecran = pygame.display.set_mode((LARGEUR_ECRAN, HAUTEUR_ECRAN), pygame.SCALED | pygame.RESIZABLE)
         pygame.display.set_caption("ColorMage")
+        icone = pygame.image.load(resource_path("img/logo.ico"))
+        pygame.display.set_icon(icone)
     
     def gerer_evenements(self):
         """Gère les événements pygame"""
@@ -228,7 +232,7 @@ class Game:
                         self.maj_volume_effets()
                         self.son_pause.play()
                         self.chrono.pause()
-                        action = self.pause.afficher_pause(self.ecran, self.joueur, self.niveau, self.niveau_actuel, self.chrono, draw_background=self.dessiner_fond_niveau)
+                        action = self.pause.afficher_pause(self.ecran, self.joueur, self.niveau, self.niveau_actuel, self.chrono, draw_background=self.dessiner_fond_niveau, alerte=self.alerte)
                         
                         # Reprendre le chronomètre
                         if action == "continuer":
@@ -307,7 +311,7 @@ class Game:
                             self.menu_niveaux.recharger_donnees()
                             self.etat = "selection"
                         elif action == "grimoire":
-                            self.popup.afficher_grimoire_complet(self.ecran)
+                            self.popup.afficher_grimoire_complet(self.ecran, alerte=self.alerte)
                         elif action == "parametres":
                             self.etat = "param"
                         elif action == "profil":
@@ -322,7 +326,7 @@ class Game:
                         self.etat = "menu"
                     elif action == "reset_save":
                         # Afficher le popup de confirmation
-                        confirmation = self.popup.afficher_popup_confirmation_reset(self.ecran, self.profil)
+                        confirmation = self.popup.afficher_popup_confirmation_reset(self.ecran, self.profil, alerte=self.alerte)
                         if confirmation == "confirmer":
                             # Réinitialiser la sauvegarde (uniquement progression)
                             self.gestionnaire_config.reinitialiser_sauvegarde()
@@ -341,7 +345,7 @@ class Game:
                         self.etat = "menu"
                     elif action == "demander_reset_param":
                         # Afficher popup de confirmation pour reset paramètres
-                        resultat = self.popup.afficher_popup_confirmation_reset(self.ecran, self.parametres, "parametres")
+                        resultat = self.popup.afficher_popup_confirmation_reset(self.ecran, self.parametres, "parametres", alerte=self.alerte)
                         if resultat == "confirmer":
                             # Reset des paramètres
                             self.gestionnaire_config.reinitialiser_parametres()
@@ -353,7 +357,7 @@ class Game:
                             self.joueur.maj_controles()
                     elif action == "demander_import":
                         # Afficher popup de confirmation pour import
-                        resultat = self.popup.afficher_popup_confirmation_reset(self.ecran, self.parametres, "import")
+                        resultat = self.popup.afficher_popup_confirmation_reset(self.ecran, self.parametres, "import", alerte=self.alerte)
                         if resultat == "confirmer":
                             resultat_import = self.parametres.importer_fichier()
                             if resultat_import == "import_ok":
@@ -379,7 +383,7 @@ class Game:
                         self.maj_volume_effets()
                         self.son_pause.play()
                         self.chrono.pause()
-                        action = self.pause.afficher_pause(self.ecran, self.joueur, self.niveau, self.niveau_actuel, self.chrono, draw_background=self.dessiner_fond_niveau)
+                        action = self.pause.afficher_pause(self.ecran, self.joueur, self.niveau, self.niveau_actuel, self.chrono, draw_background=self.dessiner_fond_niveau, alerte=self.alerte)
                         
                         # Reprendre le chronomètre
                         if action == "continuer":
@@ -418,7 +422,7 @@ class Game:
                             self.son_pause.play()
                             self.chrono.pause()
                             
-                            action = self.pause.afficher_pause(self.ecran, self.joueur, self.niveau, self.niveau_actuel, self.chrono, draw_background=self.dessiner_fond_niveau)
+                            action = self.pause.afficher_pause(self.ecran, self.joueur, self.niveau, self.niveau_actuel, self.chrono, draw_background=self.dessiner_fond_niveau, alerte=self.alerte)
                             
                             # Reprendre le chronomètre
                             if action == "continuer":
@@ -470,7 +474,7 @@ class Game:
             self.niveau.dessiner(self.ecran, self.temps_global, update_entities=False)
             for piece in list(self.niveau.pieces):
                 piece.dessiner(self.ecran)
-            self.popup.afficher_popup_grimoire(self.ecran, numero)
+            self.popup.afficher_popup_grimoire(self.ecran, numero, alerte=self.alerte)
             self.gestionnaire_config.marquer_page_vue(numero)
             self.chrono.demarrer()
             meilleur_temps = self.gestionnaire_config.obtenir_meilleur_temps(numero)
@@ -500,7 +504,7 @@ class Game:
             if not self.gestionnaire_config.page_vue(self.niveau_actuel):
                 self.dessiner_fond_niveau(self.ecran)
                 self.niveau.dessiner(self.ecran, self.temps_global, update_entities=False)
-                self.popup.afficher_popup_grimoire(self.ecran, self.niveau_actuel)
+                self.popup.afficher_popup_grimoire(self.ecran, self.niveau_actuel, alerte=self.alerte)
                 self.gestionnaire_config.marquer_page_vue(self.niveau_actuel)
                 self.chrono.demarrer()
                 meilleur_temps = self.gestionnaire_config.obtenir_meilleur_temps(self.niveau_actuel)
@@ -530,7 +534,7 @@ class Game:
             # Charger la musique de la nouvelle planète
             planete = self.menu_niveaux.planetes[nouvelle_planete]
             nom_planete = planete["nom"].lower()
-            chemin_musique = os.path.join("audio", nom_planete + ".ogg")
+            chemin_musique = resource_path(os.path.join("audio", nom_planete + ".ogg"))
             if os.path.exists(chemin_musique):
                 pygame.mixer.music.stop()
                 pygame.mixer.music.load(chemin_musique)
@@ -553,7 +557,7 @@ class Game:
             
             # Restaurer la musique principale
             pygame.mixer.music.stop()
-            pygame.mixer.music.load(os.path.join("audio", "main_theme.ogg"))
+            pygame.mixer.music.load(resource_path(os.path.join("audio", "main_theme.ogg")))
             vol = self.gestionnaire_config.obtenir_volumes().get("musique", 50) / 100
             pygame.mixer.music.set_volume(vol)
             pygame.mixer.music.play(-1)

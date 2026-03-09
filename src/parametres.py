@@ -4,7 +4,7 @@ import json
 import os
 import random
 import math
-from config import LARGEUR_ECRAN, HAUTEUR_ECRAN, VERSION_JEU, COULEUR_BOUTON, COULEUR_SURVOL, COULEUR_BORDURE
+from config import LARGEUR_ECRAN, HAUTEUR_ECRAN, VERSION_JEU, COULEUR_BOUTON, COULEUR_SURVOL, COULEUR_BORDURE, resource_path
 from config_manager import ConfigManager
 
 class Parametres:
@@ -24,7 +24,7 @@ class Parametres:
         self.volumes = self.gestionnaire_config.obtenir_volumes()
         
         # son des clics
-        self.son_select = pygame.mixer.Sound(os.path.join("audio", "select.wav"))
+        self.son_select = pygame.mixer.Sound(resource_path(os.path.join("audio", "select.wav")))
         volumes = self.gestionnaire_config.obtenir_volumes()
         self.son_select.set_volume(volumes.get("effets", 50) / 100)
         
@@ -110,8 +110,6 @@ class Parametres:
         self.dessiner_etoiles(ecran)
         
         # version du jeu
-        version_txt = self.font_3.render(VERSION_JEU, True, (255, 255, 255))
-        ecran.blit(version_txt, (LARGEUR_ECRAN - version_txt.get_width() - 20, HAUTEUR_ECRAN - version_txt.get_height() - 20))
 
         # titres
         titre_txt = self.font_1.render("Paramètres", True, (255, 255, 255))

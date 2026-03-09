@@ -1,7 +1,7 @@
 import pygame
 import os
 
-from config import TAILLE_CELLULE
+from config import TAILLE_CELLULE, resource_path
 
 
 class Projectile:
@@ -18,7 +18,7 @@ class Projectile:
             self.size = int(size)
 
         # Charger spritesheet 
-        path = os.path.join("img", "ennemy.png")
+        path = resource_path(os.path.join("img", "ennemy.png"))
         self.spritesheet = pygame.image.load(path)
         self.sprite_w = 192
         self.sprite_h = 192
@@ -178,7 +178,7 @@ class Sorcier:
                                 self.width - 2 * self.marge_x,
                                 self.height - self.marge_y_haut - self.marge_y_bas)
 
-        path = os.path.join("img", "ennemy.png")
+        path = resource_path(os.path.join("img", "ennemy.png"))
         self.spritesheet = pygame.image.load(path)
         self.sprite_w = 192
         self.sprite_h = 192
@@ -293,7 +293,7 @@ class Squelette:
                                 self.width - 2 * self.marge_x,
                                 self.height - self.marge_y_haut - self.marge_y_bas)
 
-        path = os.path.join("img", "ennemy.png")
+        path = resource_path(os.path.join("img", "ennemy.png"))
         self.spritesheet = pygame.image.load(path)
         self.sprite_w = 192
         self.sprite_h = 192
@@ -565,9 +565,9 @@ class Slime:
 
         # Charger la spritesheet
         if couleur == "violet":
-            chemin = os.path.join("img", "slime_violet.png")
+            chemin = resource_path(os.path.join("img", "slime_violet.png"))
         else:
-            chemin = os.path.join("img", "slime_vert.png")
+            chemin = resource_path(os.path.join("img", "slime_vert.png"))
         self.spritesheet = pygame.image.load(chemin)
 
         # Taille d'un sprite dans la spritesheet
@@ -651,7 +651,7 @@ class Piece:
         self.alive = True
 
         # Charger la spritesheet de la pièce
-        chemin = os.path.join("img", "piece.png")
+        chemin = resource_path(os.path.join("img", "piece.png"))
         self.spritesheet = pygame.image.load(chemin)
         self.sprite_w = 16
         self.sprite_h = 16
