@@ -561,6 +561,8 @@ class Joueur:
             else:
                 if is_tir_image:
                     cle_index = self.tir_frame
+                elif self.en_changement_couleur:
+                    cle_index = 0
                 else:
                     cle_index = self.frame_index
                 cle = (self.couleur, cle_index, 'flip')
