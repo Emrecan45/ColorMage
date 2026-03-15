@@ -101,7 +101,7 @@ class Game:
         self.pieces_en_cours = []
         
         # Animation d'explosion à la mort
-        self._charger_frames_explosion()
+        self.charger_frames_explosion()
         self.explosion_actif = False
         self.explosion_frame = 0
         self.explosion_x = 0
@@ -140,7 +140,7 @@ class Game:
         self.son_unpause.set_volume(vol_effets)
         self.son_explosion.set_volume(vol_effets)
 
-    def _charger_frames_explosion(self):
+    def charger_frames_explosion(self):
         """Charge les frames du spritesheet d'explosion"""
         chemin = resource_path(os.path.join("img", "explosion.png"))
         spritesheet = pygame.image.load(chemin).convert_alpha()
@@ -153,7 +153,7 @@ class Game:
             frame = pygame.transform.scale(frame, (taille_affichage, taille_affichage))
             self.explosion_frames.append(frame)
 
-    def _demarrer_explosion(self, x_centre, y_centre):
+    def demarrer_explosion(self, x_centre, y_centre):
         """Déclenche l'explosion"""
         self.son_explosion.play()
         self.explosion_actif = True
@@ -682,7 +682,7 @@ class Game:
                 self.pieces_en_cours = []
                 cx = self.joueur.x + self.joueur.largeur // 2
                 cy = self.joueur.y + self.joueur.hauteur // 2
-                self._demarrer_explosion(cx, cy)
+                self.demarrer_explosion(cx, cy)
                 return
             if resultat_deplacement == "mort":
                 resultat = "mort"
@@ -692,6 +692,23 @@ class Game:
                 mort_vide = True
                 resultat = "mort"
             self.joueur.animer()
+            # Mise à jour du tir et du pouvoir de feu
+            self.joueur.maj_tir()
+            self.joueur.maj_pouvoir_feu()
+
+            # Tir avec la touche E
+            if touches[pygame.K_e]:
+                proj_feu = self.joueur.tenter_tir()
+                if proj_feu is not None:
+                    self.niveau.projectiles_feu.append(proj_feu)
+
+            # Collision projectiles feu vs murs
+            for pf in list(self.niveau.projectiles_feu):
+                if pf.state == "trail" and pf.collidable:
+                    if self.niveau.collision_feu_mur(pf, self.joueur.couleur):
+                        pf.start_explosion()
+
+
             # Stocke l'interaction du joueur
             inter_result = self.joueur.interagir_avec_blocs(self.niveau)
             if inter_result is not None:
@@ -779,6 +796,15 @@ class Game:
                     cy = int(piece.y // TAILLE_CELLULE)
                     self.pieces_en_cours.append([cx, cy])
 
+
+            # power ups feu
+            for pu in list(self.niveau.powerups_feu):
+                if not pu.alive:
+                    continue
+                if player_hitbox.colliderect(pu.rect):
+                    pu.alive = False
+                    self.joueur.activer_pouvoir_feu()
+
             for proj in proj_iter:
                 rect = proj.rect
 
@@ -843,7 +869,7 @@ class Game:
                 else:
                     cx = self.joueur.x + self.joueur.largeur // 2
                     cy = self.joueur.y + self.joueur.hauteur // 2
-                    self._demarrer_explosion(cx, cy)
+                    self.demarrer_explosion(cx, cy)
 
     def afficher(self):
         """Dessine tous les éléments"""
@@ -859,8 +885,7 @@ class Game:
             
             # Dessiner le portail d'entrée si actif
             if self.portail_entree_actif:
-                self.dessiner_portail_jeu(self.joueur.x + self.joueur.largeur // 2, 
-                                          self.joueur.y + self.joueur.hauteur // 2)
+                self.dessiner_portail_jeu(self.joueur.x + self.joueur.largeur // 2, self.joueur.y + self.joueur.hauteur // 2)
             
             # Dessiner le portail de sortie si actif
             if self.portail_sortie_actif:
@@ -872,12 +897,17 @@ class Game:
             
             # Dessiner l'explosion
             if self.explosion_actif and self.explosion_frame < len(self.explosion_frames):
-                self.ecran.blit(self.explosion_frames[self.explosion_frame],
-                                (self.explosion_x, self.explosion_y))
+                self.ecran.blit(self.explosion_frames[self.explosion_frame], (self.explosion_x, self.explosion_y))
             
             if self.popup_actif is None:
                 self.pause.dessiner_bouton(self.ecran)
             self.chrono.dessiner(self.ecran)
+            
+            hud_y_offset = 0
+            
+            # Afficher le timer de feu en haut
+            if self.joueur.peut_tirer_feu:
+                self.dessiner_timer_feu(self.ecran, hud_y_offset)
             
             # Afficher le popup s'il y en a un
             if self.popup_actif == "victoire":
@@ -939,6 +969,30 @@ class Game:
         
         # Centre brillant
         pygame.draw.circle(self.ecran, (255, 255, 200), (x, y), rayon // 4)
+
+    def dessiner_timer_feu(self, ecran, y_offset=0):
+        """Affiche le compteur du pouvoir de feu en haut de l'écran."""
+        secondes = self.joueur.temps_feu_restant / 1000
+        # Barre de fond
+        bar_w = 200
+        bar_h = 20
+        bar_x = LARGEUR_ECRAN // 2 - bar_w // 2
+        bar_y = 10 + y_offset
+        pygame.draw.rect(ecran, (40, 40, 40), (bar_x, bar_y, bar_w, bar_h))
+        # Remplissage
+        ratio = max(0, self.joueur.temps_feu_restant / self.joueur.duree_feu)
+        couleur_barre = (255, 100, 30) if secondes > 5 else (255, 50, 50)
+        pygame.draw.rect(ecran, couleur_barre, (bar_x, bar_y, int(bar_w * ratio), bar_h))
+        pygame.draw.rect(ecran, (200, 200, 200), (bar_x, bar_y, bar_w, bar_h), 1)
+        # Texte
+        font = pygame.font.SysFont(None, 22)
+        txt = font.render(f"FEU  {secondes:.1f}s", True, (255, 255, 255))
+        ecran.blit(txt, (bar_x + bar_w // 2 - txt.get_width() // 2, bar_y + 1))
+
+    def dessiner_barre_vie_boss(self, ecran):
+        """Dessine la barre de vie du boss en haut de l'écran (HUD)."""
+        # TODO
+        return
     
     def run(self):
         """Lance la boucle principale"""

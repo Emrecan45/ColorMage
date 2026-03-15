@@ -402,7 +402,7 @@ class Popup:
             pygame.display.flip()
             pygame.time.Clock().tick(60)
 
-    def _creer_silhouette(self, image):
+    def creer_silhouette(self, image):
         """Crée une silhouette noire à l'image"""
         largeur = image.get_width()
         hauteur = image.get_height()
@@ -563,7 +563,7 @@ class Popup:
                 y_images = zone_img_haut + (zone_img_hauteur - hauteur_cible) // 2
                 decalage_x = 0
                 for img in images_redimensionnees:
-                    sil = self._creer_silhouette(img)
+                    sil = self.creer_silhouette(img)
                     ecran.blit(sil, (x_depart_images + decalage_x, y_images))
                     decalage_x = decalage_x + img.get_width() + 20
                 # Icône cadenas
@@ -648,8 +648,11 @@ class Popup:
         # Afficher le niveau actuel sous le titre
         planete = ((niveau_actuel - 1) // 5) + 1
         niveau_planete = ((niveau_actuel - 1) % 5) + 1
-        noms_planetes = ["Terra", "Ignis", "Aqua", "Ventus"]
-        nom_planete = noms_planetes[planete - 1] if planete <= len(noms_planetes) else f"Planète {planete}"
+        noms_planetes = ["Terra", "Pyros", "Aquaris", "Nebula", "Cryon", "Solara", "Vortex", "Obscura"]
+        if planete <= len(noms_planetes):
+            nom_planete = noms_planetes[planete - 1]
+        else:
+            nom_planete = f"Planète {planete}"
         
         niveau_texte = f"Planète {nom_planete} - Niv. {niveau_actuel}"
         niveau_surface = self.font_niveau.render(niveau_texte, True, (100, 100, 100))
@@ -794,8 +797,11 @@ class Popup:
         if niveau_actuel:
             planete = ((niveau_actuel - 1) // 5) + 1
             niveau_planete = ((niveau_actuel - 1) % 5) + 1
-            noms_planetes = ["Terra", "Ignis", "Aqua", "Ventus"]
-            nom_planete = noms_planetes[planete - 1] if planete <= len(noms_planetes) else f"Planète {planete}"
+            noms_planetes = ["Terra", "Pyros", "Aquaris", "Nebula", "Cryon", "Solara", "Vortex", "Obscura"]
+            if planete <= len(noms_planetes):
+                nom_planete = noms_planetes[planete - 1]
+            else:
+                nom_planete = f"Planète {planete}"
             
             niveau_texte = f"Planète {nom_planete} - Niv. {niveau_actuel}"
             niveau_surface = self.font_niveau.render(niveau_texte, True, (100, 100, 100))

@@ -73,11 +73,13 @@ class Joueur:
         self.spritesheets = dict()
         self.images = dict()
         self.images_boules = dict()
+        self.tir_frames = {}
         couleurs = ["gris", "rouge", "bleu", "vert"]
         
         # Dimensions d'un sprite dans le spritesheet (768x590 divisé par 4 colonnes x 3 lignes)
         self.sprite_largeur = 192  # 768 / 4
         self.sprite_hauteur = 196  # 590 / 3
+        self.tir_offset_pixels_raw = 5
         
         for couleur in couleurs:
             # Charger le spritesheet
@@ -88,44 +90,53 @@ class Joueur:
             # Extraire les frames du spritesheet
             frames = []
             
-            positions = [
-                #repos
-                (0, 0),
-                
-                # saut
-                (2, 1),  # debut du saut
-                (3, 1),  # milieu du saut
-                (1, 2)   # fin du saut
-            ]
-            
-            for col, ligne in positions:
+            def get_sprite(col, ligne):
                 x_sprite = col * self.sprite_largeur
                 y_sprite = ligne * self.sprite_hauteur
-                
-                #extraire le sprite
                 sprite = spritesheet.subsurface(pygame.Rect(x_sprite, y_sprite, self.sprite_largeur, self.sprite_hauteur))
-                sprite = pygame.transform.scale(sprite, (self.largeur, self.hauteur))
-                frames.append(sprite)
-            
+                return pygame.transform.scale(sprite, (self.largeur, self.hauteur))
+
+            positions = [
+                (0, 0),  # repos
+                (2, 1),  # debut du saut
+                (3, 1),  # milieu du saut
+                (1, 2),  # fin du saut
+            ]
+            for col, ligne in positions:
+                frames.append(get_sprite(col, ligne))
             self.images[couleur] = frames
-            
+
             positions_boules = {
                 "rouge": (1, 1),
                 "bleu":  (2, 0),
-                "vert":  (0, 1)
+                "vert":  (0, 1),
             }
 
             boules = {}
-            for couleur_boule, (col, ligne) in positions_boules.items():
-                x_sprite = col*self.sprite_largeur
-                y_sprite = ligne*self.sprite_hauteur
-
-                sprite = spritesheet.subsurface(pygame.Rect(x_sprite, y_sprite, self.sprite_largeur, self.sprite_hauteur))
-                sprite = pygame.transform.scale(sprite, (self.largeur, self.hauteur))
-                boules[couleur_boule] = sprite
+            for couleur_boule, (col_b, ligne_b) in positions_boules.items():
+                sprite_boule = get_sprite(col_b, ligne_b)
+                boules[couleur_boule] = sprite_boule
 
             boules["gris"] = self.images[couleur][0]
             self.images_boules[couleur] = boules
+
+
+            positions_tir = [(2, 1), (3, 1)]
+            tir_list = []
+            for col_t, ligne_t in positions_tir:
+                # Récupère l'image brute depuis le spritesheet
+                x_raw = col_t * self.sprite_largeur
+                y_raw = ligne_t * self.sprite_hauteur
+                raw = spritesheet.subsurface(pygame.Rect(x_raw, y_raw, self.sprite_largeur, self.sprite_hauteur))
+                # Échelle de l'image brute vers la taille d'affichage
+                scaled = pygame.transform.scale(raw, (self.largeur, self.hauteur))
+                # Calcul du décalage en pixels après mise à l'échelle
+                scaled_offset = int(self.tir_offset_pixels_raw * self.hauteur / self.sprite_hauteur)
+                # Crée une surface finale et blit l'image échelonnée décalée vers le bas
+                surf = pygame.Surface((self.largeur, self.hauteur), pygame.SRCALPHA)
+                surf.blit(scaled, (0, scaled_offset))
+                tir_list.append(surf)
+            self.tir_frames[couleur] = tir_list
 
         self.frame_index = 0
         self.temps_derniere_frame = 0
@@ -143,6 +154,19 @@ class Joueur:
         self.cache_retournes = {}
         self.cache_masques = {}
         self.combo_cache = {}
+
+        # Système de tir de feu (activé par les power-ups)
+        self.peut_tirer_feu = False
+        self.temps_feu_restant = 0  # en ms
+        self.duree_feu = 10000      # 10 secondes
+        self.en_tir = False
+        self.tir_frame = 0
+        self.tir_timer = 0
+        self.tir_delai = 300  # ms par frame de tir
+        self.tir_cooldown = 0
+        self.tir_cooldown_delai = 900  # ms entre chaque tir
+        self.feu_debut_temps = 0
+        self.tir_y_lock = 0.0  # verrou de position Y pendant le tir
     
     def reset(self, niveau=None):
         """Réinitialise le joueur à sa position de départ et sa couleur de base (gris)"""
@@ -169,6 +193,14 @@ class Joueur:
         self.couleur_precedente = None
         self.au_sol = False
         self.etait_au_sol = False
+        self.peut_tirer_feu = False
+        self.temps_feu_restant = 0
+        self.en_tir = False
+        self.tir_frame = 0
+        self.tir_timer = 0
+        self.tir_cooldown = 0
+        self.feu_debut_temps = 0
+        self.tir_y_lock = 0.0
         if niveau is not None:
             rect = pygame.Rect(self.x + self.marge_x, self.y + self.marge_y_haut,
                                self.largeur - 2 * self.marge_x,
@@ -190,6 +222,13 @@ class Joueur:
             facteur_ralenti = 0.25 # ralenti pendant changement de couleur
         else:
             facteur_ralenti = 1.0
+
+        # Freeze complet pendant le tir
+        if self.en_tir:
+            self.vitesse_x = 0
+            self.vitesse_y = 0
+            self.y = self.tir_y_lock
+            return None
 
         self.vitesse_x = 0
         if self.controls['gauche'] != "":
@@ -296,6 +335,65 @@ class Joueur:
                 son.stop()
             son_change_aleatoire = random.choice(self.sons_changement)
             son_change_aleatoire.play()
+
+    def activer_pouvoir_feu(self):
+        """Active le pouvoir de tir de feu."""
+        self.peut_tirer_feu = True
+        self.feu_debut_temps = pygame.time.get_ticks()
+        self.temps_feu_restant = self.duree_feu
+
+    def maj_pouvoir_feu(self):
+        """Met à jour le timer du pouvoir feu. Appelé chaque frame."""
+        if not self.peut_tirer_feu:
+            return
+        now = pygame.time.get_ticks()
+        elapsed = now - self.feu_debut_temps
+        self.temps_feu_restant = max(0, self.duree_feu - elapsed)
+        if self.temps_feu_restant <= 0:
+            self.peut_tirer_feu = False
+            self.temps_feu_restant = 0
+
+    def tenter_tir(self):
+        """Tente de lancer un tir de feu. Retourne un ProjectileFeu ou None."""
+        if not self.peut_tirer_feu:
+            return None
+        now = pygame.time.get_ticks()
+        if now - self.tir_cooldown < self.tir_cooldown_delai:
+            return None
+        if self.en_tir:
+            return None
+
+        from enemies import ProjectileFeu
+        self.tir_y_lock = self.y  # verrou de position Y
+        self.en_tir = True
+        self.tir_frame = 0
+        self.tir_timer = now
+        self.tir_cooldown = now
+
+        # Position de départ du feu
+        if self.direction == 1:
+            fx = self.x + self.largeur - 24
+        else:
+            fx = self.x + 24
+        if self.au_sol:
+            fy = self.y + self.hauteur * 0.25 + 3
+        else:
+            fy = self.y + self.hauteur * 0.25 + 2
+
+        proj = ProjectileFeu(fx, fy, direction=self.direction)
+        return proj
+
+    def maj_tir(self):
+        """Met à jour l'animation de tir."""
+        if not self.en_tir:
+            return
+        now = pygame.time.get_ticks()
+        if now - self.tir_timer >= self.tir_delai:
+            self.tir_timer = now
+            self.tir_frame += 1
+            if self.tir_frame >= 2:
+                self.en_tir = False
+                self.tir_frame = 0
     
     def animer_changement_couleur(self):
         """Gère l'animation de changement de couleur par étapes"""
@@ -437,9 +535,16 @@ class Joueur:
                 self.couleur = self.couleur_cible
                 image_res = self.images[self.couleur][0]
 
+        elif self.en_tir and self.couleur in self.tir_frames:
+            # Animation de tir
+            idx = min(self.tir_frame, len(self.tir_frames[self.couleur]) - 1)
+            image_res = self.tir_frames[self.couleur][idx]
+
         else:
             frames = self.images[self.couleur]
             image_res = frames[self.frame_index]
+
+        is_tir_image = (self.en_tir and self.couleur in self.tir_frames)
 
         if self.direction == -1:
             if self.en_changement_couleur and self.etape_changement == 0:
@@ -454,7 +559,11 @@ class Joueur:
                     img = pygame.transform.flip(base, True, False)
                     self.combo_cache[keyf] = img
             else:
-                cle = (self.couleur, self.frame_index)
+                if is_tir_image:
+                    cle_index = self.tir_frame
+                else:
+                    cle_index = self.frame_index
+                cle = (self.couleur, cle_index, 'flip')
                 img = self.cache_retournes.get(cle)
                 if img is None:
                     img = pygame.transform.flip(image_res, True, False)
@@ -462,9 +571,16 @@ class Joueur:
         else:
             img = image_res
 
+        draw_x = self.x
+        draw_y = self.y
+        if is_tir_image:
+            scaled_offset = int(self.tir_offset_pixels_raw * self.hauteur / self.sprite_hauteur)
+            if not self.au_sol:
+                draw_y -= scaled_offset
+
         self.visual_x = self.x
-        self.visual_y = self.y
-        ecran.blit(img, (self.x, self.y))
+        self.visual_y = draw_y
+        ecran.blit(img, (draw_x, draw_y))
 
     def obtenir_image_courante(self):
         """Retourne la surface courante du joueur (flip appliqué si nécessaire)."""
@@ -491,7 +607,11 @@ class Joueur:
             return self.images[self.couleur][0]
         image_res = self.images[self.couleur][self.frame_index]
         if self.direction == -1:
-            cle = (self.couleur, self.frame_index)
+            if self.en_tir and self.couleur in self.tir_frames:
+                cle_index = self.tir_frame
+            else:
+                cle_index = self.frame_index
+            cle = (self.couleur, cle_index, 'flip')
             img = self.cache_retournes.get(cle)
             if img is None:
                 img = pygame.transform.flip(image_res, True, False)
@@ -505,7 +625,11 @@ class Joueur:
         if self.en_changement_couleur:
             img = self.obtenir_image_courante()
             return pygame.mask.from_surface(img)
-        cle = (self.couleur, self.frame_index, self.direction)
+        if self.en_tir and self.couleur in self.tir_frames:
+            index = self.tir_frame
+        else:
+            index = self.frame_index
+        cle = (self.couleur, index, self.direction)
         masque = self.cache_masques.get(cle)
         if masque is None:
             img = self.obtenir_image_courante()

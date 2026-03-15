@@ -8,6 +8,7 @@ from enemies import Sorcier
 from enemies import Squelette
 from enemies import Slime
 from enemies import Piece
+from enemies import PowerUpFeu
 from config_manager import ConfigManager
 
 class PlateformeMobile:
@@ -120,6 +121,12 @@ class Niveau:
         self.pieces = []
         # plateformes mobiles
         self.platformes_mobiles = []
+        # Projectiles de feu du joueur et powerups
+        self.projectiles_feu = []
+        self.powerups_feu = []
+        self.positions_tir_feu = []  # positions possibles pour les power ups
+        self.dernier_spawn_powerup = 0
+        self.intervalle_spawn_powerup = 40000  # 40s entre chaque spawn possible #TODO
         self.traversables = ["change_rouge", "change_bleu", "change_vert", "porte", "vide", "pic"]
         self.image_pic = pygame.image.load(resource_path("img/pic.png"))
         self.image_pic = pygame.transform.scale(self.image_pic, (TAILLE_CELLULE, TAILLE_CELLULE))
@@ -205,6 +212,10 @@ class Niveau:
         self.slimes = []
         self.pieces = []
         self.platformes_mobiles = []
+        self.projectiles_feu = []
+        self.powerups_feu = []    
+        self.positions_tir_feu = []
+        self.dernier_spawn_powerup = pygame.time.get_ticks()
         for type_bloc, positions in data.items():
             if type_bloc == "spawn":
                 x, y = positions
@@ -405,12 +416,25 @@ class Niveau:
                     self.platformes_mobiles.append(plat)
                     # ne pas laisser de bloc dans la grille (plateforme gérée séparément)
                     self.grille[y][x] = "vide"
+            elif type_bloc == "tir_feu":
+                # Positions possibles pour les power-ups de feu
+                for pos in positions:
+                    px = pos[0] * TAILLE_CELLULE + TAILLE_CELLULE // 2
+                    py = pos[1] * TAILLE_CELLULE + TAILLE_CELLULE // 2
+                    self.positions_tir_feu.append((px, py))
+            
             else:
                 for pos in positions:
                     x = pos[0]
                     y = pos[1]
                     self.grille[y][x] = type_bloc
         
+        # Spawn un power-up de feu au début si des positions existent
+        if self.positions_tir_feu:
+            pos = random.choice(self.positions_tir_feu)
+            powerup = PowerUpFeu(pos[0], pos[1])
+            self.powerups_feu.append(powerup)
+
         return self.grille
 
     def obtenir_spawn_pixel(self):
@@ -463,6 +487,41 @@ class Niveau:
                 if plat.couleur in ["rouge", "bleu", "vert", "gris"] and plat.couleur == couleur_joueur:
                     if rect.colliderect(pr):
                         return True
+        return False
+
+    def tenter_spawn_powerup(self):
+        """Essaie de faire apparaître un power-up de feu si les conditions sont remplies."""
+        if not self.positions_tir_feu:
+            return
+        # Pas de spawn si un power-up est déjà présent
+        if self.powerups_feu:
+            return
+        now = pygame.time.get_ticks()
+        if now - self.dernier_spawn_powerup < self.intervalle_spawn_powerup:
+            return
+        self.dernier_spawn_powerup = now
+        pos = random.choice(self.positions_tir_feu)
+        powerup = PowerUpFeu(pos[0], pos[1])
+        self.powerups_feu.append(powerup)
+
+    def collision_feu_mur(self, proj_feu, couleur_joueur):
+        """Vérifie si un projectile de feu touche un mur noir ou de la couleur du joueur.
+        Retourne True si collision ( exploser)."""
+        rect = proj_feu.rect
+        for y in range(HAUTEUR_GRILLE):
+            for x in range(LARGEUR_GRILLE):
+                bloc = self.grille[y][x]
+                bloc_rect = pygame.Rect(x * TAILLE_CELLULE, y * TAILLE_CELLULE,
+                                        TAILLE_CELLULE, TAILLE_CELLULE)
+                if not rect.colliderect(bloc_rect):
+                    continue
+                # Mur noir = explose
+                if bloc == "noir":
+                    return True
+                # Mur de la même couleur que le joueur = explose
+                if bloc in ["rouge", "bleu", "vert", "gris"] and bloc == couleur_joueur:
+                    return True
+                # Murs d'autres couleurs = le feu passe à travers
         return False
 
     def bloc_solide_au_dessus(self, joueur):
@@ -576,6 +635,24 @@ class Niveau:
                 else:
                     self.appliquer_pousse_plateforme_sur_entite(piece)
                     piece.dessiner(ecran)
+
+            # Power ups de feu
+            self.tenter_spawn_powerup()
+            for pu in list(self.powerups_feu):
+                pu.update()
+                if not pu.alive:
+                    self.powerups_feu.remove(pu)
+                else:
+                    pu.dessiner(ecran)
+
+            # Projectiles de feu du joueur
+            for pf in list(self.projectiles_feu):
+                pf.update()
+                if not pf.alive:
+                    self.projectiles_feu.remove(pf)
+                else:
+                    pf.dessiner(ecran)
+
         else:
             for plat in self.platformes_mobiles:
                 plat.dessiner(ecran)
@@ -589,6 +666,11 @@ class Niveau:
                 slime.dessiner(ecran)
             for piece in self.pieces:
                 piece.dessiner(ecran)
+            for pu in self.powerups_feu:
+                pu.dessiner(ecran)
+            for pf in self.projectiles_feu:
+                pf.dessiner(ecran)
+            
     def dessiner_fond(self, ecran, couleur_planete, temps_global=0):
         """Dessine le fond pour le niveau basé sur la couleur de la planète.
         """
