@@ -700,12 +700,12 @@ class Game:
             if touches[pygame.K_e]:
                 proj_feu = self.joueur.tenter_tir()
                 if proj_feu is not None:
-                    self.niveau.projectiles_feu.append(proj_feu)
+                    self.niveau.projectiles_joueur.append(proj_feu)
 
             # Collision projectiles feu vs murs
-            for pf in list(self.niveau.projectiles_feu):
+            for pf in list(self.niveau.projectiles_joueur):
                 if pf.state == "trail" and pf.collidable:
-                    if self.niveau.collision_feu_mur(pf, self.joueur.couleur):
+                    if self.niveau.collision_projectile_mur(pf, self.joueur.couleur):
                         pf.start_explosion()
 
 
@@ -798,12 +798,23 @@ class Game:
 
 
             # power ups feu
-            for pu in list(self.niveau.powerups_feu):
+            for pu in list(self.niveau.cristaux_feu):
                 if not pu.alive:
                     continue
-                if player_hitbox.colliderect(pu.rect):
+                # obtenir ou creer le masque du cristal
+                pu_mask = getattr(pu, 'current_mask', None)
+                if pu_mask is None:
+                    pf = pu.frames[pu.frame_index]
+                    pu_mask = pygame.mask.from_surface(pf)
+                # joueur doit avoir un masque
+                if player_mask is None:
+                    continue
+                # Offset
+                offset = (int(self.joueur.x - getattr(pu, 'current_draw_x', pu.rect.left)), int(self.joueur.y - getattr(pu, 'current_draw_y', pu.rect.top)))
+                if pu_mask.overlap(player_mask, offset) is not None:
                     pu.alive = False
                     self.joueur.activer_pouvoir_feu()
+                    self.niveau.dernier_collecte_cristal = pygame.time.get_ticks()
 
             for proj in proj_iter:
                 rect = proj.rect
@@ -986,8 +997,8 @@ class Game:
         pygame.draw.rect(ecran, (200, 200, 200), (bar_x, bar_y, bar_w, bar_h), 1)
         # Texte
         font = pygame.font.SysFont(None, 22)
-        txt = font.render(f"FEU  {secondes:.1f}s", True, (255, 255, 255))
-        ecran.blit(txt, (bar_x + bar_w // 2 - txt.get_width() // 2, bar_y + 1))
+        txt = font.render("Feu  " + str(round(secondes, 1)) + "s", True, (255, 255, 255))
+        ecran.blit(txt, (bar_x + bar_w // 2 - txt.get_width() // 2, bar_y + 3))
 
     def dessiner_barre_vie_boss(self, ecran):
         """Dessine la barre de vie du boss en haut de l'écran (HUD)."""

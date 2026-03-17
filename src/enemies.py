@@ -809,20 +809,85 @@ class ProjectileFeu:
         ecran.blit(frame, (int(self.x), draw_y))
 
 
-class PowerUpFeu:
-    """Power-up de feu qui  peut être ramassé par le joueur pour lui donner une capacité de tir ou la restaurer."""
+class CristalFeu:
+    """Cristal de feu qui peut être ramassé par le joueur pour lui donner une capacité de tir ou la restaurer."""
     def __init__(self, x, y):
         self.x = x
         self.y = y
         self.alive = True
-        self.rayon = 12
-        self.rect = pygame.Rect(int(self.x - self.rayon), int(self.y - self.rayon), self.rayon * 2, self.rayon * 2)
+
+        self.taille_affichage = int(40)  # 75px
+
+        chemin = resource_path(os.path.join("img", "cristal_feu.png"))
+        spritesheet = pygame.image.load(chemin).convert()
+        spritesheet.set_colorkey((0, 0, 0))
+
+        # Coordonnées de chaque frame dans la spritesheet
+        crop_y = 151
+        crop_h = 88
+        segments = [
+            (22,  113),
+            (125, 198),
+            (215, 265),
+            (287, 306),
+            (328, 388),
+            (402, 473),
+            (489, 574),
+        ]
+
+        self.nb_frames = len(segments)
+        self.frames = []
+        cible = self.taille_affichage
+        for (x_debut, x_fin) in segments:
+            largeur = x_fin - x_debut + 1
+            sprite_source = spritesheet.subsurface(pygame.Rect(x_debut, crop_y, largeur, crop_h))
+            rapport = min(cible / largeur, cible / crop_h)
+            nouvelle_largeur = max(1, int(largeur * rapport))
+            nouvelle_hauteur = max(1, int(crop_h * rapport))
+            echelle = pygame.transform.scale(sprite_source, (nouvelle_largeur, nouvelle_hauteur))
+            # Centrer dans un carré transparent
+            res = pygame.Surface((cible, cible), pygame.SRCALPHA)
+            res.fill((0, 0, 0, 0))
+            decal_x = (cible - nouvelle_largeur) // 2
+            decal_y = (cible - nouvelle_hauteur) // 2
+            res.blit(echelle, (decal_x, decal_y))
+            self.frames.append(res)
+
+        self.frame_index = 0
+        self.last_anim_time = pygame.time.get_ticks()
+        self.anim_delay = 80
+
+        # Pré calculer les masques pour chaque frame
+        self.masks = []
+        for frame in self.frames:
+            mask = pygame.mask.from_surface(frame)
+            self.masks.append(mask)
+        # position de dessin
+        self.current_draw_x = int(self.x - self.taille_affichage // 2)
+        self.current_draw_y = int(self.y - self.taille_affichage // 2)
+        # masque et rect basés sur la frame de base
+        self.current_mask = self.masks[self.frame_index]
+        self.rect = pygame.Rect(self.current_draw_x, self.current_draw_y, self.taille_affichage, self.taille_affichage)
 
     def update(self):
-        self.rect.topleft = (int(self.x - self.rayon), int(self.y - self.rayon))
+        now = pygame.time.get_ticks()
+        if now - self.last_anim_time >= self.anim_delay:
+            self.last_anim_time = now
+            self.frame_index = (self.frame_index + 1) % self.nb_frames
+        # Mettre à jour la position de dessin et le masque
+        draw_x = int(self.x - self.taille_affichage // 2)
+        draw_y = int(self.y - self.taille_affichage // 2)
+        self.current_draw_x = draw_x
+        self.current_draw_y = draw_y
+        self.current_mask = self.masks[self.frame_index]
+        self.rect.topleft = (draw_x, draw_y)
+        self.rect.size = (self.taille_affichage, self.taille_affichage)
 
     def dessiner(self, ecran):
-        pygame.draw.circle(ecran, (200, 30, 30), (int(self.x), int(self.y)), self.rayon)
+        frame = self.frames[self.frame_index]
+        draw_x = int(self.x - self.taille_affichage // 2)
+        draw_y = int(self.y - self.taille_affichage // 2)
+        ecran.blit(frame, (draw_x, draw_y))
 
 
 def mettre_a_jour_groupes(elems):

@@ -8,7 +8,7 @@ from enemies import Sorcier
 from enemies import Squelette
 from enemies import Slime
 from enemies import Piece
-from enemies import PowerUpFeu
+from enemies import CristalFeu
 from config_manager import ConfigManager
 
 class PlateformeMobile:
@@ -121,12 +121,12 @@ class Niveau:
         self.pieces = []
         # plateformes mobiles
         self.platformes_mobiles = []
-        # Projectiles de feu du joueur et powerups
-        self.projectiles_feu = []
-        self.powerups_feu = []
-        self.positions_tir_feu = []  # positions possibles pour les power ups
-        self.dernier_spawn_powerup = 0
-        self.intervalle_spawn_powerup = 40000  # 40s entre chaque spawn possible #TODO
+        # Projectiles du joueur et cristaux
+        self.projectiles_joueur = []
+        self.cristaux_feu = []
+        self.positions_cristal_feu = []  # positions possibles pour les power ups
+        self.dernier_collecte_cristal = 0
+        self.intervalle_spawn_cristal = 25000  # 25s entre chaque spawn possible
         self.traversables = ["change_rouge", "change_bleu", "change_vert", "porte", "vide", "pic"]
         self.image_pic = pygame.image.load(resource_path("img/pic.png"))
         self.image_pic = pygame.transform.scale(self.image_pic, (TAILLE_CELLULE, TAILLE_CELLULE))
@@ -212,10 +212,10 @@ class Niveau:
         self.slimes = []
         self.pieces = []
         self.platformes_mobiles = []
-        self.projectiles_feu = []
-        self.powerups_feu = []    
-        self.positions_tir_feu = []
-        self.dernier_spawn_powerup = pygame.time.get_ticks()
+        self.projectiles_joueur = []
+        self.cristaux_feu = []    
+        self.positions_cristal_feu = []
+        self.dernier_collecte_cristal = pygame.time.get_ticks()
         for type_bloc, positions in data.items():
             if type_bloc == "spawn":
                 x, y = positions
@@ -416,12 +416,12 @@ class Niveau:
                     self.platformes_mobiles.append(plat)
                     # ne pas laisser de bloc dans la grille (plateforme gérée séparément)
                     self.grille[y][x] = "vide"
-            elif type_bloc == "tir_feu":
+            elif type_bloc == "cristal_feu":
                 # Positions possibles pour les power-ups de feu
                 for pos in positions:
                     px = pos[0] * TAILLE_CELLULE + TAILLE_CELLULE // 2
                     py = pos[1] * TAILLE_CELLULE + TAILLE_CELLULE // 2
-                    self.positions_tir_feu.append((px, py))
+                    self.positions_cristal_feu.append((px, py))
             
             else:
                 for pos in positions:
@@ -430,10 +430,10 @@ class Niveau:
                     self.grille[y][x] = type_bloc
         
         # Spawn un power-up de feu au début si des positions existent
-        if self.positions_tir_feu:
-            pos = random.choice(self.positions_tir_feu)
-            powerup = PowerUpFeu(pos[0], pos[1])
-            self.powerups_feu.append(powerup)
+        if self.positions_cristal_feu:
+            pos = random.choice(self.positions_cristal_feu)
+            cristal = CristalFeu(pos[0], pos[1])
+            self.cristaux_feu.append(cristal)
 
         return self.grille
 
@@ -489,25 +489,24 @@ class Niveau:
                         return True
         return False
 
-    def tenter_spawn_powerup(self):
-        """Essaie de faire apparaître un power-up de feu si les conditions sont remplies."""
-        if not self.positions_tir_feu:
+    def tenter_spawn_cristal_feu(self):
+        """Essaie de faire apparaître un cristal de feu si les conditions sont remplies."""
+        if not self.positions_cristal_feu:
             return
-        # Pas de spawn si un power-up est déjà présent
-        if self.powerups_feu:
+        # Pas de spawn si un cristal est déjà présent
+        if self.cristaux_feu:
             return
         now = pygame.time.get_ticks()
-        if now - self.dernier_spawn_powerup < self.intervalle_spawn_powerup:
+        if now - self.dernier_collecte_cristal < self.intervalle_spawn_cristal:
             return
-        self.dernier_spawn_powerup = now
-        pos = random.choice(self.positions_tir_feu)
-        powerup = PowerUpFeu(pos[0], pos[1])
-        self.powerups_feu.append(powerup)
+        pos = random.choice(self.positions_cristal_feu)
+        cristal = CristalFeu(pos[0], pos[1])
+        self.cristaux_feu.append(cristal)
 
-    def collision_feu_mur(self, proj_feu, couleur_joueur):
-        """Vérifie si un projectile de feu touche un mur noir ou de la couleur du joueur.
-        Retourne True si collision ( exploser)."""
-        rect = proj_feu.rect
+    def collision_projectile_mur(self, projectile, couleur_joueur):
+        """Vérifie si un projectile touche un mur noir ou de la couleur du joueur.
+        Retourne True si collision (exploser)."""
+        rect = projectile.rect
         for y in range(HAUTEUR_GRILLE):
             for x in range(LARGEUR_GRILLE):
                 bloc = self.grille[y][x]
@@ -637,19 +636,19 @@ class Niveau:
                     piece.dessiner(ecran)
 
             # Power ups de feu
-            self.tenter_spawn_powerup()
-            for pu in list(self.powerups_feu):
-                pu.update()
-                if not pu.alive:
-                    self.powerups_feu.remove(pu)
-                else:
-                    pu.dessiner(ecran)
+            self.tenter_spawn_cristal_feu()
+            for cristal in list(self.cristaux_feu):
+                    cristal.update()
+                    if not cristal.alive:
+                        self.cristaux_feu.remove(cristal)
+                    else:
+                        cristal.dessiner(ecran)
 
-            # Projectiles de feu du joueur
-            for pf in list(self.projectiles_feu):
+            # Projectiles du joueur
+            for pf in list(self.projectiles_joueur):
                 pf.update()
                 if not pf.alive:
-                    self.projectiles_feu.remove(pf)
+                    self.projectiles_joueur.remove(pf)
                 else:
                     pf.dessiner(ecran)
 
@@ -666,9 +665,9 @@ class Niveau:
                 slime.dessiner(ecran)
             for piece in self.pieces:
                 piece.dessiner(ecran)
-            for pu in self.powerups_feu:
+            for pu in self.cristaux_feu:
                 pu.dessiner(ecran)
-            for pf in self.projectiles_feu:
+            for pf in self.projectiles_joueur:
                 pf.dessiner(ecran)
             
     def dessiner_fond(self, ecran, couleur_planete, temps_global=0):
