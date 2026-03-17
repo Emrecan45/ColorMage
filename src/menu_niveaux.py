@@ -18,7 +18,7 @@ class MenuNiveaux:
         self.gestionnaire_config = ConfigManager()
         self.config = self.gestionnaire_config.charger_config()
         self.niveau_max_debloque = self.config["niveau_actuel"]
-        self._pieces_total_cache = self.config.get("pieces_total", 0)
+        self.pieces_total_cache = self.config.get("pieces_total", 0)
         self.niveaux_par_planete = 5
         
         # Système d'univers
@@ -630,7 +630,7 @@ class MenuNiveaux:
     
     def dessiner_compteur_pieces(self, ecran):
         """Dessine le compteur de pièces en haut à droite"""
-        total = self._pieces_total_cache
+        total = self.pieces_total_cache
         texte = self.font_2.render(str(total), True, (255, 255, 255))
         marge_droite = 40
         y_align = 30
@@ -786,7 +786,7 @@ class MenuNiveaux:
         """Recharge les données depuis le disque"""
         self.config = self.gestionnaire_config.charger_config()
         self.niveau_max_debloque = self.config.get("niveau_actuel", self.niveau_max_debloque)
-        self._pieces_total_cache = self.config.get("pieces_total", 0)
+        self.pieces_total_cache = self.config.get("pieces_total", 0)
         self.maj_volume()
 
     def maj_animations(self):

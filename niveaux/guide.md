@@ -19,6 +19,6 @@
 - change_"couleur" : [x, y]
 
 ### Ennemis :
-- sorcier : [x, y, direction, portée de tir]-
+- sorcier : [x, y, direction, portée de tir]
 - squelette : [x, y, direction, portée de marche]
 - slime_"couleur" : [x, y]

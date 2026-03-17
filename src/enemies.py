@@ -1,7 +1,7 @@
 import pygame
 import os
 
-from config import TAILLE_CELLULE, resource_path
+from config import TAILLE_CELLULE, resource_path, VITESSE_DEPLACEMENT
 
 
 class Projectile:
@@ -687,6 +687,207 @@ class Piece:
     def dessiner(self, ecran):
         frame = self.frames[self.frame_index]
         ecran.blit(frame, (int(self.draw_x), int(self.draw_y)))
+
+
+class ProjectileFeu:
+    """Projectile de feu tiré par le mage."""
+    def __init__(self, x, y, direction=1, speed=VITESSE_DEPLACEMENT):
+        self.direction = direction
+        self.speed = speed
+        self.alive = True
+        self.collidable = False  # pas de collision pendant la création
+
+        self.size = 120  # taille d'affichage
+        self.hit_size = 40  # taille de la hitbox de collision
+
+        # centre du projectile
+        self.centre_x = float(x)
+        self.centre_y = float(y)
+        self.x = self.centre_x - self.size // 2
+        self.y = self.centre_y - self.size // 2
+
+        # création aninmation
+        sheet_c = pygame.image.load(resource_path(os.path.join("img", "feu_creation.png"))).convert_alpha()
+        self.creation_frames = []
+        for i in range(min(10, sheet_c.get_height() // 64)):
+            frame = sheet_c.subsurface(pygame.Rect(0, i * 64, 64, 64))
+            frame = pygame.transform.scale(frame, (self.size, self.size))
+            self.creation_frames.append(frame)
+
+        # trainée
+        sheet_t = pygame.image.load(resource_path(os.path.join("img", "feu_trainée.png"))).convert_alpha()
+        self.trail_frames = []
+        for i in range(sheet_t.get_height() // 64):
+            frame = sheet_t.subsurface(pygame.Rect(0, i * 64, 64, 64))
+            frame = pygame.transform.scale(frame, (self.size, self.size))
+            self.trail_frames.append(frame)
+        self.trail_masks = []
+        for surf in self.trail_frames:
+            self.trail_masks.append(pygame.mask.from_surface(surf))
+        self.cache_trail_retourne = {}
+        sheet_e = pygame.image.load(resource_path(os.path.join("img", "feu_explosion.png"))).convert_alpha()
+        self.explosion_frames = []
+        for i in range(sheet_e.get_width() // 64):
+            frame = sheet_e.subsurface(pygame.Rect(i * 64, 0, 64, 64))
+            frame = pygame.transform.scale(frame, (self.size, self.size))
+            self.explosion_frames.append(frame)
+
+        # États : "creation", "trail", "explosion"
+        self.state = "creation"
+        self.frame_index = 0
+        self.last_frame_time = pygame.time.get_ticks()
+        self.creation_delay = 30
+        self.trail_delay = 80
+        self.explosion_delay = 60
+
+        self.cache_retourne = {}
+
+        self.rect = pygame.Rect(int(self.centre_x - self.hit_size // 2), int(self.centre_y - self.hit_size // 2),self.hit_size, self.hit_size)
+
+    def update(self):
+        now = pygame.time.get_ticks()
+
+        if self.state == "creation":
+            if now - self.last_frame_time >= self.creation_delay:
+                self.last_frame_time = now
+                self.frame_index += 1
+                if self.frame_index >= len(self.creation_frames):
+                    self.state = "trail"
+                    self.frame_index = 0
+                    self.collidable = True
+        elif self.state == "trail":
+            # Déplacement
+            self.centre_x += self.speed * self.direction
+            if now - self.last_frame_time >= self.trail_delay:
+                self.last_frame_time = now
+                self.frame_index = (self.frame_index + 1) % len(self.trail_frames)
+            # hors écran
+            if self.centre_x < -100 or self.centre_x > 2000:
+                self.alive = False
+        elif self.state == "explosion":
+            if now - self.last_frame_time >= self.explosion_delay:
+                self.last_frame_time = now
+                self.frame_index += 1
+                if self.frame_index >= len(self.explosion_frames):
+                    self.alive = False
+
+        # mettre a jour les positions de dessin et collision depuis le centre
+        self.x = self.centre_x - self.size // 2
+        self.y = self.centre_y - self.size // 2
+        self.rect.topleft = (int(self.centre_x - self.hit_size // 2), int(self.centre_y - self.hit_size // 2))
+
+    def start_explosion(self):
+        self.state = "explosion"
+        self.frame_index = 0
+        self.last_frame_time = pygame.time.get_ticks()
+        self.collidable = False
+
+    def get_frame(self):
+        if self.state == "creation":
+            idx = min(self.frame_index, len(self.creation_frames) - 1)
+            return self.creation_frames[idx]
+        elif self.state == "trail":
+            return self.trail_frames[self.frame_index % len(self.trail_frames)]
+        else:
+            idx = min(self.frame_index, len(self.explosion_frames) - 1)
+            return self.explosion_frames[idx]
+
+    def dessiner(self, ecran):
+        frame = self.get_frame()
+        if self.direction == -1:
+            key = (self.state, self.frame_index)
+            f = self.cache_retourne.get(key)
+            if f is None:
+                f = pygame.transform.flip(frame, True, False)
+                self.cache_retourne[key] = f
+            frame = f
+        draw_y = int(self.y)
+        if self.state == "creation":
+            draw_y += self.size // 2
+        elif self.state == "trail":
+            draw_y += 37
+        ecran.blit(frame, (int(self.x), draw_y))
+
+
+class CristalFeu:
+    """Cristal de feu qui peut être ramassé par le joueur pour lui donner une capacité de tir ou la restaurer."""
+    def __init__(self, x, y):
+        self.x = x
+        self.y = y
+        self.alive = True
+
+        self.taille_affichage = int(40)  # 75px
+
+        chemin = resource_path(os.path.join("img", "cristal_feu.png"))
+        spritesheet = pygame.image.load(chemin).convert()
+        spritesheet.set_colorkey((0, 0, 0))
+
+        # Coordonnées de chaque frame dans la spritesheet
+        crop_y = 151
+        crop_h = 88
+        segments = [
+            (22,  113),
+            (125, 198),
+            (215, 265),
+            (287, 306),
+            (328, 388),
+            (402, 473),
+            (489, 574),
+        ]
+
+        self.nb_frames = len(segments)
+        self.frames = []
+        cible = self.taille_affichage
+        for (x_debut, x_fin) in segments:
+            largeur = x_fin - x_debut + 1
+            sprite_source = spritesheet.subsurface(pygame.Rect(x_debut, crop_y, largeur, crop_h))
+            rapport = min(cible / largeur, cible / crop_h)
+            nouvelle_largeur = max(1, int(largeur * rapport))
+            nouvelle_hauteur = max(1, int(crop_h * rapport))
+            echelle = pygame.transform.scale(sprite_source, (nouvelle_largeur, nouvelle_hauteur))
+            # Centrer dans un carré transparent
+            res = pygame.Surface((cible, cible), pygame.SRCALPHA)
+            res.fill((0, 0, 0, 0))
+            decal_x = (cible - nouvelle_largeur) // 2
+            decal_y = (cible - nouvelle_hauteur) // 2
+            res.blit(echelle, (decal_x, decal_y))
+            self.frames.append(res)
+
+        self.frame_index = 0
+        self.last_anim_time = pygame.time.get_ticks()
+        self.anim_delay = 80
+
+        # Pré calculer les masques pour chaque frame
+        self.masks = []
+        for frame in self.frames:
+            mask = pygame.mask.from_surface(frame)
+            self.masks.append(mask)
+        # position de dessin
+        self.current_draw_x = int(self.x - self.taille_affichage // 2)
+        self.current_draw_y = int(self.y - self.taille_affichage // 2)
+        # masque et rect basés sur la frame de base
+        self.current_mask = self.masks[self.frame_index]
+        self.rect = pygame.Rect(self.current_draw_x, self.current_draw_y, self.taille_affichage, self.taille_affichage)
+
+    def update(self):
+        now = pygame.time.get_ticks()
+        if now - self.last_anim_time >= self.anim_delay:
+            self.last_anim_time = now
+            self.frame_index = (self.frame_index + 1) % self.nb_frames
+        # Mettre à jour la position de dessin et le masque
+        draw_x = int(self.x - self.taille_affichage // 2)
+        draw_y = int(self.y - self.taille_affichage // 2)
+        self.current_draw_x = draw_x
+        self.current_draw_y = draw_y
+        self.current_mask = self.masks[self.frame_index]
+        self.rect.topleft = (draw_x, draw_y)
+        self.rect.size = (self.taille_affichage, self.taille_affichage)
+
+    def dessiner(self, ecran):
+        frame = self.frames[self.frame_index]
+        draw_x = int(self.x - self.taille_affichage // 2)
+        draw_y = int(self.y - self.taille_affichage // 2)
+        ecran.blit(frame, (draw_x, draw_y))
 
 
 def mettre_a_jour_groupes(elems):
