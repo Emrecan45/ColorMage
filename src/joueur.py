@@ -150,8 +150,21 @@ class Joueur:
         self.couleur_cible = None
         self.couleur_precedente = None
 
-        # Caches pour les images retournées et les masques de collision
-        self.cache_retournes = {}
+        # Précalcul des images retournées pour les animations de marche/saut et de tir
+        self.images_retournees = {}
+        self.tir_frames_retournes = {}
+        for couleur in couleurs:
+            liste_images_flip = []
+            for f in self.images[couleur]:
+                liste_images_flip.append(pygame.transform.flip(f, True, False))
+            self.images_retournees[couleur] = liste_images_flip
+
+            liste_tir_flip = []
+            for f in self.tir_frames[couleur]:
+                liste_tir_flip.append(pygame.transform.flip(f, True, False))
+            self.tir_frames_retournes[couleur] = liste_tir_flip
+
+        # Cache pour le changement de couleur
         self.cache_masques = {}
         self.combo_cache = {}
 
@@ -558,18 +571,12 @@ class Joueur:
                         self.combo_cache[key] = base
                     img = pygame.transform.flip(base, True, False)
                     self.combo_cache[keyf] = img
+            elif is_tir_image and self.couleur in self.tir_frames_retournes:
+                idx = min(self.tir_frame, len(self.tir_frames_retournes[self.couleur]) - 1)
+                img = self.tir_frames_retournes[self.couleur][idx]
             else:
-                if is_tir_image:
-                    cle_index = self.tir_frame
-                elif self.en_changement_couleur:
-                    cle_index = 0
-                else:
-                    cle_index = self.frame_index
-                cle = (self.couleur, cle_index, 'flip')
-                img = self.cache_retournes.get(cle)
-                if img is None:
-                    img = pygame.transform.flip(image_res, True, False)
-                    self.cache_retournes[cle] = img
+                idx = min(self.frame_index, len(self.images_retournees[self.couleur]) - 1)
+                img = self.images_retournees[self.couleur][idx]
         else:
             img = image_res
 
@@ -607,19 +614,17 @@ class Joueur:
                         self.combo_cache[key] = img
                     return img
             return self.images[self.couleur][0]
-        image_res = self.images[self.couleur][self.frame_index]
         if self.direction == -1:
-            if self.en_tir and self.couleur in self.tir_frames:
-                cle_index = self.tir_frame
+            if self.en_tir and self.couleur in self.tir_frames_retournes:
+                idx = min(self.tir_frame, len(self.tir_frames_retournes[self.couleur]) - 1)
+                return self.tir_frames_retournes[self.couleur][idx]
             else:
-                cle_index = self.frame_index
-            cle = (self.couleur, cle_index, 'flip')
-            img = self.cache_retournes.get(cle)
-            if img is None:
-                img = pygame.transform.flip(image_res, True, False)
-                self.cache_retournes[cle] = img
-            return img
-        return image_res
+                idx = min(self.frame_index, len(self.images_retournees[self.couleur]) - 1)
+                return self.images_retournees[self.couleur][idx]
+        if self.en_tir and self.couleur in self.tir_frames:
+            idx = min(self.tir_frame, len(self.tir_frames[self.couleur]) - 1)
+            return self.tir_frames[self.couleur][idx]
+        return self.images[self.couleur][self.frame_index]
 
     def obtenir_masque_courant(self):
         """Retourne le masque pré calculé correspondant à l'image courante."""
