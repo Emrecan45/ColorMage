@@ -622,7 +622,7 @@ class Slime:
             self.last_anim_time = now
             self.frame_index = (self.frame_index + 1) % len(self.sequence_complete)
 
-        self.rect.topleft = (int(self.x), int(self.y))
+        self.rect.topleft = (int(self.x), int(self.y) + 20)
 
     def recevoir_degats(self):
         """Appelée quand le joueur saute sur le slime. Retourne True si le slime meurt."""
