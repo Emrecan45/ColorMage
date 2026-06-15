@@ -88,6 +88,10 @@ class Popup:
         ratio_cristal = 95 / cristal_frame.get_height()
         self.img_cristal = pygame.transform.scale(cristal_frame, (max(1, int(cristal_frame.get_width() * ratio_cristal)), 95))
 
+        # Icône de pièce
+        piece_sheet = pygame.image.load(resource_path(os.path.join("assets/img/items", "piece.png"))).convert_alpha()
+        self.img_piece = pygame.transform.scale(piece_sheet.subsurface(pygame.Rect(0, 0, 16, 16)), (32, 32))
+
 
         # Taille illustrations grimoire
         taille_illu = 70
@@ -736,7 +740,7 @@ class Popup:
             pygame.display.flip()
             pygame.time.Clock().tick(60)
 
-    def dessiner_popup_victoire(self, ecran, niveau_actuel, temps_ms=0, est_record=False):
+    def dessiner_popup_victoire(self, ecran, niveau_actuel, temps_ms=0, est_record=False, pieces_gagnees=0):
         """Dessine le popup de victoire avec le temps et indication de record
 
         Args:
@@ -744,6 +748,7 @@ class Popup:
             niveau_actuel: Numéro du niveau
             temps_ms: Temps réalisé en millisecondes
             est_record: True si c'est un nouveau record
+            pieces_gagnees: Nombre de pièces collectées pendant ce niveau
         """
         self.maj_volume()
         
@@ -772,14 +777,32 @@ class Popup:
         niveau_y = self.popup_rect.y + 80
         ecran.blit(niveau_surface, (niveau_x, niveau_y))
         
-        #afficher le temps
+        # Afficher le temps et les pièces gagnées
+        font_temps = pygame.font.Font(None, 40)
+        temps_y = self.popup_rect.y + 120
+
+        temps_surface = None
         if temps_ms > 0:
             temps_texte = "Temps : " + Chronometre.formater_temps(self, temps_ms)
-            font_temps = pygame.font.Font(None, 40)
             temps_surface = font_temps.render(temps_texte, True, (0, 0, 0))
-            temps_x = self.popup_rect.x + (self.popup_rect.width - temps_surface.get_width()) // 2
-            temps_y = self.popup_rect.y + 120
-            ecran.blit(temps_surface, (temps_x, temps_y))
+
+        # compteur de pièces
+        pieces_surface = font_temps.render(str(pieces_gagnees), True, (0, 0, 0))
+
+        espace = 30
+        largeur_totale = 0
+        if temps_surface:
+            largeur_totale += temps_surface.get_width() + espace
+        largeur_totale += self.img_piece.get_width() + 6 + pieces_surface.get_width()
+
+        x = self.popup_rect.x + (self.popup_rect.width - largeur_totale) // 2
+        if temps_surface:
+            ecran.blit(temps_surface, (x, temps_y))
+            x += temps_surface.get_width() + espace
+        icone_y = temps_y + (pieces_surface.get_height() - self.img_piece.get_height()) // 2
+        ecran.blit(self.img_piece, (x, icone_y))
+        x += self.img_piece.get_width() + 6
+        ecran.blit(pieces_surface, (x, temps_y))
         
         # Afficher "Nouveau record !" si c'est le cas
         if est_record:

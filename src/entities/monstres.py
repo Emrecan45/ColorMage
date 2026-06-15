@@ -555,7 +555,16 @@ class Slime:
         self.douleur_duree = 350  # ms
 
         # Hitbox
-        self.rect = pygame.Rect(self.x, self.y, self.taille_affichage, self.taille_affichage)
+        echelle_hb = self.taille_affichage / 24.0
+        self.marge_x_hitbox = round(5 * echelle_hb)
+        self.decalage_y_hitbox = 20
+        largeur_hitbox = round(14 * echelle_hb)
+        self.rect = pygame.Rect(
+            int(self.x) + self.marge_x_hitbox,
+            int(self.y) + self.decalage_y_hitbox,
+            largeur_hitbox,
+            self.taille_affichage - self.decalage_y_hitbox,
+        )
 
     def update(self):
         now = temps.obtenir_temps()
@@ -570,7 +579,7 @@ class Slime:
             if now - self.douleur_timer >= self.douleur_duree:
                 self.en_douleur = False
             else:
-                self.rect.topleft = (int(self.x), int(self.y) + 20)
+                self.rect.topleft = (int(self.x) + self.marge_x_hitbox, int(self.y) + self.decalage_y_hitbox)
                 return
 
         # Animation continue tant que le slime n'est pas mort
@@ -578,7 +587,7 @@ class Slime:
             self.last_anim_time = now
             self.frame_index = (self.frame_index + 1) % len(self.sequence_complete)
 
-        self.rect.topleft = (int(self.x), int(self.y) + 20)
+        self.rect.topleft = (int(self.x) + self.marge_x_hitbox, int(self.y) + self.decalage_y_hitbox)
 
     def recevoir_degats(self):
         """Appelée quand le joueur saute sur le slime. Retourne True si le slime meurt."""

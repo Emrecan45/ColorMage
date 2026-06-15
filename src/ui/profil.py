@@ -409,6 +409,10 @@ class Profil:
         """Recharge les données du profil depuis la config"""
         self.gestionnaire_config.config = self.gestionnaire_config.charger_config()
         self.pseudo = self.gestionnaire_config.obtenir_pseudo()
+        
+        if "avatar_profil" in self.gestionnaire_config.config:
+            self.avatar_actuel = self.gestionnaire_config.config["avatar_profil"]
+            
         if not self.avatar_est_debloque(self.avatar_actuel):
             for idx in range(len(self.avatars)):
                 if self.avatar_est_debloque(idx):

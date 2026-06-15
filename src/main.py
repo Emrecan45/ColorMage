@@ -75,7 +75,9 @@ class Game:
         
         # Pièces collectées pendant le niveau en cours (sauvegardées seulement à la victoire)
         self.pieces_en_cours = []
-
+        # Nombre de pièces gagnées au dernier niveau
+        self.pieces_gagnees_niveau = 0
+        
         # Animation d'explosion à la mort
         self.charger_frames_explosion()
         self.explosion_actif = False
@@ -820,6 +822,7 @@ class Game:
                 self.joueur.son_victoire.play()
                 
                 # Sauvegarder les pièces collectées pendant ce niveau
+                self.pieces_gagnees_niveau = len(self.pieces_en_cours)
                 for pos in self.pieces_en_cours:
                     self.gestionnaire_config.sauvegarder_piece_collectee(self.niveau_actuel, pos[0], pos[1])
                 self.pieces_en_cours = []
@@ -1306,7 +1309,7 @@ class Game:
             # Afficher le popup s'il y en a un
             if self.popup_actif == "victoire":
                 temps_final = self.chrono.obtenir_temps()
-                self.popup.dessiner_popup_victoire(self.ecran, self.niveau_actuel, temps_final, self.est_record)
+                self.popup.dessiner_popup_victoire(self.ecran, self.niveau_actuel, temps_final, self.est_record, self.pieces_gagnees_niveau)
             elif self.popup_actif == "defaite":
                 self.popup.dessiner_popup_defaite(self.ecran, self.niveau_actuel)
 
