@@ -234,7 +234,7 @@ class Popup:
                     "- Saute par-dessus ou contourne-le !"
                 ]
             },
-            8: {
+            9: {
                 "titre": "Démon volant",
                 "images": [self.img_demon],
                 "lore": "Une créature des abysses qui plane sans répit, le regard rivé sur sa proie.",
