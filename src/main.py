@@ -54,6 +54,9 @@ class Game:
         self.boss_annonce_time = 0
 
 
+        # Musique de boss
+        self.musique_boss_active = False
+
         # Séquence d'enrage (gèle le jeu, animation de grossissement + texte)
         self.enrage_actif = False
         self.enrage_start = 0
@@ -93,6 +96,7 @@ class Game:
         
         # Sons pour slimes et pièces
         self.son_hurt = pygame.mixer.Sound(resource_path(os.path.join("assets/audio", "hurt.wav")))
+        self.son_slime_saut = pygame.mixer.Sound(resource_path(os.path.join("assets/audio", "slime_saut.wav")))
         self.son_piece = pygame.mixer.Sound(resource_path(os.path.join("assets/audio", "piece.wav")))
 
         # Son d'explosion
@@ -101,9 +105,13 @@ class Game:
         # Sons de pause/unpause
         self.son_pause = pygame.mixer.Sound(resource_path(os.path.join("assets/audio", "pause.wav")))
         self.son_unpause = pygame.mixer.Sound(resource_path(os.path.join("assets/audio", "unpause.wav")))
+
+        # Son d'enragement du boss
+        chemin_enrage = resource_path(os.path.join("assets/audio", "pyrolord_enrage.wav"))
+        self.son_enrage = pygame.mixer.Sound(chemin_enrage)
         
         # Alerte
-        self.alerte = Alerte()
+        self.alerte = Alerte(self.gestionnaire_config)
 
         # Vérifier si la sauvegarde a été corrompue (modifiée à la main)
         if self.gestionnaire_config.sauvegarde_corrompue:
@@ -114,10 +122,12 @@ class Game:
         volumes = self.gestionnaire_config.obtenir_volumes()
         vol_effets = volumes.get("effets", 50) / 100
         self.son_hurt.set_volume(vol_effets)
+        self.son_slime_saut.set_volume(vol_effets)
         self.son_piece.set_volume(vol_effets)
         self.son_pause.set_volume(vol_effets)
         self.son_unpause.set_volume(vol_effets)
         self.son_explosion.set_volume(vol_effets)
+        self.son_enrage.set_volume(vol_effets)
 
     def preparer_ecran_chargement(self):
         """Prépare les ressources de l'écran de chargement."""
@@ -305,9 +315,13 @@ class Game:
                     break
             if demon_touche is not None:
                 mort = demon_touche.recevoir_degats()
-                pf.start_explosion()
+                pf.alive = False
                 if mort:
                     self.son_explosion.play()
+                    self.niveau.appliquer_drop(demon_touche)
+                else:
+                    # le démon encaisse un coup sans mourir
+                    self.son_hurt.play()
                 continue
             cible = None
             liste_cible = None
@@ -327,19 +341,21 @@ class Game:
                         break
             if cible is not None:
                 cx, cy = cible.rect.center
+                self.niveau.appliquer_drop(cible)
                 liste_cible.remove(cible)
                 self.ajouter_explosion_mob(cx, cy)
-                pf.start_explosion()
-
+                pf.alive = False
     def maj_volume_effets(self):
         """Met à jour le volume des effets sonores depuis la config"""
         volumes = self.gestionnaire_config.volumes
         vol_effets = volumes.get("effets", 50) / 100
         self.son_hurt.set_volume(vol_effets)
+        self.son_slime_saut.set_volume(vol_effets)
         self.son_piece.set_volume(vol_effets)
         self.son_pause.set_volume(vol_effets)
         self.son_unpause.set_volume(vol_effets)
         self.son_explosion.set_volume(vol_effets)
+        self.son_enrage.set_volume(vol_effets)
         self.niveau.maj_volume_sons()
         self.joueur.maj_volume_effets()
         self.menu.maj_volume()
@@ -347,6 +363,7 @@ class Game:
         self.profil.maj_volume()
         self.pause.maj_volume()
         self.popup.maj_volume()
+        self.alerte.maj_volume()
 
     def basculer_plein_ecran(self):
         """Bascule entre plein écran et fenêtré"""
@@ -400,6 +417,7 @@ class Game:
                         # En jeu, Échap met en pause
                         self.maj_volume_effets()
                         self.son_pause.play()
+                        self.niveau.regler_ambiances(False)
                         self.chrono.pause()
                         temps.set_pause(True)
                         action = self.pause.afficher_pause(self.ecran, self.joueur, self.niveau, self.niveau_actuel, self.chrono, draw_background=self.dessiner_fond_niveau, alerte=self.alerte)
@@ -508,7 +526,7 @@ class Game:
                             self.gestionnaire_config.reinitialiser_sauvegarde()
                             
                             # Recharger le menu des niveaux avec la nouvelle config
-                            self.menu_niveaux = MenuNiveaux()
+                            self.menu_niveaux = MenuNiveaux(self.gestionnaire_config)
                             
                             # Recharger le profil (avec l'avatar par défaut)
                             self.profil.recharger_donnees()
@@ -558,6 +576,7 @@ class Game:
                         # Mettre en pause le chronomètre
                         self.maj_volume_effets()
                         self.son_pause.play()
+                        self.niveau.regler_ambiances(False)
                         self.chrono.pause()
                         temps.set_pause(True)
                         action = self.pause.afficher_pause(self.ecran, self.joueur, self.niveau, self.niveau_actuel, self.chrono, draw_background=self.dessiner_fond_niveau, alerte=self.alerte)
@@ -598,6 +617,7 @@ class Game:
                             # Mettre en pause le chronomètre
                             self.maj_volume_effets()
                             self.son_pause.play()
+                            self.niveau.regler_ambiances(False)
                             self.chrono.pause()
                             temps.set_pause(True)
                             action = self.pause.afficher_pause(self.ecran, self.joueur, self.niveau, self.niveau_actuel, self.chrono, draw_background=self.dessiner_fond_niveau, alerte=self.alerte)
@@ -640,6 +660,8 @@ class Game:
         self.boss_annonce = None
         self.enrage_actif = False
         self.enrage_boss = None
+        self.musique_boss_active = False
+        pygame.mixer.music.set_volume(self.volume_musique_config())
         self.explosions_mob = []
         self.niveau.reset(numero, self.ecran)
         self.joueur.maj_controles()
@@ -774,11 +796,142 @@ class Game:
             self.menu_niveaux.preparer_retour_niveau(self.niveau_actuel)
             self.etat = "selection"
     
+    def nom_planete_actuelle(self):
+        """Nom de la planète du niveau courant."""
+        planetes = ["terra", "pyros", "aquaris", "nebula", "cryon", "solara", "vortex", "obscura"]
+        idx = (self.niveau_actuel - 1) // 5
+        if 0 <= idx < len(planetes):
+            return planetes[idx]
+        return "terra"
+
+    def chemin_musique_planete(self):
+        return resource_path(os.path.join("assets/audio", self.nom_planete_actuelle() + ".ogg"))
+
+    def chemin_musique_boss(self):
+        return resource_path(os.path.join("assets/audio", self.nom_planete_actuelle() + "_boss.ogg"))
+
+    def volume_musique_config(self):
+        """Volume musique réglé dans les paramètres."""
+        return self.gestionnaire_config.obtenir_volumes().get("musique", 50) / 100
+
+    def jouer_musique(self, chemin):
+        """Charge et joue une musique en boucle. Ne fait rien si le fichier est absent."""
+        if not os.path.exists(chemin):
+            return False
+        pygame.mixer.music.stop()
+        pygame.mixer.music.load(chemin)
+        pygame.mixer.music.set_volume(self.volume_musique_config())
+        pygame.mixer.music.play(-1)
+        return True
+
+    def maj_musique_boss(self):
+        """Bascule sur la musique de boss quand le Pyrolord se transforme et restaure la musique de planète à la fin du combat. Reste inerte tant que le fichier."""
+        boss = self.niveau.boss
+        if not os.path.exists(self.chemin_musique_boss()):
+            # pas de musique de boss
+            if boss is not None:
+                boss.consommer_event_couper_musique()
+            return
+
+        # La musique 
+        if boss is not None:
+            boss.consommer_event_couper_musique()
+
+        # lance la musique de boss dès la fin de la transformation
+        veut_boss = (self.etat == "jeu" and boss is not None and boss.alive
+                     and not boss.finished and boss.doit_jouer_musique_boss())
+        if veut_boss and not self.musique_boss_active:
+            if self.jouer_musique(self.chemin_musique_boss()):
+                self.musique_boss_active = True
+        elif not veut_boss and self.musique_boss_active:
+            self.jouer_musique(self.chemin_musique_planete())
+            self.musique_boss_active = False
+
+    def maj_ambiances(self):
+        """Active les boucles d'ambiance."""
+        en_jeu = (self.etat == "jeu")
+        actif = (en_jeu and self.popup_actif is None and not self.portail_sortie_actif and not self.explosion_actif)
+        # Pendant les popups/explosions, le monde continue (mort/victoire) :
+        # le démon garde son ambiance de vol et les sons du boss finissent.
+        self.niveau.regler_ambiances(actif, feu_actif=en_jeu, demon_actif=en_jeu, boss_actif=en_jeu)
+
+    def maj_passif(self):
+        """Fait tourner le monde pendant la mort/victoire du joueur.
+
+        Les projectiles continuent d'avancer, les animations et les sons des
+        ennemis se terminent, mais ceux-ci n'agissent plus et ne se déplacent
+        plus (cerveau désactivé). Aucune collision n'affecte le joueur.
+        """
+        couleur = self.joueur.couleur
+
+        # Démons : animation/tir en cours continuent, pas de déplacement ni IA
+        for demon in list(self.niveau.demons):
+            proj = demon.update(self.joueur, self.niveau, passif=True)
+            if proj is not None:
+                self.niveau.projectiles_demon.append(proj)
+                self.niveau.son_demon_tir.play()
+            if not demon.alive:
+                self.niveau.demons.remove(demon)
+
+        # Boss : finit son animation en cours puis reste en idle
+        if self.niveau.boss is not None:
+            nouveaux = self.niveau.boss.update(self.joueur, passif=True)
+            if nouveaux:
+                self.niveau.projectiles_boss.extend(nouveaux)
+            if self.niveau.boss.finished:
+                self.niveau.boss = None
+
+        # Projectiles du boss
+        for bp in list(self.niveau.projectiles_boss):
+            bp.update()
+            if not bp.alive:
+                self.niveau.projectiles_boss.remove(bp)
+                continue
+            if bp.collidable and self.niveau.collision_projectile_boss(bp, couleur):
+                bp.start_explosion()
+
+        # Projectiles des démons
+        for dp in list(self.niveau.projectiles_demon):
+            dp.update()
+            if not dp.alive:
+                self.niveau.projectiles_demon.remove(dp)
+                continue
+            if dp.state == "explosion":
+                continue
+            if self.niveau.collision_projectile_demon(dp, couleur):
+                dp.start_explosion()
+
+        # Tirs du joueur continuent d'infliger des dégâts même mort
+        for pf in list(self.niveau.projectiles_joueur):
+            if pf.state == "trail" and pf.collidable:
+                if self.niveau.collision_projectile_mur(pf, couleur):
+                    pf.start_explosion()
+        self.gerer_tirs_feu_vs_mobs()
+        self.maj_explosions_mob()
+
+        boss = self.niveau.boss
+        if boss is not None:
+            if boss.est_slime():
+                if boss.state == "slime":
+                    for pf in list(self.niveau.projectiles_joueur):
+                        if pf.state == "trail" and pf.collidable and boss.touche_par_rect(pf.rect):
+                            pf.start_explosion()
+                            self.son_slime_saut.play()
+                            boss.stomp()
+                            break
+            elif boss.state != "dying" and boss.peut_etre_blesse():
+                for pf in list(self.niveau.projectiles_joueur):
+                    if pf.state == "trail" and pf.collidable and boss.touche_par_rect(pf.rect):
+                        pf.start_explosion()
+                        boss.encaisser(1)
+
     def maj(self):
         """Met à jour la logique du jeu"""
         # Incrémenter le timer global
         self.temps_global += 1
-        
+        self.maj_ambiances()
+        self.maj_musique_boss()
+
         # Vérifier si un niveau doit être lancé depuis le menu
         if self.etat == "selection":
             niveau = self.menu_niveaux.verifier_niveau_a_lancer()
@@ -788,8 +941,10 @@ class Game:
             self.menu_niveaux.maj()
             return
 
-        # Ne pas mettre à jour si un popup est actif
+        # Popup actif (mort/victoire) : le joueur ne joue plus, mais le monde
+        # continue (projectiles, animations, sons) avec les ennemis en passif.
         if self.popup_actif is not None:
+            self.maj_passif()
             return None
         
         # Animation de portail d'entrée
@@ -821,10 +976,9 @@ class Game:
                 # Jouer le son de victoire maintenant
                 self.joueur.son_victoire.play()
                 
-                # Sauvegarder les pièces collectées pendant ce niveau
+                # Créditer les pièces ramassées pendant ce niveau à la victoire)
                 self.pieces_gagnees_niveau = len(self.pieces_en_cours)
-                for pos in self.pieces_en_cours:
-                    self.gestionnaire_config.sauvegarder_piece_collectee(self.niveau_actuel, pos[0], pos[1])
+                self.gestionnaire_config.ajouter_pieces_gagnees(self.pieces_gagnees_niveau)
                 self.pieces_en_cours = []
                 
                 # Sauvegarder le temps et vérifier si c'est un record
@@ -857,6 +1011,8 @@ class Game:
                     self.joueur.son_mort.play()
                     self.chrono.arreter()
                     self.est_record = False
+            # Le monde continue pendant l'explosion (projectiles, animations, sons)
+            self.maj_passif()
             return
 
         # Séquence d'enrage : gèle le jeu pendant l'animation de grossissement + le texte
@@ -1026,7 +1182,7 @@ class Game:
                 joueur_descend = self.joueur.vitesse_y > 0
                 if joueur_descend and pieds_joueur <= milieu_slime + 15:
                     # Le joueur saute sur le slime
-                    self.son_hurt.play()
+                    self.son_slime_saut.play()
                     slime.recevoir_degats()
                     # Rebond du joueur
                     self.joueur.vitesse_y = -17
@@ -1043,8 +1199,11 @@ class Game:
                     self.son_piece.play()
                     piece.alive = False
                     # Stocker temporairement la piece collectee
-                    cx = int(piece.x // TAILLE_CELLULE)
-                    cy = int(piece.y // TAILLE_CELLULE)
+                    cx = piece.cell_x
+                    cy = piece.cell_y
+                    if cx is None or cy is None:
+                        cx = int(piece.x // TAILLE_CELLULE)
+                        cy = int(piece.y // TAILLE_CELLULE)
                     self.pieces_en_cours.append([cx, cy])
 
 
@@ -1118,7 +1277,10 @@ class Game:
 
             # Démons volants
             for demon in list(self.niveau.demons):
-                demon.update(self.joueur, self.niveau)
+                projectile_demon = demon.update(self.joueur, self.niveau)
+                if projectile_demon is not None:
+                    self.niveau.projectiles_demon.append(projectile_demon)
+                    self.niveau.son_demon_tir.play()
                 if not demon.alive:
                     self.niveau.demons.remove(demon)
                     continue
@@ -1144,7 +1306,6 @@ class Game:
                     self.niveau.projectiles_boss.extend(nouveaux)
                 if boss.finished:
                     # mort : la porte de sortie apparaît.
-                    self.son_explosion.play()
                     if self.niveau.porte_boss is not None:
                         px, py = self.niveau.porte_boss
                     else:
@@ -1155,27 +1316,18 @@ class Game:
                         self.niveau.grille[py][px] = "porte"
                         
                     # Éjection des pièces de boss
-                    import random
                     from entities.objets import Piece
-                    
-                    pieces_collectees = self.gestionnaire_config.obtenir_pieces_collectees(self.niveau_actuel)
+
                     y_sol = boss.hitbox.bottom
-                    
+
                     for i in range(4):
-                        deja_collectee = False
-                        for p in pieces_collectees:
-                            if p["x"] == "boss" and p["y"] == i:
-                                deja_collectee = True
-                                break
-                                
-                        if not deja_collectee:
-                            piece = Piece(boss.hitbox.centerx, boss.hitbox.centery)
-                            piece.cell_x = "boss"
-                            piece.cell_y = i
-                            piece.y_sol = y_sol
-                            piece.v_x = random.uniform(-4, 4)
-                            piece.v_y = random.uniform(-8, -4)
-                            self.niveau.pieces.append(piece)
+                        piece = Piece(boss.hitbox.centerx, boss.hitbox.centery)
+                        piece.cell_x = "boss"
+                        piece.cell_y = i
+                        piece.y_sol = y_sol
+                        piece.v_x = random.uniform(-4, 4)
+                        piece.v_y = random.uniform(-8, -4)
+                        self.niveau.pieces.append(piece)
 
                 elif boss.est_slime():
                     # Forme slime
@@ -1183,14 +1335,14 @@ class Game:
                         for pf in list(self.niveau.projectiles_joueur):
                             if pf.state == "trail" and pf.collidable and boss.touche_par_rect(pf.rect):
                                 pf.start_explosion()
-                                self.son_hurt.play()
+                                self.son_slime_saut.play()
                                 boss.stomp()
                                 break
                     if boss.state == "slime" and player_hitbox.colliderect(boss.hitbox):
                         pieds = player_hitbox.bottom
                         milieu = boss.hitbox.top + boss.hitbox.height // 2
                         if self.joueur.vitesse_y > 0 and pieds <= milieu + 20:
-                            self.son_hurt.play()
+                            self.son_slime_saut.play()
                             boss.stomp()
                             self.joueur.vitesse_y = -17
                             self.joueur.au_sol = False
@@ -1215,6 +1367,9 @@ class Game:
                     self.enrage_start = temps.obtenir_temps()
                     self.enrage_boss = boss
                     boss.render_scale = 1.0
+                    self.son_enrage.play()
+                    # baisse la musique le temps de l'enragement pour entendre le bruitage
+                    pygame.mixer.music.set_volume(self.volume_musique_config() * 0.3)
 
             # Projectiles du boss
             for bp in list(self.niveau.projectiles_boss):
@@ -1231,6 +1386,27 @@ class Game:
                 if bp.rect.colliderect(player_hitbox):
                     bp.start_explosion()
                     resultat = "mort"
+
+            # Projectiles des démons
+            for dp in list(self.niveau.projectiles_demon):
+                dp.update()
+                if not dp.alive:
+                    self.niveau.projectiles_demon.remove(dp)
+                    continue
+                if dp.state == "explosion":
+                    continue
+                # explose sur un obstacle (mur / plateforme)
+                if self.niveau.collision_projectile_demon(dp, self.joueur.couleur):
+                    dp.start_explosion()
+                    continue
+                # touche le joueur : le tue
+                proj_mask = dp.masque_courant()
+                px, py = dp.offset_dessin()
+                if player_mask is not None:
+                    offset = (int(self.joueur.x - px), int(self.joueur.y - py))
+                    if proj_mask.overlap(player_mask, offset) is not None:
+                        dp.alive = False
+                        resultat = "mort"
 
             # Cas de téléportation (quand on touche le portail jaune)
             if resultat == "teleportation":
@@ -1422,6 +1598,7 @@ class Game:
         if boss is None or boss is not self.niveau.boss:
             self.enrage_actif = False
             self.enrage_boss = None
+            pygame.mixer.music.set_volume(self.volume_musique_config())
             return
         now = temps.obtenir_temps()
         elapsed = now - self.enrage_start
@@ -1436,6 +1613,8 @@ class Game:
                 boss.grandir(boss.enrage_scale)
             self.enrage_actif = False
             self.enrage_boss = None
+            # restaure le volume de la musique à la fin de l'enragement
+            pygame.mixer.music.set_volume(self.volume_musique_config())
 
     def dessiner_annonce_boss(self, ecran):
         """Affiche l'annonce de boss (ex: enrage) en grand au centre de l'écran."""

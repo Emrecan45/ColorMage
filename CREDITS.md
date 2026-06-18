@@ -14,6 +14,10 @@ Merci aux créateurs dont les ressources ont rendu ce projet possible.
 | Slimes & pièces | Brackeys | https://brackeysgames.itch.io/brackeys-platformer-bundle |
 | Potions | Ace Studi0s | https://ace-studi0s.itch.io/potion-rpg-assets-5-pack |
 | Effets de fumée / explosion | bdragon1727 | https://bdragon1727.itch.io/free-smoke-fx-pixel-2 |
+| Feu | DevKidd | https://devkidd.itch.io/pixel-fire-asset-pack |
+| Pyrolord | Chierit | https://chierit.itch.io/boss-demon-slime |
+| Boule de feu | MsFrantz | https://msfrantz.itch.io/free-fire-ball-pixel-art |
+| Démon volant | Xzany | https://xzany.itch.io/flying-demon-2d-pixel-art |
 
 ### Images générées par IA
 
@@ -29,6 +33,8 @@ Les effets sonores et musiques utilisés dans le jeu proviennent des plateformes
 - **Mixkit** - https://mixkit.co
 - **Uppbeat** - https://uppbeat.io
 - **itch.io** - https://itch.io
+- **Brackeys Platformer Bundle** - https://brackeysgames.itch.io/brackeys-platformer-bundle
+- **ElevenLabs** - https://elevenlabs.io/
 
 ---
 

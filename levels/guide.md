@@ -21,11 +21,11 @@
 - cristal_feu : [x, y]
 
 ### Ennemis :
-- sorcier : [x, y, direction, portée de tir]
-- squelette : [x, y, direction, portée de marche]
-- slime_"couleur" : [x, y]
-- demon : [x, y]
+- sorcier : [x, y, direction, portée de tir, "drop"]
+- squelette : [x, y, direction, portée de marche, "drop"]
+- slime_"couleur" : [x, y, "drop"]
+- demon : [x, y, "drop"]
 
 ### Boss :
 - pyrolord : [x, y] ou [x, y, pv]
-- porte_boss : [x, y]
+- porte_boss : [x, y]  (optionnel, sans ca, la porte apparaît automatiquement à la position du boss à sa mort)

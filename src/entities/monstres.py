@@ -6,6 +6,7 @@ import random
 
 from core.config import TAILLE_CELLULE, resource_path, VITESSE_DEPLACEMENT, LARGEUR_ECRAN, HAUTEUR_ECRAN
 from core.assets import charger_image
+from entities.projectiles import ProjectileDemon
 
 
 cache_projectile = {}
@@ -278,6 +279,8 @@ class Squelette:
     def __init__(self, x, y, direction=-1, walk_blocks=3):
         self.x = x
         self.y = y
+        self.visual_x = self.x
+        self.visual_y = self.y
         self.direction = direction
         self.alive = True
 
@@ -656,11 +659,12 @@ def construire_assets_demon(width, height):
 
 
 class Demon:
-    """Démon volant. Toutes les 5 secondes, fonce sur le joueur. 2 PV.
+    """Démon volant. Toutes les 3 secondes, fonce ou tire sur le joueur. 3 PV.
     """
 
-    PV_MAX = 2
-    INTERVALLE_CHARGE = 5000  # ms entre deux charges
+    PV_MAX = 3
+    INTERVALLE_CHARGE = 3000  # ms entre deux actions
+    TIR_FRAME = 4
 
     def __init__(self, x, y):
         self.width = DEMON_W
@@ -732,6 +736,10 @@ class Demon:
         self.prepare_y0 = 0.0
         self.recoil = TAILLE_CELLULE * 0.5
 
+        # pattern : tir, charge, tir, charge...
+        self.prochaine_action = "tir"
+        self.a_tire = False
+
         # animation de dégât
         self.degat_actif = False
         self.degat_index = 0
@@ -774,6 +782,32 @@ class Demon:
         self.frame_index = 0
         self.last_anim = temps.obtenir_temps()
 
+    def demarrer_tir(self, joueur):
+        """Se tourne vers le joueur et lance l'animation d'attaque (tir)."""
+        cible_x = joueur.x + joueur.largeur / 2
+        cx = self.x + self.width / 2
+        if cible_x < cx:
+            self.direction = -1
+        else:
+            self.direction = 1
+        self.state = "tir"
+        self.frame_index = 0
+        self.a_tire = False
+        self.last_anim = temps.obtenir_temps()
+
+    def creer_projectile(self, joueur):
+        """Crée un projectile dirigé vers le joueur, depuis le centre du démon."""
+        cx = self.x + self.width / 2
+        cy = self.y + self.height / 2
+        cible_x = joueur.x + joueur.largeur / 2
+        cible_y = joueur.y + joueur.hauteur / 2
+        dx = cible_x - cx
+        dy = cible_y - cy
+        dist = max(1.0, math.hypot(dx, dy))
+        vx = dx / dist * ProjectileDemon.VITESSE
+        vy = dy / dist * ProjectileDemon.VITESSE
+        return ProjectileDemon(cx, cy, vx, vy)
+
     def recevoir_degats(self, degats=1):
         """Encaisse un tir. Retourne True si le démon vient de mourir."""
         if self.en_train_de_mourir:
@@ -805,11 +839,16 @@ class Demon:
         self.last_charge = now
         self.frame_index = 0
 
-    def update(self, joueur=None, niveau=None):
+    def update(self, joueur=None, niveau=None, passif=False):
         now = temps.obtenir_temps()
         couleur = None
         if joueur is not None:
             couleur = joueur.couleur
+        projectile = None  # renvoyé à main.py quand le démon tire
+
+        # passif
+        if passif and self.state in ("prepare", "charge"):
+            self.terminer_charge(now)
 
         # Animation de mort
         if self.en_train_de_mourir:
@@ -830,7 +869,7 @@ class Demon:
                 self.degat_actif = False
                 self.degat_index = 0
 
-        if joueur is not None:
+        if not passif and joueur is not None:
             centre_j = joueur.x + joueur.largeur / 2
             if centre_j < (self.x + self.width / 2):
                 self.direction = -1
@@ -843,12 +882,32 @@ class Demon:
             self.y = self.base_y + math.sin(now * 0.004 + self.bob_phase) * self.bob_amplitude
             if self.touche_mur(niveau, couleur):
                 self.y = old_y  # ne pas s'enfoncer dans un mur en flottant
-            if joueur is not None and now - self.last_charge >= self.INTERVALLE_CHARGE:
-                self.state = "prepare"
-                self.prepare_start = now
-                self.prepare_x0 = self.x
-                self.prepare_y0 = self.y
-                self.frame_index = 0
+            if not passif and joueur is not None and now - self.last_charge >= self.INTERVALLE_CHARGE:
+                # alterne tir puis charge
+                if self.prochaine_action == "tir":
+                    self.prochaine_action = "charge"
+                    self.demarrer_tir(joueur)
+                else:
+                    self.prochaine_action = "tir"
+                    self.state = "prepare"
+                    self.prepare_start = now
+                    self.prepare_x0 = self.x
+                    self.prepare_y0 = self.y
+                    self.frame_index = 0
+                    # son de charge
+                    if niveau is not None:
+                        niveau.son_demon_fonce.play()
+
+        elif self.state == "tir":
+            # joue l'animation d'attaque et lâche le projectile à une frame précise
+            if joueur is not None and not self.a_tire and self.frame_index >= self.TIR_FRAME:
+                self.a_tire = True
+                projectile = self.creer_projectile(joueur)
+            if self.frame_index >= len(self.frames_attaque) - 1:
+                self.state = "vol"
+                self.last_charge = now
+                self.base_x = self.x
+                self.base_y = self.y
 
         elif self.state == "prepare":
             # petit recul vers l'arrière pour prévenir le joueur
@@ -865,24 +924,60 @@ class Demon:
                     self.last_charge = now
 
         elif self.state == "charge":
-            old_x, old_y = self.x, self.y
+            depart_x = self.x
+            depart_y = self.y
+
+            # Déplacement horizontal
             self.x += self.charge_vx
+            if self.touche_mur(niveau, couleur):
+                self.x = depart_x
+
+            # Déplacement vertical
             self.y += self.charge_vy
             if self.touche_mur(niveau, couleur):
-                self.x, self.y = old_x, old_y
+                self.y = depart_y
+
+            self.charge_dist += math.hypot(self.charge_vx, self.charge_vy)
+            if self.charge_dist >= self.charge_max_dist:
                 self.terminer_charge(now)
-            else:
-                self.charge_dist += math.hypot(self.charge_vx, self.charge_vy)
-                if self.charge_dist >= self.charge_max_dist:
-                    self.terminer_charge(now)
+
+        # Une plateforme qui rentre dans le démon le pousse
+        if niveau is not None and couleur is not None:
+            niveau.pousser_demon_par_plateformes(self, couleur)
+
+        # Empêcher le démon de sortir de l'écran sur les côtés
+        hitbox_gauche = self.x + self.marge_x
+        hitbox_droite = self.x + self.width - self.marge_x
+        if hitbox_gauche < 0:
+            self.x = -self.marge_x
+        if hitbox_droite > LARGEUR_ECRAN:
+            self.x = LARGEUR_ECRAN - self.width + self.marge_x
 
         # Avancer l'animation courante
+        self.animer()
+
+        self.maj_rect()
+        self.maj_mask_courant()
+        return projectile
+
+    def animer(self):
+        """Avance l'animation courante (sans déplacement)."""
+        now = temps.obtenir_temps()
         if now - self.last_anim >= self.anim_delay:
             self.last_anim = now
             self.frame_index += 1
 
-        self.maj_rect()
-        self.maj_mask_courant()
+    def passer_en_idle(self):
+        """Remet le démon en vol (idle)."""
+        if not self.en_train_de_mourir:
+            self.state = "vol"
+
+    def decaler_ancres(self, dx, dy):
+        """Décale les positions de référence (vol et prepare) quand on pousse le démon."""
+        self.base_x += dx
+        self.base_y += dy
+        self.prepare_x0 += dx
+        self.prepare_y0 += dy
 
     def frame_courante(self):
         """Retourne (frame, paire_de_masques) selon l'état/anim."""
@@ -894,6 +989,9 @@ class Demon:
             return self.frames_degat[idx], self.masks_degat[idx]
         if self.state == "charge":
             idx = self.frame_index % len(self.frames_attaque)
+            return self.frames_attaque[idx], self.masks_attaque[idx]
+        if self.state == "tir":
+            idx = min(self.frame_index, len(self.frames_attaque) - 1)
             return self.frames_attaque[idx], self.masks_attaque[idx]
         if self.state == "prepare":
             idx = self.frame_index % len(self.frames_idle)
