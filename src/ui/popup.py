@@ -169,7 +169,7 @@ class Popup:
                 ]
             },
             2: {
-                "titre": "Blocs Enchantés",
+                "titre": "Blocs enchantés",
                 "images": [self.img_mobile_bleu],
                 "lore": "Certains fragments du monde refusent de rester immobiles, animés par une magie résiduelle.",
                 "lignes": [
@@ -191,7 +191,7 @@ class Popup:
                 ]
             },
             4: {
-                "titre": "Garde d'Os",
+                "titre": "Garde d'os",
                 "images": [self.img_squelette],
                 "lore": "D'anciens gardiens relevés par le néant. Ils patrouillent sans fin, frappant tout intrus.",
                 "lignes": [
@@ -410,7 +410,7 @@ class Popup:
         
         grimoire = self.grimoires[numero_niveau]
         titre = grimoire["titre"]
-        images = self.redimensionner_images_grimoire(grimoire["images"], 70)
+        images = self.redimensionner_images_grimoire(grimoire["images"], 95)
         lignes = grimoire["lignes"]
         
         # Dimensions du popup
@@ -476,12 +476,6 @@ class Popup:
 
             x_depart_images = popup_rect.centerx - total_largeur_images // 2
             y_images = popup_rect.top + 70
-            texte_y_base = y_images + 105
-
-            if numero_niveau == 2:
-                y_images -= 30 # Remonte l'image pour les blocs mobiles
-            if numero_niveau in [3, 4]:
-                y_images -= 15  # Remonte l'image pour le sorcier et le squelette
 
             decalage_x = 0
             for img in images:
@@ -491,7 +485,7 @@ class Popup:
                 decalage_x = decalage_x + img.get_width() + 15
             
             # Lignes de texte
-            texte_y = texte_y_base
+            texte_y = y_images + max_hauteur_img + 20
             
 
             for idx in range(len(lignes)):
@@ -711,13 +705,11 @@ class Popup:
                     lock_y = zone_img_haut + (zone_img_hauteur // 2) - taille_cadenas // 2
                     ecran.blit(cadenas_img, (lock_x, lock_y))
                     haut_zone = zone_img_haut + zone_img_hauteur
-                    haut_bouton = bouton_fermer.top
-                    pos_y_texte = haut_zone + (haut_bouton - haut_zone) // 2 - (texte_cadenas.get_height() // 2)
+                    pos_y_texte = haut_zone + 80
                     ecran.blit(texte_cadenas, (popup_rect.centerx - texte_cadenas.get_width() // 2, pos_y_texte))
                 else:
                     haut_zone = zone_img_haut + zone_img_hauteur
-                    haut_bouton = bouton_fermer.top
-                    pos_y_texte = haut_zone + (haut_bouton - haut_zone) // 2 - (texte_cadenas.get_height() // 2)
+                    pos_y_texte = haut_zone + 80
                     ecran.blit(texte_cadenas, (popup_rect.centerx - texte_cadenas.get_width() // 2, pos_y_texte))
             
             # Navigation

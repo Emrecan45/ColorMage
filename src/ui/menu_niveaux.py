@@ -940,7 +940,7 @@ class MenuNiveaux:
                 titre_pw = self.font_2.render(powerup["nom"], True, (150, 150, 150))
                 ecran.blit(titre_pw, (texte_x, rect.top + 50))
                 niv_req = powerup.get("niveau_associe", "?")
-                txt_niv = self.font_3.render(f"Niveau {niv_req} requis", True, (255, 100, 100))
+                txt_niv = self.font_3.render(f"Niv. {niv_req}", True, (255, 100, 100))
                 ecran.blit(txt_niv, (texte_x, rect.top + 95))
                 continue
 
