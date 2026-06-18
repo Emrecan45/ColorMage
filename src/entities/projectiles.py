@@ -210,9 +210,10 @@ class ProjectileFeu:
     """Projectile de feu tiré par le mage."""
     size = 120  # taille d'affichage
 
-    def __init__(self, x, y, direction=1, speed=VITESSE_DEPLACEMENT):
+    def __init__(self, x, y, direction=1, speed=VITESSE_DEPLACEMENT, joueur_source=None):
         self.direction = direction
         self.speed = speed
+        self.joueur_source = joueur_source
         self.alive = True
         self.collidable = False  # pas de collision pendant la création
 
@@ -250,6 +251,17 @@ class ProjectileFeu:
         now = temps.obtenir_temps()
 
         if self.state == "creation":
+            # Mettre à jour la position du projectile par rapport au joueur
+            if self.joueur_source is not None:
+                if self.direction == 1:
+                    self.centre_x = float(self.joueur_source.x + self.joueur_source.largeur - 24)
+                else:
+                    self.centre_x = float(self.joueur_source.x + 24)
+                if self.joueur_source.au_sol:
+                    self.centre_y = float(self.joueur_source.y + self.joueur_source.hauteur * 0.25 + 3)
+                else:
+                    self.centre_y = float(self.joueur_source.y + self.joueur_source.hauteur * 0.25 + 2)
+
             if now - self.last_frame_time >= self.creation_delay:
                 self.last_frame_time = now
                 self.frame_index += 1
