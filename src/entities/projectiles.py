@@ -1,6 +1,7 @@
 import pygame
 import core.temps as temps
 import os
+import math
 
 from core.config import TAILLE_CELLULE, resource_path, VITESSE_DEPLACEMENT, LARGEUR_ECRAN, HAUTEUR_ECRAN
 from core.assets import charger_image
@@ -461,4 +462,109 @@ class ProjectilePyro:
 
 
 cache_frames_natives_pyro = {}
+
+
+cache_projectile_demon = {}
+
+
+def charger_assets_projectile_demon():
+    """Charge (une fois) le sprite du projectile du démon, normal et retourné."""
+    if "assets" in cache_projectile_demon:
+        return cache_projectile_demon["assets"]
+    chemin = resource_path(os.path.join("assets/img/entities", "demon_projectile.png"))
+    sheet = pygame.image.load(chemin).convert_alpha()
+    hauteur = 40
+    largeur = int(sheet.get_width() * (hauteur / sheet.get_height()))
+    img = pygame.transform.scale(sheet, (largeur, hauteur))
+    img = pygame.transform.flip(img, True, False)
+    assets = {
+        "img": img,
+        "largeur": largeur,
+        "hauteur": hauteur,
+    }
+    cache_projectile_demon["assets"] = assets
+    return assets
+
+
+class ProjectileDemon:
+    """Boule de feu tirée par le démon : vole en ligne droite vers le joueur."""
+
+    VITESSE = 7.0
+
+    def __init__(self, x, y, vx, vy):
+        a = charger_assets_projectile_demon()
+        img_base = a["img"]
+        self.largeur = a["largeur"]
+        self.hauteur = a["hauteur"]
+        self.centre_x = float(x)
+        self.centre_y = float(y)
+        self.vx = float(vx)
+        self.vy = float(vy)
+        self.alive = True
+
+        angle_rad = math.atan2(self.vy, self.vx)
+        angle_deg = -math.degrees(angle_rad)
+
+        if self.vx < 0:
+            img_orient = pygame.transform.flip(img_base, True, False)
+            angle_deg = angle_deg + 180
+        else:
+            img_orient = img_base
+
+        self.img_rotate = pygame.transform.rotate(img_orient, angle_deg)
+        self.mask_rotate = pygame.mask.from_surface(self.img_rotate)
+
+        self.rect = pygame.Rect(0, 0, self.img_rotate.get_width(), self.img_rotate.get_height())
+        self.rect.center = (int(self.centre_x), int(self.centre_y))
+
+        # explosion du projectile
+        _, explosion, taille = charger_frames_pyro_projectile()
+        self.explosion_frames = explosion
+        self.explosion_taille = taille
+        self.state = "vol"
+        self.explosion_index = 0
+        self.explosion_last = 0
+        self.explosion_delay = 55
+
+    def update(self):
+        if self.state == "explosion":
+            now = temps.obtenir_temps()
+            if now - self.explosion_last >= self.explosion_delay:
+                self.explosion_last = now
+                self.explosion_index += 1
+                if self.explosion_index >= len(self.explosion_frames):
+                    self.alive = False
+            return
+        self.centre_x += self.vx
+        self.centre_y += self.vy
+        self.rect.center = (int(self.centre_x), int(self.centre_y))
+        if (self.centre_x < -80 or self.centre_x > LARGEUR_ECRAN + 80 or
+                self.centre_y < -80 or self.centre_y > HAUTEUR_ECRAN + 80):
+            self.alive = False
+
+    def start_explosion(self):
+        """Déclenche l'animation d'explosion (c'est le mm que celui du Pyrolord)."""
+        if self.state != "explosion":
+            self.state = "explosion"
+            self.explosion_index = 0
+            self.explosion_last = temps.obtenir_temps()
+
+    def image_courante(self):
+        return self.img_rotate
+
+    def masque_courant(self):
+        return self.mask_rotate
+
+    def offset_dessin(self):
+        w = self.img_rotate.get_width()
+        h = self.img_rotate.get_height()
+        return (int(self.centre_x - w / 2), int(self.centre_y - h / 2))
+
+    def dessiner(self, ecran):
+        if self.state == "explosion":
+            idx = min(self.explosion_index, len(self.explosion_frames) - 1)
+            frame = self.explosion_frames[idx]
+            ecran.blit(frame, (int(self.centre_x - frame.get_width() / 2), int(self.centre_y - frame.get_height() / 2)))
+            return
+        ecran.blit(self.img_rotate, self.offset_dessin())
 

@@ -12,7 +12,7 @@ from entities import Piece
 from entities import CristalFeu
 from entities import Pyrolord
 from entities import Demon, DEMON_W, DEMON_H
-from core.assets import charger_image
+from core.assets import charger_image, charger_son_accelere
 from entities.obstacles import FeuBloc, PicBloc
 from core.config_manager import ConfigManager
 from entities import Piece, CristalFeu
@@ -140,6 +140,7 @@ class Niveau:
         # Boss
         self.boss = None
         self.projectiles_boss = []
+        self.projectiles_demon = []
         self.porte_boss = None  # (x, y) porte de sortie à la mort du boss
         self.intervalle_spawn_cristal = 25000  # 25s entre chaque spawn possible
         self.traversables = ["change_rouge", "change_bleu", "change_vert", "porte", "vide", "pic", "feu"]
@@ -200,6 +201,14 @@ class Niveau:
         for i in range(1, 4):
             son = pygame.mixer.Sound(resource_path(os.path.join("assets/audio", "squelette_tape" + str(i) + ".ogg")))
             self.sons_squelette_tape.append(son)
+        # Tir et charge des démons
+        self.son_demon_tir = pygame.mixer.Sound(resource_path(os.path.join("assets/audio", "demon_tir.wav")))
+        self.son_demon_fonce = pygame.mixer.Sound(resource_path(os.path.join("assets/audio", "demon_fonce.wav")))
+        # Ambiances en boucle
+        self.son_feu = pygame.mixer.Sound(resource_path(os.path.join("assets/audio", "feu.wav")))
+        self.son_demon_vol = charger_son_accelere(resource_path(os.path.join("assets/audio", "demon_vol.wav")), 2.5)
+        self.feu_en_cours = False
+        self.demon_vol_en_cours = False
         self.maj_volume_sons()
 
         # stocker les infos des étoiles pour le fond
@@ -232,6 +241,41 @@ class Niveau:
             son.set_volume(vol_effets)
         for son in self.sons_squelette_tape:
             son.set_volume(vol_effets)
+        self.son_demon_tir.set_volume(vol_effets)
+        self.son_demon_fonce.set_volume(vol_effets)
+        # l'ambiance de feu discrète
+        self.son_feu.set_volume(vol_effets * 0.15)
+        self.son_demon_vol.set_volume(vol_effets * 1.9)
+        if self.boss is not None:
+            self.boss.maj_volume_sons(vol_effets)
+
+    def regler_ambiances(self, actif, feu_actif=None, demon_actif=None, boss_actif=None):
+        """Démarre/arrête les boucles d'ambiance (feu, vol du démon) et coupe les
+        sons du boss hors jeu."""
+        if feu_actif is None:
+            feu_actif = actif
+        if demon_actif is None:
+            demon_actif = actif
+        if boss_actif is None:
+            boss_actif = actif
+        veut_feu = feu_actif and bool(self.feux)
+        if veut_feu != self.feu_en_cours:
+            if veut_feu:
+                self.son_feu.play(-1)
+            else:
+                self.son_feu.stop()
+            self.feu_en_cours = veut_feu
+
+        veut_demon = demon_actif and any(not d.en_train_de_mourir for d in self.demons)
+        if veut_demon != self.demon_vol_en_cours:
+            if veut_demon:
+                self.son_demon_vol.play(-1)
+            else:
+                self.son_demon_vol.stop()
+            self.demon_vol_en_cours = veut_demon
+
+        if not boss_actif and self.boss is not None:
+            self.boss.arreter_sons()
 
     def creer_grille_vide(self):
         """Crée une grille vide"""
@@ -256,6 +300,13 @@ class Niveau:
             data = json.load(f)
         self.creer_grille_vide()
         self.spawn_cell = None
+        # couper les sons de l'ancien niveau avant de tout réinitialiser
+        self.son_feu.stop()
+        self.feu_en_cours = False
+        self.son_demon_vol.stop()
+        self.demon_vol_en_cours = False
+        if self.boss is not None:
+            self.boss.arreter_sons()
         # reset
         self.sorciers = []
         self.projectiles = []
@@ -272,6 +323,7 @@ class Niveau:
         self.dernier_collecte_cristal = temps.obtenir_temps()
         self.boss = None
         self.projectiles_boss = []
+        self.projectiles_demon = []
         self.porte_boss = None
         for type_bloc, positions in data.items():
             if type_bloc == "spawn":
@@ -280,117 +332,56 @@ class Niveau:
                 self.grille[y][x] = "vide"
             elif type_bloc == "sorcier":
                 for item in positions:
-                    # valeurs par défaut
+                    item, drop = self.extraire_drop(item)
+                    try:
+                        x = int(item[0])
+                        y = int(item[1])
+                    except Exception:
+                        continue
                     dirv = 1
+                    if len(item) >= 3:
+                        dirv = int(item[2])
                     range_blocks = None
-
-                    if type(item) == list or type(item) == tuple:
-                        # cas où la direction et/ou range sont fournis
-                        if len(item) >= 3:
-                            x = item[0]
-                            y = item[1]
-                            dirv = int(item[2])
-                            if len(item) >= 4:
-                                range_blocks = int(item[3])
-                        else:
-                            x = item[0]
-                            y = item[1]
-                    else:
-                        # tenter de déballer d'autres types (sécurité)
-                        try:
-                            x = item[0]
-                            y = item[1]
-                        except Exception:
-                            continue
-
-                    # créer sorcier à la position (pixels)
-                    px = x * TAILLE_CELLULE
-                    if dirv == 1:
-                        direction_val = 1
-                    else:
-                        direction_val = -1
-                    sorcier = Sorcier(px, 0, direction=direction_val, shoot_range_blocks=range_blocks)
-
-                    rect_w = sorcier.width - 2 * sorcier.marge_x
-                    cell_cx = x * TAILLE_CELLULE + TAILLE_CELLULE // 2
-                    new_rect_left = cell_cx - rect_w // 2
-                    sorcier.x = int(new_rect_left - sorcier.marge_x)
-
-                    cell_top_px = y * TAILLE_CELLULE
-                    rect_h = sorcier.height - sorcier.marge_y_haut - sorcier.marge_y_bas
-                    rect_top = cell_top_px - rect_h
-                    sorcier.y = int(rect_top - sorcier.marge_y_haut + 53)
-
-                    # mettre à jour la rect en fonction de la nouvelle position
-                    sorcier.rect.topleft = (int(sorcier.x + sorcier.marge_x), int(sorcier.y + sorcier.marge_y_haut))
-
-                    self.sorciers.append(sorcier)
-                    # laisser la case vide pour ne pas bloquer le joueur
-                    self.grille[y][x] = "vide"
+                    if len(item) >= 4:
+                        range_blocks = int(item[3])
+                    self.creer_sorcier(x, y, dirv, range_blocks, drop)
             elif type_bloc == "squelette":
                 for item in positions:
-                    if type(item) == list or type(item) == tuple:
-                        if len(item) >= 3:
-                            x = item[0]
-                            y = item[1]
-                            dirv = int(item[2])
-                            if len(item) >= 4:
-                                walk_blocks = int(item[3])
-                            else:
-                                walk_blocks = 3
-                        else:
-                            x = item[0]
-                            y = item[1]
-                            dirv = 1
-                            walk_blocks = 3
-
-                    # créer squelette à la position
-                    px = x * TAILLE_CELLULE
-                    if dirv == 1:
-                        direction_val = 1
-                    else:
-                        direction_val = -1
-                    squelette = Squelette(px, 0, direction=direction_val, walk_blocks=walk_blocks)
-
-                    rect_w = squelette.width - 2 * squelette.marge_x
-                    cell_cx = x * TAILLE_CELLULE + TAILLE_CELLULE // 2
-                    new_rect_left = cell_cx - rect_w // 2
-                    squelette.x = int(new_rect_left - squelette.marge_x)
-
-                    cell_top_px = y * TAILLE_CELLULE
-                    rect_h = squelette.height - squelette.marge_y_haut - squelette.marge_y_bas
-                    rect_top = cell_top_px - rect_h
-                    squelette.y = int(rect_top - squelette.marge_y_haut + 50)
-
-                    # mettre à jour la rect en fonction de la nouvelle position
-                    squelette.rect.topleft = (int(squelette.x + squelette.marge_x), int(squelette.y + squelette.marge_y_haut))
-
-                    squelette.origin_x = squelette.x
-
-                    self.squelettes.append(squelette)
-                    self.grille[y][x] = "vide"
+                    item, drop = self.extraire_drop(item)
+                    try:
+                        x = int(item[0])
+                        y = int(item[1])
+                    except Exception:
+                        continue
+                    dirv = 1
+                    if len(item) >= 3:
+                        dirv = int(item[2])
+                    walk_blocks = 3
+                    if len(item) >= 4:
+                        walk_blocks = int(item[3])
+                    self.creer_squelette(x, y, dirv, walk_blocks, drop)
             elif type_bloc == "slime_vert" or type_bloc == "slime_violet":
                 if type_bloc == "slime_vert":
                     couleur_slime = "vert"
                 else:
                     couleur_slime = "violet"
-                for pos in positions:
-                    x = pos[0]
-                    y = pos[1]
-                    px = x * TAILLE_CELLULE
-                    py = y * TAILLE_CELLULE
-                    slime = Slime(px, py, couleur=couleur_slime)
-                    self.slimes.append(slime)
-                    self.grille[y][x] = "vide"
+                for item in positions:
+                    item, drop = self.extraire_drop(item)
+                    try:
+                        x = int(item[0])
+                        y = int(item[1])
+                    except Exception:
+                        continue
+                    self.creer_slime(x, y, couleur_slime, drop)
             elif type_bloc == "demon":
-                for pos in positions:
-                    x = pos[0]
-                    y = pos[1]
-                    px = x * TAILLE_CELLULE + TAILLE_CELLULE // 2 - DEMON_W // 2
-                    py = y * TAILLE_CELLULE + TAILLE_CELLULE // 2 - DEMON_H // 2
-                    demon = Demon(px, py)
-                    self.demons.append(demon)
-                    self.grille[y][x] = "vide"
+                for item in positions:
+                    item, drop = self.extraire_drop(item)
+                    try:
+                        x = int(item[0])
+                        y = int(item[1])
+                    except Exception:
+                        continue
+                    self.creer_demon(x, y, drop)
             elif type_bloc == "feu":
                 for pos in positions:
                     x = pos[0]
@@ -406,19 +397,9 @@ class Niveau:
                     self.pics.append(nouveau_pic)
                     self.grille[y][x] = "vide"
             elif type_bloc == "piece":
-                pieces_deja = self.gestionnaire_config.obtenir_pieces_collectees(numero)
                 for pos in positions:
                     x = pos[0]
                     y = pos[1]
-                    # Vérifier si cette pièce a déjà été collectée
-                    deja_collectee = False
-                    for p in pieces_deja:
-                        if p[0] == x and p[1] == y:
-                            deja_collectee = True
-                            break
-                    if deja_collectee:
-                        self.grille[y][x] = "vide"
-                        continue
                     px = x * TAILLE_CELLULE
                     py = y * TAILLE_CELLULE
                     piece = Piece(px, py)
@@ -519,6 +500,7 @@ class Niveau:
                     boss.y = float(sol - boss.feet_bottom)
                     boss.base_y = boss.y
                     boss.maj_hitbox()
+                    boss.maj_volume_sons(self.gestionnaire_config.volumes.get("effets", 50) / 100)
                     self.boss = boss
                     self.grille[y][x] = "vide"
             elif type_bloc == "porte_boss":
@@ -540,6 +522,133 @@ class Niveau:
             self.cristaux_feu.append(cristal)
 
         return self.grille
+
+    def extraire_drop(self, item):
+        """Sépare le drop optionnel (string en fin de liste) des arguments d'un monstre."""
+        drop = None
+        if type(item) == list and len(item) > 0 and type(item[-1]) == str:
+            drop = item[-1]
+            item = item[:-1]
+        return item, drop
+
+    def creer_sorcier(self, x, y, dirv=1, range_blocks=None, drop=None):
+        """Crée et positionne un sorcier sur la grille."""
+        px = x * TAILLE_CELLULE
+        if dirv == 1:
+            direction_val = 1
+        else:
+            direction_val = -1
+        sorcier = Sorcier(px, 0, direction=direction_val, shoot_range_blocks=range_blocks)
+
+        rect_w = sorcier.width - 2 * sorcier.marge_x
+        cell_cx = x * TAILLE_CELLULE + TAILLE_CELLULE // 2
+        new_rect_left = cell_cx - rect_w // 2
+        sorcier.x = int(new_rect_left - sorcier.marge_x)
+
+        cell_top_px = y * TAILLE_CELLULE
+        rect_h = sorcier.height - sorcier.marge_y_haut - sorcier.marge_y_bas
+        rect_top = cell_top_px - rect_h
+        sorcier.y = int(rect_top - sorcier.marge_y_haut + 53)
+
+        sorcier.rect.topleft = (int(sorcier.x + sorcier.marge_x), int(sorcier.y + sorcier.marge_y_haut))
+        sorcier.drop = drop
+        sorcier.drop_fait = False
+        self.sorciers.append(sorcier)
+        # laisser la case vide pour ne pas bloquer le joueur
+        if 0 <= y < HAUTEUR_GRILLE and 0 <= x < LARGEUR_GRILLE:
+            self.grille[y][x] = "vide"
+        return sorcier
+
+    def creer_squelette(self, x, y, dirv=1, walk_blocks=3, drop=None):
+        """Crée et positionne un squelette sur la grille."""
+        px = x * TAILLE_CELLULE
+        if dirv == 1:
+            direction_val = 1
+        else:
+            direction_val = -1
+        squelette = Squelette(px, 0, direction=direction_val, walk_blocks=walk_blocks)
+
+        rect_w = squelette.width - 2 * squelette.marge_x
+        cell_cx = x * TAILLE_CELLULE + TAILLE_CELLULE // 2
+        new_rect_left = cell_cx - rect_w // 2
+        squelette.x = int(new_rect_left - squelette.marge_x)
+
+        cell_top_px = y * TAILLE_CELLULE
+        rect_h = squelette.height - squelette.marge_y_haut - squelette.marge_y_bas
+        rect_top = cell_top_px - rect_h
+        squelette.y = int(rect_top - squelette.marge_y_haut + 50)
+
+        squelette.rect.topleft = (int(squelette.x + squelette.marge_x), int(squelette.y + squelette.marge_y_haut))
+        squelette.origin_x = squelette.x
+        squelette.drop = drop
+        squelette.drop_fait = False
+        self.squelettes.append(squelette)
+        if 0 <= y < HAUTEUR_GRILLE and 0 <= x < LARGEUR_GRILLE:
+            self.grille[y][x] = "vide"
+        return squelette
+
+    def creer_slime(self, x, y, couleur, drop=None):
+        """Crée un slime sur la grille."""
+        px = x * TAILLE_CELLULE
+        py = y * TAILLE_CELLULE
+        slime = Slime(px, py, couleur=couleur)
+        slime.drop = drop
+        slime.drop_fait = False
+        self.slimes.append(slime)
+        if 0 <= y < HAUTEUR_GRILLE and 0 <= x < LARGEUR_GRILLE:
+            self.grille[y][x] = "vide"
+        return slime
+
+    def creer_demon(self, x, y, drop=None):
+        """Crée un démon volant sur la grille."""
+        px = x * TAILLE_CELLULE + TAILLE_CELLULE // 2 - DEMON_W // 2
+        py = y * TAILLE_CELLULE + TAILLE_CELLULE // 2 - DEMON_H // 2
+        demon = Demon(px, py)
+        demon.drop = drop
+        demon.drop_fait = False
+        self.demons.append(demon)
+        if 0 <= y < HAUTEUR_GRILLE and 0 <= x < LARGEUR_GRILLE:
+            self.grille[y][x] = "vide"
+        return demon
+
+    def appliquer_drop(self, monstre):
+        """Fait apparaître le drop d'un monstre à l'endroit de sa mort."""
+        drop = monstre.drop
+        if not drop:
+            return
+        if monstre.drop_fait:
+            return
+        monstre.drop_fait = True
+
+        centre = monstre.rect.center
+        cx_px = centre[0]
+        cy_px = centre[1]
+        cell_x = int(cx_px // TAILLE_CELLULE)
+        cell_y = int(cy_px // TAILLE_CELLULE)
+
+        dans_grille = (0 <= cell_y < HAUTEUR_GRILLE and 0 <= cell_x < LARGEUR_GRILLE)
+
+        if drop == "piece":
+            piece = Piece(cell_x * TAILLE_CELLULE, cell_y * TAILLE_CELLULE)
+            piece.cell_x = cell_x
+            piece.cell_y = cell_y
+            self.pieces.append(piece)
+        elif drop == "change_rouge" or drop == "change_bleu" or drop == "change_vert":
+            if dans_grille:
+                self.grille[cell_y][cell_x] = drop
+        elif drop == "cristal_feu":
+            cristal = CristalFeu(cx_px, cy_px)
+            self.cristaux_feu.append(cristal)
+        elif drop == "sorcier":
+            self.creer_sorcier(cell_x, cell_y)
+        elif drop == "squelette":
+            self.creer_squelette(cell_x, cell_y)
+        elif drop == "slime_vert":
+            self.creer_slime(cell_x, cell_y, "vert")
+        elif drop == "slime_violet":
+            self.creer_slime(cell_x, cell_y, "violet")
+        elif drop == "demon":
+            self.creer_demon(cell_x, cell_y)
 
     def obtenir_spawn_pixel(self):
         """Retourne la position de spawn en pixels (x_px, y_px) ou None si absent."""
@@ -705,6 +814,48 @@ class Niveau:
                     return True
         return False
 
+    def collision_projectile_demon(self, projectile, couleur_joueur=None):
+        """Le projectile du démon se casse sur les blocs noirs, ceux de la couleur du mage et les plateformes."""
+        proj_mask = projectile.masque_courant()
+        px, py = projectile.offset_dessin()
+        proj_rect = pygame.Rect(px, py, projectile.largeur, projectile.hauteur)
+        bloc_mask = pygame.Mask((TAILLE_CELLULE, TAILLE_CELLULE), fill=True)
+
+        for y in range(HAUTEUR_GRILLE):
+            for x in range(LARGEUR_GRILLE):
+                bloc = self.grille[y][x]
+                bloque = False
+                if bloc == "noir":
+                    bloque = True
+                elif couleur_joueur and bloc in ["rouge", "bleu", "vert", "gris"] and bloc == couleur_joueur:
+                    bloque = True
+                if bloque:
+                    bx = x * TAILLE_CELLULE
+                    by = y * TAILLE_CELLULE
+                    if bx + TAILLE_CELLULE < px or bx > px + projectile.largeur:
+                        continue
+                    if by + TAILLE_CELLULE < py or by > py + projectile.hauteur:
+                        continue
+                    offset = (bx - px, by - py)
+                    if proj_mask.overlap(bloc_mask, offset) is not None:
+                        return True
+
+        for plat in self.platformes_mobiles:
+            pr = plat.obtenir_rect()
+            if not proj_rect.colliderect(pr):
+                continue
+            bloque = False
+            if plat.couleur is None or plat.couleur == "noir":
+                bloque = True
+            elif couleur_joueur and plat.couleur == couleur_joueur:
+                bloque = True
+            if bloque:
+                p_mask = pygame.Mask((pr.width, pr.height), fill=True)
+                offset = (pr.x - px, pr.y - py)
+                if proj_mask.overlap(p_mask, offset) is not None:
+                    return True
+        return False
+
     def bloc_solide_au_dessus(self, joueur):
         """Vérifie s'il y a un bloc solide juste au-dessus du joueur"""
         # Zone de détection au-dessus de la tête du joueur
@@ -801,6 +952,7 @@ class Niveau:
             for slime in list(self.slimes):
                 slime.update()
                 if not slime.alive:
+                    self.appliquer_drop(slime)
                     self.slimes.remove(slime)
                 else:
                     self.appliquer_pousse_plateforme_sur_entite(slime)
@@ -848,6 +1000,8 @@ class Niveau:
                 self.boss.dessiner(ecran)
             for bp in self.projectiles_boss:
                 bp.dessiner(ecran)
+            for dp in self.projectiles_demon:
+                dp.dessiner(ecran)
 
         else:
             for plat in self.platformes_mobiles:
@@ -876,6 +1030,8 @@ class Niveau:
                 self.boss.dessiner(ecran)
             for bp in self.projectiles_boss:
                 bp.dessiner(ecran)
+            for dp in self.projectiles_demon:
+                dp.dessiner(ecran)
 
     def dessiner_fond(self, ecran, couleur_planete, temps_global=0):
         """Dessine le fond pour le niveau basé sur la couleur de la planète.
@@ -965,6 +1121,33 @@ class Niveau:
                     entite.visual_x = entite.visual_x + dx
                     entite.visual_y = entite.visual_y + dy
                 break
+        return
+
+    def pousser_demon_par_plateformes(self, demon, couleur):
+        """Pousse le démon hors d'une plateforme mobile qui lui rentre dedans."""
+        demon.maj_rect()
+        for plat in self.platformes_mobiles:
+            # plateforme solide seulement pour la couleur du mage
+            if plat.couleur is not None and plat.couleur != "noir" and plat.couleur != couleur:
+                continue
+            rect_plat = plat.obtenir_rect()
+            if not demon.rect.colliderect(rect_plat):
+                continue
+            dx = plat.dernier_dx
+            dy = plat.dernier_dy
+            avant_x = demon.x
+            avant_y = demon.y
+            # coller le démon contre le bord dans le sens du déplacement
+            if dx > 0:
+                demon.x = rect_plat.right - demon.marge_x
+            elif dx < 0:
+                demon.x = rect_plat.left - (demon.width - demon.marge_x)
+            if dy > 0:
+                demon.y = rect_plat.bottom - demon.marge_y_haut
+            elif dy < 0:
+                demon.y = rect_plat.top - (demon.height - demon.marge_y_bas)
+            demon.decaler_ancres(demon.x - avant_x, demon.y - avant_y)
+            demon.maj_rect()
         return
 
     def appliquer_pousse_plateforme(self, joueur):

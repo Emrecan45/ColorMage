@@ -7,7 +7,7 @@ from core.config import TAILLE_CELLULE, resource_path, VITESSE_DEPLACEMENT, LARG
 from core.assets import charger_image
 
 from entities.boss.boss import Boss
-from entities.projectiles import Projectile, ProjectileFeu, ProjectilePyro, construire_assets_projectile, construire_assets_feu, charger_frames_pyro_projectile
+from entities.projectiles import Projectile, ProjectileFeu, ProjectilePyro, ProjectileDemon, construire_assets_projectile, construire_assets_feu, charger_frames_pyro_projectile, charger_assets_projectile_demon
 from entities.monstres import Sorcier, Squelette, Slime, Demon, construire_frames_sorcier, construire_masques_sorcier, construire_assets_squelette, construire_frames_slime, construire_assets_demon, DEMON_W, DEMON_H
 from entities.objets import Piece, CristalFeu, construire_frames_piece, construire_assets_cristal
 from entities.boss.pyrolord import Pyrolord, charger_assets_pyrolord
@@ -42,11 +42,13 @@ def etapes_prechargement():
     etapes.append((construire_frames_slime, ("vert", petit_slime)))
     etapes.append((construire_frames_slime, ("violet", petit_slime)))
     etapes.append((construire_assets_demon, (DEMON_W, DEMON_H)))
+    etapes.append((charger_assets_projectile_demon, ()))
     etapes.append((construire_frames_piece, (taille_piece,)))
     etapes.append((construire_assets_feu, ()))
     etapes.append((construire_assets_cristal, ()))
     etapes.append((charger_frames_pyro_projectile, ()))
     etapes.append((charger_assets_pyrolord, (Pyrolord.ECHELLE,)))
-    etapes.append((charger_assets_pyrolord, (Pyrolord.ECHELLE * Pyrolord.ENRAGE_SCALE,)))
+    etapes.append((charger_assets_pyrolord, (Pyrolord.ECHELLE_BOSS,)))
+    etapes.append((charger_assets_pyrolord, (Pyrolord.ECHELLE_BOSS * Pyrolord.ENRAGE_SCALE,)))
     return etapes
 

@@ -39,6 +39,8 @@ class Piece:
         self.visual_x = None
         self.visual_y = None
         self.alive = True
+        self.cell_x = None
+        self.cell_y = None
 
         # Taille d'affichage
         self.taille_affichage = int(TAILLE_CELLULE * 0.7)
