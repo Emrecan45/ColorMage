@@ -3,7 +3,7 @@ import sys
 import os
 import random
 import math
-from core.config import LARGEUR_ECRAN, HAUTEUR_ECRAN, TAILLE_CELLULE, COULEURS, COULEUR_BOUTON, COULEUR_SURVOL, COULEUR_BORDURE, resource_path
+from core.config import LARGEUR_ECRAN, HAUTEUR_ECRAN, COULEURS, COULEUR_BOUTON, COULEUR_SURVOL, COULEUR_BORDURE, NIVEAUX_DISPONIBLES, resource_path
 from core.config_manager import ConfigManager
 from ui.chronometre import Chronometre
 from ui.profil import Profil
@@ -311,7 +311,9 @@ class Popup:
             pygame.draw.circle(ecran, (brillance, brillance, brillance), (x, y), taille)
 
     def niveau_existe(self, numero_niveau):
-        """Vérifie si un fichier de niveau existe"""
+        """Vérifie si un niveau est disponible (sorti et fichier présent)."""
+        if numero_niveau > NIVEAUX_DISPONIBLES:
+            return False
         planetes = ["terra", "pyros", "aquaris", "nebula", "cryon", "solara", "vortex", "obscura"]
         planete_idx = (numero_niveau - 1) // 5
         if planete_idx < len(planetes):

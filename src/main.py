@@ -112,6 +112,7 @@ class Game:
         
         # Alerte
         self.alerte = Alerte(self.gestionnaire_config)
+        self.menu_niveaux.alerte = self.alerte
 
         # Vérifier si la sauvegarde a été corrompue (modifiée à la main)
         if self.gestionnaire_config.sauvegarde_corrompue:
@@ -527,7 +528,8 @@ class Game:
                             
                             # Recharger le menu des niveaux avec la nouvelle config
                             self.menu_niveaux = MenuNiveaux(self.gestionnaire_config)
-                            
+                            self.menu_niveaux.alerte = self.alerte
+
                             # Recharger le profil (avec l'avatar par défaut)
                             self.profil.recharger_donnees()
                             self.profil.avatar_actuel = 0

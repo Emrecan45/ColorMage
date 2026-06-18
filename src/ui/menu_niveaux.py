@@ -2,7 +2,7 @@ import pygame
 import os
 import math
 import random
-from core.config import LARGEUR_ECRAN, HAUTEUR_ECRAN, VERSION_JEU, COULEUR_BOUTON, COULEUR_SURVOL, COULEUR_BORDURE, resource_path
+from core.config import LARGEUR_ECRAN, HAUTEUR_ECRAN, NIVEAUX_DISPONIBLES, COULEUR_BOUTON, COULEUR_SURVOL, COULEUR_BORDURE, resource_path
 from core.config_manager import ConfigManager
 from ui.profil import Profil
 
@@ -123,7 +123,8 @@ class MenuNiveaux:
         self.mage_visible = True
         self.teleportation_en_cours = False
         self.niveau_a_lancer = None
-        
+        self.alerte = None
+
         # Chemin de plaques pour la marche
         self.chemin_plaques = []  # Liste des indices de plaques à parcourir
         self.plaque_courante_index = 0  # Index dans le chemin
@@ -1464,7 +1465,13 @@ class MenuNiveaux:
             rect = pygame.Rect(px - 35, py - 20, 70, 40)
             if rect.collidepoint(pos) and est_debloque:
                 self.son_select.play()
-                
+
+                # Niveau pas encore sorti = afficher une alerte
+                if numero > NIVEAUX_DISPONIBLES:
+                    if self.alerte is not None:
+                        self.alerte.afficher("Niveau bientot disponible !")
+                    return None
+
                 # Si le mage est déjà sur cette plaque, lancer directement
                 if i == self.mage_niveau_actuel:
                     self.niveau_cible = numero

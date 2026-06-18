@@ -539,9 +539,9 @@ class Slime:
         decalage_anim = random.randint(0, self.anim_delay)
         self.last_anim_time = temps.obtenir_temps() - decalage_anim
 
-        # Frame de mort : L3 C3 (index 10) – flash rouge réservé à la mort
+        # Frame de mort : L3 C3 (index 10) - flash rouge réservé à la mort
         self.frame_mort = self.toutes_frames[10]
-        # Frame de douleur : L3 C4 (index 11) – animation quand il prend un coup sans mourir
+        # Frame de douleur : L3 C4 (index 11) - animation quand il prend un coup sans mourir
         if len(self.toutes_frames) > 11:
             self.frame_douleur = self.toutes_frames[11]
         else:
@@ -552,7 +552,7 @@ class Slime:
         self.mort_timer = 0
         self.mort_duree = 300  # ms
 
-        # État de douleur (coup encaissé sans mourir – slime violet)
+        # État de douleur (coup encaissé sans mourir - slime violet)
         self.en_douleur = False
         self.douleur_timer = 0
         self.douleur_duree = 350  # ms

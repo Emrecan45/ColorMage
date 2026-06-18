@@ -12,6 +12,9 @@ def resource_path(relative_path):
 # Version du jeu
 VERSION_JEU = "v2.2"
 
+# Nombre de niveaux réellement disponibles
+NIVEAUX_DISPONIBLES = 10
+
 # Dimensions
 TAILLE_CELLULE = 50
 LARGEUR_GRILLE = 30
