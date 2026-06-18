@@ -3,6 +3,7 @@ import sys
 import os
 from core.config import LARGEUR_ECRAN, HAUTEUR_ECRAN, resource_path, FPS
 from core.config_manager import ConfigManager
+from core.i18n import t
 from ui.parametres import Parametres
 from ui.popup import Popup
 
@@ -78,7 +79,7 @@ class Pause:
         pygame.draw.rect(ecran, (0, 0, 0), self.popup_rect, 4)
         
         # Titre
-        titre_surface = self.font.render("Pause", True, (0, 0, 0))
+        titre_surface = self.font.render(t("pause.titre"), True, (0, 0, 0))
         titre_x = self.popup_rect.x + (self.popup_rect.width - titre_surface.get_width()) // 2
         titre_y = self.popup_rect.y + 50
         ecran.blit(titre_surface, (titre_x, titre_y))
@@ -90,9 +91,9 @@ class Pause:
             if planete <= len(noms_planetes):
                 nom_planete = noms_planetes[planete - 1]
             else:
-                nom_planete = "Planète " + str(planete)
+                nom_planete = f"{t('pause.planete')} {planete}"
 
-            niveau_texte = "Planète " + nom_planete + " - Niv. " + str(numero_niveau)
+            niveau_texte = f"{t('pause.planete')} {nom_planete} - {t('pause.niv')} {numero_niveau}"
             niveau_surface = self.font_niveau.render(niveau_texte, True, (100, 100, 100))
             niveau_x = self.popup_rect.x + (self.popup_rect.width - niveau_surface.get_width()) // 2
             niveau_y = self.popup_rect.y + 100
@@ -100,10 +101,10 @@ class Pause:
 
         # Liste des boutons avec leurs textes
         boutons = [
-            (self.bouton_continuer, "Continuer"),
-            (self.bouton_recommencer, "Recommencer"),
-            (self.bouton_parametres, "Paramètres"),
-            (self.bouton_quitter, "Quitter")
+            (self.bouton_continuer, t("pause.continuer")),
+            (self.bouton_recommencer, t("pause.recommencer")),
+            (self.bouton_parametres, t("pause.parametres")),
+            (self.bouton_quitter, t("pause.quitter"))
         ]
         
         # Dessiner les boutons

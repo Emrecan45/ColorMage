@@ -262,6 +262,11 @@ class Joueur:
     
     def deplacer(self, touches, niveau):
         """Gère le déplacement du joueur"""
+        # Vérifier si le joueur est coincé dans un bloc
+        rect_debut = pygame.Rect(self.x + self.marge_x, self.y + self.marge_y_haut, self.largeur - 2 * self.marge_x, self.hauteur - self.marge_y_haut - self.marge_y_bas)
+        if niveau.collision(rect_debut, self.couleur):
+            return "mort"
+
         self.etait_au_sol = self.au_sol
         self.pousse_plateforme = False
         if self.en_changement_couleur and self.etape_changement < 3:

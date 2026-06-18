@@ -1,3 +1,4 @@
+from core.i18n import t
 import pygame
 import sys
 import os
@@ -45,27 +46,27 @@ class Profil:
         # Avatars disponibles (images dans img/avatars/)
         # niveau_associe = niveau dont l'ennemi doit être vaincu pour débloquer
         self.avatars = [
-            {"nom": "Mage 1", "fichier": "mage1.png", "prix": 0},
-            {"nom": "Mage 2", "fichier": "mage2.png", "prix": 3},
-            {"nom": "Mage 3", "fichier": "mage3.png", "prix": 3},
-            {"nom": "Grimoire", "fichier": "grimoire.png", "niveau_associe": 1, "prix": 4},
-            {"nom": "Mage 4", "fichier": "mage4.png", "niveau_associe": 2, "prix": 8},
-            {"nom": "Sorcier", "fichier": "sorcier.png", "niveau_associe": 3, "prix": 12},
-            {"nom": "Squelette", "fichier": "squelette.png", "niveau_associe": 4, "prix": 16},
-            {"nom": "Slime Vert1", "fichier": "slime_vert1.png", "niveau_associe": 5, "prix": 20},
-            {"nom": "Slime Violet", "fichier": "slime_violet.png", "niveau_associe": 5, "prix": 20},
-            {"nom": "Mage 5", "fichier": "mage5.png", "niveau_associe": 6, "prix": 24},
-            {"nom": "Slime Vert2", "fichier": "slime_vert2.png", "niveau_associe": 7, "prix": 28},
-            {"nom": "Mage 6", "fichier": "mage6.png", "niveau_associe": 8, "prix": 32},
-            {"nom": "Démon", "fichier": "demon.png", "niveau_associe": 9, "prix": 36},
-            {"nom": "Pyrolord", "fichier": "pyrolord.png", "niveau_associe": 10, "prix": 40},
+            {"nom": t("avatar.mage1"), "fichier": "mage1.png", "prix": 0},
+            {"nom": t("avatar.mage2"), "fichier": "mage2.png", "prix": 3},
+            {"nom": t("avatar.mage3"), "fichier": "mage3.png", "prix": 3},
+            {"nom": t("avatar.grimoire"), "fichier": "grimoire.png", "niveau_associe": 1, "prix": 4},
+            {"nom": t("avatar.mage4"), "fichier": "mage4.png", "niveau_associe": 2, "prix": 8},
+            {"nom": t("avatar.sorcier"), "fichier": "sorcier.png", "niveau_associe": 3, "prix": 12},
+            {"nom": t("avatar.squelette"), "fichier": "squelette.png", "niveau_associe": 4, "prix": 16},
+            {"nom": t("avatar.slime_vert1"), "fichier": "slime_vert1.png", "niveau_associe": 5, "prix": 20},
+            {"nom": t("avatar.slime_violet"), "fichier": "slime_violet.png", "niveau_associe": 5, "prix": 20},
+            {"nom": t("avatar.mage5"), "fichier": "mage5.png", "niveau_associe": 6, "prix": 24},
+            {"nom": t("avatar.slime_vert2"), "fichier": "slime_vert2.png", "niveau_associe": 7, "prix": 28},
+            {"nom": t("avatar.mage6"), "fichier": "mage6.png", "niveau_associe": 8, "prix": 32},
+            {"nom": t("avatar.demon"), "fichier": "demon.png", "niveau_associe": 9, "prix": 36},
+            {"nom": t("avatar.pyrolord"), "fichier": "pyrolord.png", "niveau_associe": 10, "prix": 40},
         ]
 
         # Power-ups achetables (améliorations permanentes)
         self.powerups = [
             {
                 "id": "cristal_temps",
-                "nom": "Cristal prolongé",
+                "nom": t("power.cristal_temps"),
                 "description": [
                     "Augmente la durée du pouvoir de",
                     "tir octroyé par le Cristal de feu.",
@@ -77,7 +78,7 @@ class Profil:
             },
             {
                 "id": "cristal_vitesse",
-                "nom": "Cristal accéléré",
+                "nom": t("power.cristal_vitesse"),
                 "description": [
                     "Augmente la vitesse des",
                     "projectiles de feu du Cristal de feu.",
@@ -216,7 +217,7 @@ class Profil:
         
         # Calculer la planète correspondante
         planete = (niveau_max - 1) // 5 + 1
-        noms_planetes = ["Terra", "Pyros", "Aquaris", "Nebula", "Cryon", "Solara", "Vortex", "Obscura"]
+        noms_planetes = [t("planet.1"), t("planet.2"), t("planet.3"), t("planet.4"), t("planet.5"), t("planet.6"), t("planet.7"), t("planet.8")]
         if planete > 0:
             idx = min(planete - 1, len(noms_planetes) - 1)
             nom_planete = noms_planetes[idx]
@@ -276,13 +277,13 @@ class Profil:
         self.dessiner_etoiles(ecran)
         
         # Titre "Profil"
-        titre = self.font_titre.render("Profil", True, (255, 255, 255))
+        titre = self.font_titre.render(t("profil.titre"), True, (255, 255, 255))
         ecran.blit(titre, (LARGEUR_ECRAN // 2 - titre.get_width() // 2, 30))
         
         mouse_pos = pygame.mouse.get_pos()
         
         # Sous-titre "Pseudo"
-        sous_titre_pseudo = self.font_3.render("Pseudo", True, (180, 180, 180))
+        sous_titre_pseudo = self.font_3.render(t("profil.pseudo"), True, (180, 180, 180))
         ecran.blit(sous_titre_pseudo, (LARGEUR_ECRAN // 2 - sous_titre_pseudo.get_width() // 2, 130))
         
         # Cadre du pseudo
@@ -309,7 +310,7 @@ class Profil:
         self.pseudo_rect = pseudo_zone
         
         # Sous-titre "Avatar"
-        sous_titre_avatar = self.font_3.render("Avatar", True, (180, 180, 180))
+        sous_titre_avatar = self.font_3.render(t("profil.avatar"), True, (180, 180, 180))
         ecran.blit(sous_titre_avatar, (self.cadre_avatar.centerx - sous_titre_avatar.get_width() // 2, self.cadre_avatar.y - 25))
         
         # Cadre de l'avatar
@@ -334,23 +335,23 @@ class Profil:
         stats = self.calculer_statistiques()
         
         # Sous-titre "Statistiques"
-        sous_titre_stats = self.font_3.render("Statistiques", True, (180, 180, 180))
+        sous_titre_stats = self.font_3.render(t("profil.statistiques"), True, (180, 180, 180))
         ecran.blit(sous_titre_stats, (self.zone_niveau_max.centerx - sous_titre_stats.get_width() // 2, self.zone_niveau_max.y - 25))
         
         # Zone niveau maximum / planète
         pygame.draw.rect(ecran, COULEUR_BOUTON, self.zone_niveau_max, border_radius=10)
         pygame.draw.rect(ecran, COULEUR_BORDURE, self.zone_niveau_max, 3, border_radius=10)
-        niveau_txt = self.font_3.render("Progression", True, (200, 200, 200))
+        niveau_txt = self.font_3.render(t("profil.progression"), True, (200, 200, 200))
         niveau_y = self.zone_niveau_max.y + 10
         ecran.blit(niveau_txt, (self.zone_niveau_max.x + 15, niveau_y))
-        progression_txt = self.font_2.render(f"{stats['planete']} - Niv. {stats['niveau_max']}", True, (255, 255, 255))
+        progression_txt = self.font_2.render(f"{stats['planete']} - {t('profil.niv')} {stats['niveau_max']}", True, (255, 255, 255))
         progression_y = self.zone_niveau_max.y + self.zone_niveau_max.height - progression_txt.get_height() - 12 + 6
         ecran.blit(progression_txt, (self.zone_niveau_max.x + 15, progression_y))
         
         # Zone temps total (records)
         pygame.draw.rect(ecran, COULEUR_BOUTON, self.zone_temps_total, border_radius=10)
         pygame.draw.rect(ecran, COULEUR_BORDURE, self.zone_temps_total, 3, border_radius=10)
-        temps_label = self.font_3.render("Temps total (records)", True, (200, 200, 200))
+        temps_label = self.font_3.render(t("profil.temps_total"), True, (200, 200, 200))
         temps_label_y = self.zone_temps_total.y + 10
         ecran.blit(temps_label, (self.zone_temps_total.x + 15, temps_label_y))
         temps_txt = self.font_2.render(self.formater_temps(stats['temps_total_ms']), True, (255, 255, 255))
@@ -360,7 +361,7 @@ class Profil:
         # Zone pièces collectées
         pygame.draw.rect(ecran, COULEUR_BOUTON, self.zone_cibles, border_radius=10)
         pygame.draw.rect(ecran, COULEUR_BORDURE, self.zone_cibles, 3, border_radius=10)
-        pieces_label = self.font_3.render("Pièces gagnées", True, (200, 200, 200))
+        pieces_label = self.font_3.render(t("profil.pieces"), True, (200, 200, 200))
         pieces_label_y = self.zone_cibles.y + 10
         ecran.blit(pieces_label, (self.zone_cibles.x + 15, pieces_label_y))
         pieces_txt = self.font_2.render(str(stats.get('pieces_total', 0)), True, (255, 255, 255))
@@ -373,7 +374,7 @@ class Profil:
         else:
             pygame.draw.rect(ecran, (120, 30, 30), self.bouton_reset_save, border_radius=10)
         pygame.draw.rect(ecran, COULEUR_BORDURE, self.bouton_reset_save, 3, border_radius=10)
-        reset_txt = self.font_1.render("Réinitialiser", True, (255, 255, 255))
+        reset_txt = self.font_1.render(t("profil.reset"), True, (255, 255, 255))
         ecran.blit(reset_txt, (self.bouton_reset_save.centerx - reset_txt.get_width() // 2,
                               self.bouton_reset_save.centery - reset_txt.get_height() // 2))
         
@@ -384,7 +385,7 @@ class Profil:
             couleur_retour = COULEUR_BOUTON
         pygame.draw.rect(ecran, couleur_retour, self.bouton_retour, border_radius=10)
         pygame.draw.rect(ecran, COULEUR_BORDURE, self.bouton_retour, 3, border_radius=10)
-        retour_txt = self.font_1.render("Retour", True, (255, 255, 255))
+        retour_txt = self.font_1.render(t("profil.retour"), True, (255, 255, 255))
         ecran.blit(retour_txt, (self.bouton_retour.centerx - retour_txt.get_width() // 2,
                                self.bouton_retour.centery - retour_txt.get_height() // 2))
         

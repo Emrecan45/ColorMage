@@ -4,6 +4,7 @@ import os
 import random
 import math
 from core.config import LARGEUR_ECRAN, HAUTEUR_ECRAN, VERSION_JEU, COULEUR_BOUTON, COULEUR_SURVOL, COULEUR_BORDURE, resource_path
+from core.i18n import t
 from core.config_manager import ConfigManager
 
 class Menu:
@@ -76,28 +77,28 @@ class Menu:
             couleur_jouer = COULEUR_SURVOL
         else:
             couleur_jouer = COULEUR_BOUTON
-        self.dessiner_bouton_arrondi(ecran, self.bouton_jouer, couleur_jouer, "Jouer", self.font_1)
+        self.dessiner_bouton_arrondi(ecran, self.bouton_jouer, couleur_jouer, t("menu.jouer"), self.font_1)
         
         # Bouton Grimoire
         if self.bouton_grimoire.collidepoint(mouse_pos):
             couleur_grimoire = COULEUR_SURVOL
         else:
             couleur_grimoire = COULEUR_BOUTON
-        self.dessiner_bouton_arrondi(ecran, self.bouton_grimoire, couleur_grimoire, "Grimoire", self.font_1)
+        self.dessiner_bouton_arrondi(ecran, self.bouton_grimoire, couleur_grimoire, t("menu.grimoire"), self.font_1)
         
         # Bouton Paramètres
         if self.bouton_parametres.collidepoint(mouse_pos):
             couleur_param = COULEUR_SURVOL
         else:
             couleur_param = COULEUR_BOUTON
-        self.dessiner_bouton_arrondi(ecran, self.bouton_parametres, couleur_param, "Paramètres", self.font_1)
+        self.dessiner_bouton_arrondi(ecran, self.bouton_parametres, couleur_param, t("menu.parametres"), self.font_1)
         
         # Bouton Quitter
         if self.bouton_quitter.collidepoint(mouse_pos):
             couleur_quitter = (150, 50, 50)  # Rouge clair au survol
         else:
             couleur_quitter = (120, 30, 30)  # Rouge sombre
-        self.dessiner_bouton_arrondi(ecran, self.bouton_quitter, couleur_quitter, "Quitter", self.font_1)
+        self.dessiner_bouton_arrondi(ecran, self.bouton_quitter, couleur_quitter, t("menu.quitter"), self.font_1)
         
         # Bouton Profil (en haut à droite avec icône)
         if self.bouton_profil.collidepoint(mouse_pos):
