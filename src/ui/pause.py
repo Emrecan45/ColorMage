@@ -1,7 +1,7 @@
 import pygame
 import sys
 import os
-from core.config import LARGEUR_ECRAN, HAUTEUR_ECRAN, resource_path
+from core.config import LARGEUR_ECRAN, HAUTEUR_ECRAN, resource_path, FPS
 from core.config_manager import ConfigManager
 from ui.parametres import Parametres
 from ui.popup import Popup
@@ -159,8 +159,10 @@ class Pause:
         en_pause = True
         action = "continuer"
         self.maj_volume()
-        
+        clock = pygame.time.Clock()
+
         while en_pause:
+            clock.tick(FPS)
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     pygame.quit()
@@ -180,6 +182,7 @@ class Pause:
                         popup = Popup()
                         en_params = True
                         while en_params:
+                            clock.tick(FPS)
                             for ev in pygame.event.get():
                                 if ev.type == pygame.QUIT:
                                     pygame.quit()
