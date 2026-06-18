@@ -46,19 +46,19 @@ class Profil:
         # niveau_associe = niveau dont l'ennemi doit être vaincu pour débloquer
         self.avatars = [
             {"nom": "Mage 1", "fichier": "mage1.png", "prix": 0},
-            {"nom": "Mage 2", "fichier": "mage2.png", "prix": 5},
-            {"nom": "Mage 3", "fichier": "mage3.png", "prix": 10},
-            {"nom": "Mage 4", "fichier": "mage4.png", "prix": 15},
-            {"nom": "Grimoire", "fichier": "grimoire.png", "prix": 15},
-            {"nom": "Sorcier", "fichier": "sorcier.png", "niveau_associe": 3, "prix": 20},
-            {"nom": "Squelette", "fichier": "squelette.png", "niveau_associe": 4, "prix": 20},
-            {"nom": "Slime Vert1", "fichier": "slime_vert1.png", "niveau_associe": 5, "prix": 25},
-            {"nom": "Slime Violet", "fichier": "slime_violet.png", "niveau_associe": 5, "prix": 25},
-            {"nom": "Mage 5", "fichier": "mage5.png", "niveau_associe": 6, "prix": 30},
-            {"nom": "Slime Vert2", "fichier": "slime_vert2.png", "niveau_associe": 7, "prix": 35},
-            {"nom": "Mage 6", "fichier": "mage6.png", "niveau_associe": 8, "prix": 40},
-            {"nom": "Démon", "fichier": "demon.png", "niveau_associe": 9, "prix": 45},
-            {"nom": "Pyrolord", "fichier": "pyrolord.png", "niveau_associe": 10, "prix": 50},
+            {"nom": "Mage 2", "fichier": "mage2.png", "prix": 3},
+            {"nom": "Mage 3", "fichier": "mage3.png", "prix": 3},
+            {"nom": "Grimoire", "fichier": "grimoire.png", "niveau_associe": 1, "prix": 4},
+            {"nom": "Mage 4", "fichier": "mage4.png", "niveau_associe": 2, "prix": 8},
+            {"nom": "Sorcier", "fichier": "sorcier.png", "niveau_associe": 3, "prix": 12},
+            {"nom": "Squelette", "fichier": "squelette.png", "niveau_associe": 4, "prix": 16},
+            {"nom": "Slime Vert1", "fichier": "slime_vert1.png", "niveau_associe": 5, "prix": 20},
+            {"nom": "Slime Violet", "fichier": "slime_violet.png", "niveau_associe": 5, "prix": 20},
+            {"nom": "Mage 5", "fichier": "mage5.png", "niveau_associe": 6, "prix": 24},
+            {"nom": "Slime Vert2", "fichier": "slime_vert2.png", "niveau_associe": 7, "prix": 28},
+            {"nom": "Mage 6", "fichier": "mage6.png", "niveau_associe": 8, "prix": 32},
+            {"nom": "Démon", "fichier": "demon.png", "niveau_associe": 9, "prix": 36},
+            {"nom": "Pyrolord", "fichier": "pyrolord.png", "niveau_associe": 10, "prix": 40},
         ]
 
         # Power-ups achetables (améliorations permanentes)
@@ -73,7 +73,7 @@ class Profil:
                 ],
                 "fichier": "cristal_feu_temps_up.png",
                 "niveau_associe": 7,
-                "prix": 50,
+                "prix": 30,
             },
             {
                 "id": "cristal_vitesse",
@@ -84,7 +84,7 @@ class Profil:
                 ],
                 "fichier": "cristal_feu_up_vitesse.png",
                 "niveau_associe": 9,
-                "prix": 60,
+                "prix": 30,
             },
         ]
         

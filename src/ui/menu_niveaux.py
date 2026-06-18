@@ -187,7 +187,7 @@ class MenuNiveaux:
         # Catégories du marché
         self.marche_categories = [
             {"nom": "Avatars", "section": "avatars", "disponible": True},
-            {"nom": "Power-ups", "section": "powerups", "disponible": True},
+            {"nom": "Pouvoirs", "section": "powerups", "disponible": True},
         ]
         self.boutons_categories = []
         # Cache des images d'avatars et de power-ups
@@ -899,7 +899,7 @@ class MenuNiveaux:
         if self.powerups_marche_cache is None:
             self.construire_cache_powerups_marche()
 
-        sous_titre = self.font_2.render("Power-ups", True, (230, 200, 150))
+        sous_titre = self.font_2.render("Pouvoirs", True, (230, 200, 150))
         ecran.blit(sous_titre, (LARGEUR_ECRAN // 2 - sous_titre.get_width() // 2, 120))
 
         mouse_pos = pygame.mouse.get_pos()

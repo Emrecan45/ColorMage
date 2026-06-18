@@ -77,7 +77,7 @@ Chaque niveau possède un **meilleur temps** enregistré, et un **Grimoire** se 
 Dépense les pièces gagnées en terminant les niveaux :
 
 - **Avatars** : nouvelles apparences débloquées au fil de la progression.
-- **Power-ups** : améliorations permanentes du cristal de feu - *cristal prolongé* (durée allongée) et *cristal accéléré* (projectiles plus rapides), débloqués à certains niveaux.
+- **Pouvoirs** : améliorations permanentes du cristal de feu - *cristal prolongé* (durée allongée) et *cristal accéléré* (projectiles plus rapides), débloqués à certains niveaux.
 
 
 
