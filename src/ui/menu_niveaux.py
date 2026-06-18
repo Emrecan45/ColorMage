@@ -186,12 +186,14 @@ class MenuNiveaux:
         # Catégories du marché
         self.marche_categories = [
             {"nom": "Avatars", "section": "avatars", "disponible": True},
-            {"nom": "Power-ups", "section": "powerups", "disponible": False},
+            {"nom": "Power-ups", "section": "powerups", "disponible": True},
         ]
         self.boutons_categories = []
-        # Cache des images d'avatars
+        # Cache des images d'avatars et de power-ups
         self.avatars_marche_cache = None
+        self.powerups_marche_cache = None
         self.boutons_achats = []
+        self.boutons_powerups = []
         # Achat en attente de confirmation et boutons du popup
         self.achat_en_attente = None
         self.bouton_achat_confirmer = pygame.Rect(0, 0, 200, 55)
@@ -214,7 +216,20 @@ class MenuNiveaux:
             except Exception:
                 cache.append(None)
         self.avatars_marche_cache = cache
-    
+
+    def construire_cache_powerups_marche(self):
+        """Précharge les images des power-ups du marché."""
+        taille = 120
+        cache = []
+        for powerup in self.profil.powerups:
+            try:
+                chemin = resource_path(os.path.join("assets", "img", "ui", powerup["fichier"]))
+                img = pygame.image.load(chemin).convert_alpha()
+                cache.append(pygame.transform.scale(img, (taille, taille)))
+            except Exception:
+                cache.append(None)
+        self.powerups_marche_cache = cache
+
     def generer_plaques_positions(self):
         """Génère les positions des plaques de niveaux sur une planète"""
         self.plaques_positions = []
@@ -792,7 +807,21 @@ class MenuNiveaux:
             self.dessiner_bouton_retour(ecran, "Retour")
             return
 
-        # Sinon : section Avatars
+        # Sinon : afficher la section choisie
+        if self.marche_section == "powerups":
+            self.afficher_section_powerups(ecran)
+        else:
+            self.afficher_section_avatars(ecran)
+
+        self.dessiner_compteur_pieces(ecran)
+        self.dessiner_bouton_retour(ecran, "Retour")
+
+        # Popup de confirmation d'achat
+        if self.achat_en_attente is not None:
+            self.dessiner_popup_achat(ecran, pygame.mouse.get_pos())
+
+    def afficher_section_avatars(self, ecran):
+        """Affiche la grille d'avatars du marché."""
         if self.avatars_marche_cache is None:
             self.construire_cache_avatars_marche()
 
@@ -863,17 +892,99 @@ class MenuNiveaux:
                 ecran.blit(piece_img, (gx, center_y - piece_img.get_height() // 2))
                 ecran.blit(txt_prix, (gx + piece_img.get_width() + ecart, center_y - txt_prix.get_height() // 2))
 
-        self.dessiner_compteur_pieces(ecran)
-        self.dessiner_bouton_retour(ecran, "Retour")
+    def afficher_section_powerups(self, ecran):
+        """Affiche les power-ups du marché sous forme de cartes.
+        """
+        if self.powerups_marche_cache is None:
+            self.construire_cache_powerups_marche()
 
-        # Popup de confirmation d'achat
-        if self.achat_en_attente is not None:
-            self.dessiner_popup_achat(ecran, mouse_pos)
+        sous_titre = self.font_2.render("Power-ups", True, (230, 200, 150))
+        ecran.blit(sous_titre, (LARGEUR_ECRAN // 2 - sous_titre.get_width() // 2, 120))
+
+        mouse_pos = pygame.mouse.get_pos()
+        self.boutons_powerups = []
+
+        carte_l, carte_h = 720, 180
+        ecart_v = 30
+        y_start = 210
+
+        for i, powerup in enumerate(self.profil.powerups):
+            x = (LARGEUR_ECRAN - carte_l) // 2
+            y = y_start + i * (carte_h + ecart_v)
+            rect = pygame.Rect(x, y, carte_l, carte_h)
+
+            possede = self.profil.powerup_est_achete(i)
+            dispo = self.profil.powerup_est_disponible_marche(i)
+            prix = powerup.get("prix", 0)
+            self.boutons_powerups.append((rect, i, possede, dispo, prix))
+
+            if not dispo:
+                couleur_case = (0, 0, 0)
+            elif rect.collidepoint(mouse_pos) and not possede and self.achat_en_attente is None:
+                couleur_case = COULEUR_SURVOL
+            else:
+                couleur_case = COULEUR_BOUTON
+            pygame.draw.rect(ecran, couleur_case, rect, border_radius=12)
+            pygame.draw.rect(ecran, COULEUR_BORDURE, rect, 3, border_radius=12)
+
+            img = self.powerups_marche_cache[i]
+            img_x = rect.left + 30
+            texte_x = img_x + (img.get_width() if img is not None else 120) + 40
+
+            # Power-up verrouillé
+            if not dispo:
+                cad_x = img_x + (img.get_width() if img is not None else 120) // 2 - self.image_cadenas.get_width() // 2
+                cad_y = rect.centery - self.image_cadenas.get_height() // 2
+                ecran.blit(self.image_cadenas, (cad_x, cad_y))
+                titre_pw = self.font_2.render(powerup["nom"], True, (150, 150, 150))
+                ecran.blit(titre_pw, (texte_x, rect.top + 50))
+                niv_req = powerup.get("niveau_associe", "?")
+                txt_niv = self.font_3.render(f"Niveau {niv_req} requis", True, (255, 100, 100))
+                ecran.blit(txt_niv, (texte_x, rect.top + 95))
+                continue
+
+            # Image
+            if img is not None:
+                img_y = rect.top + 20
+                ecran.blit(img, (img_x, img_y))
+                img_centre_x = img_x + img.get_width() // 2
+                bas_image = img_y + img.get_height()
+            else:
+                img_centre_x = img_x + 60
+                bas_image = rect.top + 140
+
+            # Prix (ou "Acquis")
+            if possede:
+                txt = self.font_petit.render("Acquis", True, (100, 255, 100))
+                ecran.blit(txt, (img_centre_x - txt.get_width() // 2, bas_image + 8))
+            else:
+                txt_prix = self.font_3.render(f"{prix}", True, (255, 215, 0))
+                piece_img = pygame.transform.scale(self.icone_piece, (26, 26))
+                ecart = 6
+                total_w = piece_img.get_width() + ecart + txt_prix.get_width()
+                gx = img_centre_x - total_w // 2
+                cy = bas_image + 8 + txt_prix.get_height() // 2
+                ecran.blit(piece_img, (gx, cy - piece_img.get_height() // 2))
+                ecran.blit(txt_prix, (gx + piece_img.get_width() + ecart, cy - txt_prix.get_height() // 2))
+
+            # Titre et description
+            titre_pw = self.font_2.render(powerup["nom"], True, (255, 255, 255))
+            ecran.blit(titre_pw, (texte_x, rect.top + 30))
+
+            desc_y = rect.top + 80
+            for ligne in powerup.get("description", []):
+                ligne_txt = self.font_petit.render(ligne, True, (200, 200, 200))
+                ecran.blit(ligne_txt, (texte_x, desc_y))
+                desc_y += 30
 
     def dessiner_popup_achat(self, ecran, mouse_pos):
-        """Dessine la fenêtre de confirmation d'achat d'un avatar"""
-        avatar = self.profil.avatars[self.achat_en_attente]
-        prix = avatar.get("prix", 0)
+        """Dessine la fenêtre de confirmation d'achat"""
+        type_achat, idx = self.achat_en_attente
+        if type_achat == "powerup":
+            article = self.profil.powerups[idx]
+        else:
+            article = self.profil.avatars[idx]
+        prix = article.get("prix", 0)
 
         # Fond
         overlay = pygame.Surface((LARGEUR_ECRAN, HAUTEUR_ECRAN), pygame.SRCALPHA)
@@ -890,8 +1001,8 @@ class MenuNiveaux:
         titre = self.font_3.render("Confirmer l'achat", True, (255, 215, 0))
         ecran.blit(titre, (boite.centerx - titre.get_width() // 2, boite.top + 25))
 
-        # nom de l'avatar
-        nom = self.font_3.render(avatar["nom"], True, (255, 255, 255))
+        # nom de l'article
+        nom = self.font_3.render(article["nom"], True, (255, 255, 255))
         ecran.blit(nom, (boite.centerx - nom.get_width() // 2, boite.top + 80))
 
         # prix
@@ -943,28 +1054,49 @@ class MenuNiveaux:
                 self.achat_en_attente = None
             return None
 
+        # Section power-ups
+        if self.marche_section == "powerups":
+            for rect, idx, possede, dispo, prix in self.boutons_powerups:
+                if rect.collidepoint(pos):
+                    if dispo and not possede and self.config.get("pieces_total", 0) >= prix:
+                        self.son_select.play()
+                        self.achat_en_attente = ("powerup", idx)
+                    return None
+            return None
+
+        # Section avatars
         for rect, idx, possede, dispo, prix in self.boutons_achats:
             if rect.collidepoint(pos):
                 if dispo and not possede and self.config.get("pieces_total", 0) >= prix:
                     self.son_select.play()
-                    self.achat_en_attente = idx
+                    self.achat_en_attente = ("avatar", idx)
                 return None
         return None
 
-    def confirmer_achat(self, idx):
-        """Valide l'achat d'un avatar : débite les pièces et enregistre la possession"""
-        avatar = self.profil.avatars[idx]
-        prix = avatar.get("prix", 0)
+    def confirmer_achat(self, achat):
+        """Valide un achat : débite les pièces et enregistre la possession"""
+        type_achat, idx = achat
+        if type_achat == "powerup":
+            article = self.profil.powerups[idx]
+        else:
+            article = self.profil.avatars[idx]
+        prix = article.get("prix", 0)
         # Recharger le fichier pour avoir le solde de pièces à jour
         config = self.gestionnaire_config.charger_config()
         if config.get("pieces_total", 0) < prix:
             return
         self.son_piece.play()
         config["pieces_total"] = config.get("pieces_total", 0) - prix
-        achetes = config.get("avatars_achetes", [0])
-        if idx not in achetes:
-            achetes.append(idx)
-        config["avatars_achetes"] = achetes
+        if type_achat == "powerup":
+            achetes = config.get("powerups_achetes", [])
+            if article["id"] not in achetes:
+                achetes.append(article["id"])
+            config["powerups_achetes"] = achetes
+        else:
+            achetes = config.get("avatars_achetes", [0])
+            if idx not in achetes:
+                achetes.append(idx)
+            config["avatars_achetes"] = achetes
         self.gestionnaire_config.sauvegarder_config(config)
         self.config = config
         self.pieces_total_cache = config["pieces_total"]
