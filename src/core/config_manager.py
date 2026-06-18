@@ -33,6 +33,13 @@ class ConfigManager:
         self.niveau_actuel = self.config.get("niveau_actuel", 1)
         self.meilleurs_temps = self.config.get("meilleurs_temps", {})
     
+    def ecrire_config_atomique(self, config):
+        """Écrit la config de façon a ce que l'écriture d'abord dans un fichier temporaire puis on le renomme = une fermeture du jeu en pleine écriture ne peut pas laisser un save.json corrompu."""
+        chemin_tmp = self.chemin_config + ".tmp"
+        with open(chemin_tmp, "w", encoding="utf-8") as f:
+            json.dump(config, f, ensure_ascii=False)
+        os.replace(chemin_tmp, self.chemin_config)
+
     def generer_signature(self, config):
         """Génère un HMAC-SHA256 de la config"""
         copie = {}
@@ -85,6 +92,12 @@ class ConfigManager:
                 config = None
 
             if config is not None and type(config) == dict:
+                if "signature" in config:
+                    if not self.verifier_signature(config):
+                        self.sauvegarde_corrompue = True
+                else:
+                    self.sauvegarde_corrompue = False
+
                 # Vérifier que toutes les sections existent
                 if "controles" not in config:
                     config["controles"] = config_defaut["controles"]
@@ -100,17 +113,9 @@ class ConfigManager:
                 for cle in config_defaut["volumes"]:
                     if cle not in config["volumes"]:
                         config["volumes"][cle] = config_defaut["volumes"][cle]
-                
-                if "signature" in config:
-                    if not self.verifier_signature(config):
-                        self.sauvegarde_corrompue = True
-                else:
-                    self.sauvegarde_corrompue = False
-                
                 config["signature"] = self.generer_signature(config)
-                with open(self.chemin_config, "w", encoding="utf-8") as fw:
-                    json.dump(config, fw, ensure_ascii=False)
-                
+                self.ecrire_config_atomique(config)
+
                 return config
             # Fichier corrompu = on repart sur une config par défaut propre
             self.sauvegarde_corrompue = True
@@ -147,8 +152,7 @@ class ConfigManager:
             }
         # Ajouter la signature anti triche
         config["signature"] = self.generer_signature(config)
-        with open(self.chemin_config, "w", encoding="utf-8") as f:
-            json.dump(config, f, ensure_ascii=False)
+        self.ecrire_config_atomique(config)
         self.config = config
         self.controles = config.get("controles", {})
         self.volumes = config.get("volumes", {})
