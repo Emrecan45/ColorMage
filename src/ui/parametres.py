@@ -4,7 +4,9 @@ import json
 import os
 import random
 import math
-from core.config import LARGEUR_ECRAN, HAUTEUR_ECRAN, VERSION_JEU, COULEUR_BOUTON, COULEUR_SURVOL, COULEUR_BORDURE, resource_path
+from core.i18n import t
+from core.config import LARGEUR_ECRAN, HAUTEUR_ECRAN, COULEUR_BOUTON, COULEUR_SURVOL, COULEUR_BORDURE, resource_path
+import core.i18n as i18n
 from core.config_manager import ConfigManager
 
 class Parametres:
@@ -54,19 +56,19 @@ class Parametres:
             self.bloc_y = 400
 
         # droite
-        self.droite_field = pygame.Rect(LARGEUR_ECRAN // 3 + 150, self.bloc_y - 30, 90, 50)
+        self.droite_field = pygame.Rect(LARGEUR_ECRAN // 3 + 110, self.bloc_y - 30, 90, 50)
         self.droite_assign = self.controls.get("droite", "right")
 
         # gauche
-        self.gauche_field = pygame.Rect(LARGEUR_ECRAN // 3 + 150, self.bloc_y + 30, 90, 50)
+        self.gauche_field = pygame.Rect(LARGEUR_ECRAN // 3 + 110, self.bloc_y + 30, 90, 50)
         self.gauche_assign = self.controls.get("gauche", "left")
 
         # sauter
-        self.sauter_field = pygame.Rect(LARGEUR_ECRAN // 3 + 150, self.bloc_y + 90, 90, 50)
+        self.sauter_field = pygame.Rect(LARGEUR_ECRAN // 3 + 110, self.bloc_y + 90, 90, 50)
         self.sauter_assign = self.controls.get("sauter", "up")
 
         # tir
-        self.tir_field = pygame.Rect(LARGEUR_ECRAN // 3 + 150, self.bloc_y + 150, 90, 50)
+        self.tir_field = pygame.Rect(LARGEUR_ECRAN // 3 + 110, self.bloc_y + 150, 90, 50)
         self.tir_assign = self.controls.get("tir", "e")
 
         # Variable pour savoir quel champ est actuellement en cours d'attribution
@@ -81,11 +83,12 @@ class Parametres:
             self.bouton_importer = None
 
         self.bouton_reset_param = pygame.Rect(LARGEUR_ECRAN // 2 - 125, 635, 250, 50)
+        self.bouton_langue = pygame.Rect(LARGEUR_ECRAN // 2 + 150, self.bloc_y + 145, 160, 50)
         self.bouton_retour = pygame.Rect(LARGEUR_ECRAN // 2 - 125, 700, 250, 50)
         self.fichier_import_en_attente = None
 
         self.jauge_musique = pygame.Rect(LARGEUR_ECRAN // 2 + 35, self.bloc_y, 250, 15)
-        self.jauge_general = pygame.Rect(LARGEUR_ECRAN // 2 + 35, self.bloc_y + 110, 250, 15)
+        self.jauge_general = pygame.Rect(LARGEUR_ECRAN // 2 + 35, self.bloc_y + 90, 250, 15)
         
         # Charger les valeurs sauvegardées
         self.val_jauge_musique = self.volumes.get("musique", 50)
@@ -116,26 +119,26 @@ class Parametres:
         # version du jeu
 
         # titres
-        titre_txt = self.font_1.render("Paramètres", True, (255, 255, 255))
+        titre_txt = self.font_1.render(t("param.titre"), True, (255, 255, 255))
         ecran.blit(titre_txt, (LARGEUR_ECRAN // 2 - titre_txt.get_width() // 2, 30))
 
-        # Sous-titre "Sauvegarde"
+        # Sous-titre t("param.sauvegarde")
         if not self.depuis_partie:
-            sous_titre_save = self.font_sous_titre.render("Sauvegarde", True, (180, 180, 180))
+            sous_titre_save = self.font_sous_titre.render(t("param.sauvegarde"), True, (180, 180, 180))
             ecran.blit(sous_titre_save, (LARGEUR_ECRAN // 2 - sous_titre_save.get_width() // 2, self.bouton_exporter.y - 45))
 
         # Sous-titres volumes
-        volume_txt = self.font_sous_titre.render("Volumes", True, (180, 180, 180))
-        ecran.blit(volume_txt, (LARGEUR_ECRAN // 2 - volume_txt.get_width() // 2 + 160, self.bloc_y - 100))
+        volume_txt = self.font_sous_titre.render(t("param.volumes"), True, (180, 180, 180))
+        ecran.blit(volume_txt, (LARGEUR_ECRAN // 2 - volume_txt.get_width() // 2 + 160, self.bloc_y - 86))
 
-        configuration_txt = self.font_sous_titre.render("Configuration", True, (180, 180, 180))
+        configuration_txt = self.font_sous_titre.render(t("param.config"), True, (180, 180, 180))
         ecran.blit(configuration_txt, (LARGEUR_ECRAN // 2 - configuration_txt.get_width() // 2 - 110, self.bloc_y - 100))
         
-        des_touches_txt = self.font_sous_titre.render("des touches", True, (180, 180, 180))
+        des_touches_txt = self.font_sous_titre.render(t("param.touches"), True, (180, 180, 180))
         ecran.blit(des_touches_txt, (LARGEUR_ECRAN // 2 - des_touches_txt.get_width() // 2 - 110, self.bloc_y - 72))
 
         # ---------volume musique
-        musique_txt = self.font_3.render("Musique", True, (255, 255, 255))
+        musique_txt = self.font_3.render(t("param.musique"), True, (255, 255, 255))
         ecran.blit(musique_txt, (LARGEUR_ECRAN // 2 - musique_txt.get_width() // 2 + 160, self.bloc_y - 30))
         pygame.draw.rect(ecran, (100, 100, 100), self.jauge_musique)
         # remplissage de la jauge
@@ -143,8 +146,8 @@ class Parametres:
         pygame.draw.rect(ecran, (0, 200, 0), (self.jauge_musique.x, self.jauge_musique.y, largeur_remplie, self.jauge_musique.height))
 
         # ----------volume général
-        general_txt = self.font_3.render("Effets sonores", True, (255, 255, 255))
-        ecran.blit(general_txt, (LARGEUR_ECRAN // 2 - general_txt.get_width() // 2 + 160, self.bloc_y + 70))
+        general_txt = self.font_3.render(t("param.sfx"), True, (255, 255, 255))
+        ecran.blit(general_txt, (LARGEUR_ECRAN // 2 - general_txt.get_width() // 2 + 160, self.bloc_y + 60))
         pygame.draw.rect(ecran, (100, 100, 100), self.jauge_general)
         # remplissage de la jauge
         largeur_remplie = int((self.val_jauge_general / 100) * self.jauge_general.width)
@@ -154,8 +157,8 @@ class Parametres:
         
         
         # ----------touche droite
-        droite_txt = self.font_3.render("Droite", True, (255, 255, 255))
-        ecran.blit(droite_txt, (LARGEUR_ECRAN // 3 + 50 - droite_txt.get_width() // 2, self.bloc_y - 30))
+        droite_txt = self.font_3.render(t("param.droite"), True, (255, 255, 255))
+        ecran.blit(droite_txt, (LARGEUR_ECRAN // 3 + 20 - droite_txt.get_width() // 2, self.bloc_y - 30))
         # Couleur du champ selon l'état
         if self.champ_actif == "droite":
             pygame.draw.rect(ecran, (255, 0, 0), self.droite_field, border_radius=5)
@@ -174,8 +177,8 @@ class Parametres:
         ecran.blit(droite_assign_txt, text_rect)
 
         # ---------touche gauche
-        gauche_txt = self.font_3.render("Gauche", True, (255, 255, 255))
-        ecran.blit(gauche_txt, (LARGEUR_ECRAN // 3 + 50 - gauche_txt.get_width() // 2, self.bloc_y + 30))
+        gauche_txt = self.font_3.render(t("param.gauche"), True, (255, 255, 255))
+        ecran.blit(gauche_txt, (LARGEUR_ECRAN // 3 + 20 - gauche_txt.get_width() // 2, self.bloc_y + 30))
         # Couleur du champ selon l'état
         if self.champ_actif == "gauche":
             pygame.draw.rect(ecran, (255, 0, 0), self.gauche_field, border_radius=5)
@@ -194,8 +197,8 @@ class Parametres:
         ecran.blit(gauche_assign_txt, text_rect)
         
         # --------touche sauter
-        sauter_txt = self.font_3.render("Sauter", True, (255, 255, 255))
-        ecran.blit(sauter_txt, (LARGEUR_ECRAN // 3 + 50 - sauter_txt.get_width() // 2, self.bloc_y + 100))
+        sauter_txt = self.font_3.render(t("param.sauter"), True, (255, 255, 255))
+        ecran.blit(sauter_txt, (LARGEUR_ECRAN // 3 + 20 - sauter_txt.get_width() // 2, self.bloc_y + 100))
         # Couleur du champ selon l'état
         if self.champ_actif == "sauter":
                 pygame.draw.rect(ecran, (255, 0, 0), self.sauter_field, border_radius=5)
@@ -214,8 +217,8 @@ class Parametres:
         ecran.blit(sauter_assign_txt, text_rect)
 
         # --------touche tir
-        tir_txt = self.font_3.render("Tir", True, (255, 255, 255))
-        ecran.blit(tir_txt, (LARGEUR_ECRAN // 3 + 50 - tir_txt.get_width() // 2, self.bloc_y + 160))
+        tir_txt = self.font_3.render(t("param.tir"), True, (255, 255, 255))
+        ecran.blit(tir_txt, (LARGEUR_ECRAN // 3 + 20 - tir_txt.get_width() // 2, self.bloc_y + 160))
         if self.champ_actif == "tir":
             pygame.draw.rect(ecran, (255, 0, 0), self.tir_field, border_radius=5)
         else:
@@ -239,7 +242,7 @@ class Parametres:
             else:
                 pygame.draw.rect(ecran, COULEUR_BOUTON, self.bouton_exporter, border_radius=10)
             pygame.draw.rect(ecran, COULEUR_BORDURE, self.bouton_exporter, 3, border_radius=10)
-            export_txt = self.font_3.render("Exporter", True, (255, 255, 255))
+            export_txt = self.font_3.render(t("param.exporter"), True, (255, 255, 255))
             ecran.blit(export_txt, (self.bouton_exporter.centerx - export_txt.get_width() // 2,
                                     self.bouton_exporter.centery - export_txt.get_height() // 2))
 
@@ -249,9 +252,23 @@ class Parametres:
             else:
                 pygame.draw.rect(ecran, COULEUR_BOUTON, self.bouton_importer, border_radius=10)
             pygame.draw.rect(ecran, COULEUR_BORDURE, self.bouton_importer, 3, border_radius=10)
-            import_txt = self.font_3.render("Importer", True, (255, 255, 255))
+            import_txt = self.font_3.render(t("param.importer"), True, (255, 255, 255))
             ecran.blit(import_txt, (self.bouton_importer.centerx - import_txt.get_width() // 2,
                                     self.bouton_importer.centery - import_txt.get_height() // 2))
+
+        
+        # -------bouton langue
+        lang_label = self.font_3.render(t("param.langue"), True, (255, 255, 255))
+        ecran.blit(lang_label, (LARGEUR_ECRAN // 2 + 70 - lang_label.get_width() // 2, self.bloc_y + 160))
+
+        if self.bouton_langue.collidepoint(pygame.mouse.get_pos()):
+            pygame.draw.rect(ecran, COULEUR_SURVOL, self.bouton_langue, border_radius=5)
+        else:
+            pygame.draw.rect(ecran, COULEUR_BOUTON, self.bouton_langue, border_radius=5)
+        pygame.draw.rect(ecran, COULEUR_BORDURE, self.bouton_langue, 3, border_radius=5)
+        lang_txt = self.font_3.render(t("param.langue_actuelle"), True, (255, 255, 255))
+        ecran.blit(lang_txt, (self.bouton_langue.centerx - lang_txt.get_width() // 2,
+                              self.bouton_langue.centery - lang_txt.get_height() // 2))
 
         # -------bouton réinitialiser
         if self.bouton_reset_param.collidepoint(pygame.mouse.get_pos()):
@@ -260,7 +277,7 @@ class Parametres:
             pygame.draw.rect(ecran, (120, 30, 30), self.bouton_reset_param, border_radius=10)
             
         pygame.draw.rect(ecran, COULEUR_BORDURE, self.bouton_reset_param, 3, border_radius=10)
-        reset_txt = self.font_2.render("Réinitialiser", True, (255, 255, 255))
+        reset_txt = self.font_2.render(t("param.reset"), True, (255, 255, 255))
         ecran.blit(reset_txt, (self.bouton_reset_param.centerx - reset_txt.get_width() // 2, 
                               self.bouton_reset_param.centery - reset_txt.get_height() // 2))
         
@@ -271,7 +288,7 @@ class Parametres:
             pygame.draw.rect(ecran, COULEUR_BOUTON, self.bouton_retour, border_radius=10)
             
         pygame.draw.rect(ecran, COULEUR_BORDURE, self.bouton_retour, 3, border_radius=10)
-        retour_txt = self.font_2.render("Retour", True, (255, 255, 255))
+        retour_txt = self.font_2.render(t("param.retour"), True, (255, 255, 255))
         ecran.blit(retour_txt, (self.bouton_retour.centerx - retour_txt.get_width() // 2,
                                self.bouton_retour.centery - retour_txt.get_height() // 2))
           
@@ -345,6 +362,17 @@ class Parametres:
                     self.fichier_import_en_attente = chemin
                     return "demander_import"
                 return None
+            
+            elif self.bouton_langue.collidepoint(evenement.pos):
+                self.son_select.play()
+                actuelle = self.gestionnaire_config.config.get("langue", "en")
+                if actuelle == "fr":
+                    nouvelle = "en"
+                else:
+                    nouvelle = "fr"
+                self.gestionnaire_config.config["langue"] = nouvelle
+                self.gestionnaire_config.sauvegarder_config()
+                i18n.init(nouvelle)
             elif self.bouton_reset_param.collidepoint(evenement.pos):
                 self.son_select.play()
                 # Demander confirmation avant reset
@@ -425,7 +453,7 @@ class Parametres:
         with open(destination, "w", encoding="utf-8") as f:
             f.write(contenu)
         if self.game is not None:
-            self.game.alerte.afficher("Sauvegarde exportée !")
+            self.game.alerte.afficher(t("alerte.export_ok"))
 
     def choisir_fichier_import(self):
         """Ouvre un sélecteur de fichier et retourne le chemin choisi"""
@@ -450,7 +478,7 @@ class Parametres:
         self.fichier_import_en_attente = None
         if not source or not os.path.isfile(source):
             if self.game is not None:
-                self.game.alerte.afficher("Fichier introuvable !")
+                self.game.alerte.afficher(t("alerte.fichier_introuvable"))
             return
         with open(source, "r", encoding="utf-8") as f:
             contenu = f.read()
@@ -463,17 +491,17 @@ class Parametres:
                 break
         if not valide:
             if self.game is not None:
-                self.game.alerte.afficher("Fichier invalide !")
+                self.game.alerte.afficher(t("alerte.fichier_invalide"))
             return
         # Vérifier la signature anti triche
         if "signature" in nouvelle_config:
             if not self.gestionnaire_config.verifier_signature(nouvelle_config):
                 if self.game is not None:
-                    self.game.alerte.afficher("Sauvegarde corrompue !")
+                    self.game.alerte.afficher(t("alerte.sauvegarde_corrompue"))
                 return
         else:
             if self.game is not None:
-                self.game.alerte.afficher("Sauvegarde non signée !")
+                self.game.alerte.afficher(t("alerte.sauvegarde_non_signee"))
             return
         self.gestionnaire_config.sauvegarder_config(nouvelle_config)
         self.controls = self.gestionnaire_config.obtenir_controles()

@@ -2,6 +2,7 @@ import pygame
 import os
 import math
 import random
+from core.i18n import t
 from core.config import LARGEUR_ECRAN, HAUTEUR_ECRAN, NIVEAUX_DISPONIBLES, COULEUR_BOUTON, COULEUR_SURVOL, COULEUR_BORDURE, resource_path
 from core.config_manager import ConfigManager
 from ui.profil import Profil
@@ -30,20 +31,22 @@ class MenuNiveaux:
         self.univers = [
             {
                 "nom": "Royaume Nord",
+                "id_trad": "nord",
                 "planetes": [
-                    {"nom": "Terra", "couleur": (100, 180, 100), "x": LARGEUR_ECRAN // 5, "y": HAUTEUR_ECRAN // 2, "rayon": 70, "anneaux": False},
-                    {"nom": "Pyros", "couleur": (200, 80, 60), "x": LARGEUR_ECRAN // 2, "y": HAUTEUR_ECRAN // 3, "rayon": 60, "anneaux": False},
-                    {"nom": "Aquaris", "couleur": (60, 120, 200), "x": LARGEUR_ECRAN * 3 // 4, "y": HAUTEUR_ECRAN * 2 // 3, "rayon": 80, "anneaux": True},
-                    {"nom": "Nebula", "couleur": (150, 80, 180), "x": LARGEUR_ECRAN * 4 // 5, "y": HAUTEUR_ECRAN // 4, "rayon": 55, "anneaux": False},
+                    {"nom": "Terra", "id_trad": "1", "couleur": (100, 180, 100), "x": LARGEUR_ECRAN // 5, "y": HAUTEUR_ECRAN // 2, "rayon": 70, "anneaux": False},
+                    {"nom": "Pyros", "id_trad": "2", "couleur": (200, 80, 60), "x": LARGEUR_ECRAN // 2, "y": HAUTEUR_ECRAN // 3, "rayon": 60, "anneaux": False},
+                    {"nom": "Aquaris", "id_trad": "3", "couleur": (60, 120, 200), "x": LARGEUR_ECRAN * 3 // 4, "y": HAUTEUR_ECRAN * 2 // 3, "rayon": 80, "anneaux": True},
+                    {"nom": "Nebula", "id_trad": "4", "couleur": (150, 80, 180), "x": LARGEUR_ECRAN * 4 // 5, "y": HAUTEUR_ECRAN // 4, "rayon": 55, "anneaux": False},
                 ]
             },
             {
                 "nom": "Royaume Sud",
+                "id_trad": "sud",
                 "planetes": [
-                    {"nom": "Cryon", "couleur": (150, 220, 255), "x": LARGEUR_ECRAN // 4, "y": HAUTEUR_ECRAN // 3, "rayon": 65, "anneaux": False},
-                    {"nom": "Solara", "couleur": (255, 180, 50), "x": LARGEUR_ECRAN // 2, "y": HAUTEUR_ECRAN * 2 // 3 - 40, "rayon": 75, "anneaux": False},
-                    {"nom": "Vortex", "couleur": (180, 180, 200), "x": LARGEUR_ECRAN * 3 // 4, "y": HAUTEUR_ECRAN // 3, "rayon": 55, "anneaux": True},
-                    {"nom": "Obscura", "couleur": (60, 40, 80), "x": LARGEUR_ECRAN * 4 // 5, "y": HAUTEUR_ECRAN * 3 // 4, "rayon": 70, "anneaux": False},
+                    {"nom": "Cryon", "id_trad": "5", "couleur": (150, 220, 255), "x": LARGEUR_ECRAN // 4, "y": HAUTEUR_ECRAN // 3, "rayon": 65, "anneaux": False},
+                    {"nom": "Solara", "id_trad": "6", "couleur": (255, 180, 50), "x": LARGEUR_ECRAN // 2, "y": HAUTEUR_ECRAN * 2 // 3 - 40, "rayon": 75, "anneaux": False},
+                    {"nom": "Vortex", "id_trad": "7", "couleur": (180, 180, 200), "x": LARGEUR_ECRAN * 3 // 4, "y": HAUTEUR_ECRAN // 3, "rayon": 55, "anneaux": True},
+                    {"nom": "Obscura", "id_trad": "8", "couleur": (60, 40, 80), "x": LARGEUR_ECRAN * 4 // 5, "y": HAUTEUR_ECRAN * 3 // 4, "rayon": 70, "anneaux": False},
                 ]
             }
         ]
@@ -186,8 +189,8 @@ class MenuNiveaux:
         self.marche_section = None
         # Catégories du marché
         self.marche_categories = [
-            {"nom": "Avatars", "section": "avatars", "disponible": True},
-            {"nom": "Pouvoirs", "section": "powerups", "disponible": True},
+            {"nom": t("marche.avatars"), "section": "avatars", "disponible": True},
+            {"nom": t("marche.pouvoirs"), "section": "powerups", "disponible": True},
         ]
         self.boutons_categories = []
         # Cache des images d'avatars et de power-ups
@@ -442,7 +445,7 @@ class MenuNiveaux:
                 continue
             
             # Titre de l'univers
-            titre = self.font_1.render(univers["nom"], True, (255, 255, 255))
+            titre = self.font_1.render(t(f"univers.{univers['id_trad']}", univers["nom"]), True, (255, 255, 255))
             titre_x = LARGEUR_ECRAN // 2 - titre.get_width() // 2 + offset_univers
             ecran.blit(titre, (titre_x, 30))
             
@@ -497,7 +500,7 @@ class MenuNiveaux:
                 ecran.blit(nom, (planete_x - nom.get_width() // 2, planete["y"] + planete["rayon"] + 20 + offset_y))
                 
                 # Niveaux disponibles
-                niveaux_texte = f"Niveaux {premier_niveau}-{premier_niveau + self.niveaux_par_planete - 1}"
+                niveaux_texte = f"{t('menu_niveaux.niveaux')} {premier_niveau}-{premier_niveau + self.niveaux_par_planete - 1}"
                 if planete_debloquee:
                     couleur_niveaux = (200, 200, 200)
                 else:
@@ -539,14 +542,14 @@ class MenuNiveaux:
         if self.univers_actuel < len(self.univers) - 1:
             univers_debloque = self.univers_est_complete(self.univers_actuel)
             est_survole = self.fleche_droite_rect.collidepoint(mouse_pos)
-            nom_univers_suivant = self.univers[self.univers_actuel + 1]["nom"]
+            nom_univers_suivant = t(f"univers.{self.univers[self.univers_actuel + 1]['id_trad']}", self.univers[self.univers_actuel + 1]["nom"])
             self.dessiner_fleche(ecran, self.fleche_droite_rect.centerx, self.fleche_droite_rect.centery + offset_y, 
                                "droite", est_survole, nom_univers_suivant, univers_debloque)
         
         # Flèche gauche (si univers précédent existe)
         if self.univers_actuel > 0:
             est_survole = self.fleche_gauche_rect.collidepoint(mouse_pos)
-            nom_univers_precedent = self.univers[self.univers_actuel - 1]["nom"]
+            nom_univers_precedent = t(f"univers.{self.univers[self.univers_actuel - 1]['id_trad']}", self.univers[self.univers_actuel - 1]["nom"])
             self.dessiner_fleche(ecran, self.fleche_gauche_rect.centerx, self.fleche_gauche_rect.centery + offset_y, 
                                "gauche", est_survole, nom_univers_precedent, True)
     
@@ -672,11 +675,11 @@ class MenuNiveaux:
             # Choisir le bon sprite
             if self.mage_en_saut:
                 # Animation de saut
-                t = self.mage_saut_progression
-                if t < 0.15:
+                prog = self.mage_saut_progression
+                if prog < 0.15:
                     # Début du saut
                     sprite = self.mage_walk_frames[1]
-                elif t < 0.2:
+                elif prog < 0.2:
                     # Milieu du saut
                     sprite = self.mage_walk_frames[2]
                 else:
@@ -698,7 +701,7 @@ class MenuNiveaux:
             ecran.blit(sprite, (self.mage_x - 30, self.mage_y - 55))
         
         # Bouton retour
-        self.dessiner_bouton_retour(ecran, "Retour")
+        self.dessiner_bouton_retour(ecran, t("marche.retour"))
         
         # Compteur de pièces
         self.dessiner_compteur_pieces(ecran)
@@ -726,7 +729,7 @@ class MenuNiveaux:
             couleur = COULEUR_BOUTON
         pygame.draw.rect(ecran, couleur, self.bouton_marche, border_radius=10)
         pygame.draw.rect(ecran, COULEUR_BORDURE, self.bouton_marche, 3, border_radius=10)
-        texte_surface = self.font_3.render("Marché", True, (255, 255, 255))
+        texte_surface = self.font_3.render(t("marche.marche"), True, (255, 255, 255))
         # Texte + icône
         icone_w = self.icone_marche.get_width()
         icone_h = self.icone_marche.get_height()
@@ -772,7 +775,7 @@ class MenuNiveaux:
                                  rect.centery - nom_txt.get_height() // 2))
 
             if not dispo:
-                bientot = self.font_petit.render("Bientôt disponible", True, (180, 180, 180))
+                bientot = self.font_petit.render(t("marche.bientot_dispo"), True, (180, 180, 180))
                 ecran.blit(bientot, (rect.centerx - bientot.get_width() // 2, rect.bottom + 6))
 
     def afficher_marche(self, ecran):
@@ -798,14 +801,14 @@ class MenuNiveaux:
         ecran.fill((25, 18, 10))
         self.dessiner_etoiles(ecran)
 
-        titre = self.font_1.render("Marché", True, (255, 215, 0))
+        titre = self.font_1.render(t("marche.marche"), True, (255, 215, 0))
         ecran.blit(titre, (LARGEUR_ECRAN // 2 - titre.get_width() // 2, 30))
 
         # Accueil du marché : choix de la catégorie
         if self.marche_section is None:
             self.afficher_accueil_marche(ecran)
             self.dessiner_compteur_pieces(ecran)
-            self.dessiner_bouton_retour(ecran, "Retour")
+            self.dessiner_bouton_retour(ecran, t("marche.retour"))
             return
 
         # Sinon : afficher la section choisie
@@ -815,7 +818,7 @@ class MenuNiveaux:
             self.afficher_section_avatars(ecran)
 
         self.dessiner_compteur_pieces(ecran)
-        self.dessiner_bouton_retour(ecran, "Retour")
+        self.dessiner_bouton_retour(ecran, t("marche.retour"))
 
         # Popup de confirmation d'achat
         if self.achat_en_attente is not None:
@@ -826,7 +829,7 @@ class MenuNiveaux:
         if self.avatars_marche_cache is None:
             self.construire_cache_avatars_marche()
 
-        sous_titre = self.font_2.render("Avatars", True, (230, 200, 150))
+        sous_titre = self.font_2.render(t("marche.avatars"), True, (230, 200, 150))
         ecran.blit(sous_titre, (LARGEUR_ECRAN // 2 - sous_titre.get_width() // 2, 120))
 
         cellule = 120
@@ -871,7 +874,7 @@ class MenuNiveaux:
                 cad_y = rect_avatar.centery - self.image_cadenas.get_height() // 2
                 ecran.blit(self.image_cadenas, (cad_x, cad_y))
                 niv_req = avatar.get("niveau_associe", "?")
-                txt_niv = self.font_petit.render(f"Niv.{niv_req}", True, (255, 100, 100))
+                txt_niv = self.font_petit.render(f"{t('marche.niv')} {niv_req}", True, (255, 100, 100))
                 ecran.blit(txt_niv, (x + cellule // 2 - txt_niv.get_width() // 2, y + cellule - 28))
                 continue
 
@@ -881,7 +884,7 @@ class MenuNiveaux:
                 ecran.blit(img, (x + (cellule - img.get_width()) // 2, y + 10))
 
             if possede:
-                txt = self.font_petit.render("Acquis", True, (100, 255, 100))
+                txt = self.font_petit.render(t("marche.acquis"), True, (100, 255, 100))
                 ecran.blit(txt, (x + cellule // 2 - txt.get_width() // 2, y + cellule - 28))
             else:
                 txt_prix = self.font_petit.render(f"{prix}", True, (255, 215, 0))
@@ -899,7 +902,7 @@ class MenuNiveaux:
         if self.powerups_marche_cache is None:
             self.construire_cache_powerups_marche()
 
-        sous_titre = self.font_2.render("Pouvoirs", True, (230, 200, 150))
+        sous_titre = self.font_2.render(t("marche.pouvoirs"), True, (230, 200, 150))
         ecran.blit(sous_titre, (LARGEUR_ECRAN // 2 - sous_titre.get_width() // 2, 120))
 
         mouse_pos = pygame.mouse.get_pos()
@@ -930,17 +933,23 @@ class MenuNiveaux:
 
             img = self.powerups_marche_cache[i]
             img_x = rect.left + 30
-            texte_x = img_x + (img.get_width() if img is not None else 120) + 40
+            if img is not None:
+                texte_x = img_x + img.get_width() + 40
+            else:
+                texte_x = img_x + 120 + 40
 
             # Power-up verrouillé
             if not dispo:
-                cad_x = img_x + (img.get_width() if img is not None else 120) // 2 - self.image_cadenas.get_width() // 2
+                if img is not None:
+                    cad_x = img_x + img.get_width() // 2 - self.image_cadenas.get_width() // 2
+                else:
+                    cad_x = img_x + 120 // 2 - self.image_cadenas.get_width() // 2
                 cad_y = rect.centery - self.image_cadenas.get_height() // 2
                 ecran.blit(self.image_cadenas, (cad_x, cad_y))
                 titre_pw = self.font_2.render(powerup["nom"], True, (150, 150, 150))
                 ecran.blit(titre_pw, (texte_x, rect.top + 50))
                 niv_req = powerup.get("niveau_associe", "?")
-                txt_niv = self.font_3.render(f"Niv. {niv_req}", True, (255, 100, 100))
+                txt_niv = self.font_3.render(f"{t('marche.niv')} {niv_req}", True, (255, 100, 100))
                 ecran.blit(txt_niv, (texte_x, rect.top + 95))
                 continue
 
@@ -954,9 +963,9 @@ class MenuNiveaux:
                 img_centre_x = img_x + 60
                 bas_image = rect.top + 140
 
-            # Prix (ou "Acquis")
+            # Prix (ou t("marche.acquis"))
             if possede:
-                txt = self.font_petit.render("Acquis", True, (100, 255, 100))
+                txt = self.font_petit.render(t("marche.acquis"), True, (100, 255, 100))
                 ecran.blit(txt, (img_centre_x - txt.get_width() // 2, bas_image + 8))
             else:
                 txt_prix = self.font_3.render(f"{prix}", True, (255, 215, 0))
@@ -999,7 +1008,7 @@ class MenuNiveaux:
         pygame.draw.rect(ecran, (255, 215, 0), boite, 3, border_radius=15)
 
         # Titre
-        titre = self.font_3.render("Confirmer l'achat", True, (255, 215, 0))
+        titre = self.font_3.render(t("marche.confirmer"), True, (255, 215, 0))
         ecran.blit(titre, (boite.centerx - titre.get_width() // 2, boite.top + 25))
 
         # nom de l'article
@@ -1022,7 +1031,7 @@ class MenuNiveaux:
         else:
             pygame.draw.rect(ecran, (40, 150, 40), self.bouton_achat_confirmer, border_radius=10)
         pygame.draw.rect(ecran, (255, 255, 255), self.bouton_achat_confirmer, 2, border_radius=10)
-        conf_txt = self.font_3.render("Acheter", True, (255, 255, 255))
+        conf_txt = self.font_3.render(t("marche.acheter"), True, (255, 255, 255))
         ecran.blit(conf_txt, (self.bouton_achat_confirmer.centerx - conf_txt.get_width() // 2,
                               self.bouton_achat_confirmer.centery - conf_txt.get_height() // 2))
 
@@ -1031,7 +1040,7 @@ class MenuNiveaux:
         else:
             pygame.draw.rect(ecran, (150, 40, 40), self.bouton_achat_annuler, border_radius=10)
         pygame.draw.rect(ecran, (255, 255, 255), self.bouton_achat_annuler, 2, border_radius=10)
-        ann_txt = self.font_3.render("Annuler", True, (255, 255, 255))
+        ann_txt = self.font_3.render(t("marche.annuler"), True, (255, 255, 255))
         ecran.blit(ann_txt, (self.bouton_achat_annuler.centerx - ann_txt.get_width() // 2,
                              self.bouton_achat_annuler.centery - ann_txt.get_height() // 2))
 
@@ -1125,7 +1134,9 @@ class MenuNiveaux:
         except Exception:
             pass
     
-    def dessiner_bouton_retour(self, ecran, texte="Retour"):
+    def dessiner_bouton_retour(self, ecran, texte=None):
+        if texte is None:
+            texte = t("marche.retour")
         """Dessine le bouton retour"""
         mouse_pos = pygame.mouse.get_pos()
         est_survole = self.bouton_retour.collidepoint(mouse_pos)
@@ -1157,7 +1168,7 @@ class MenuNiveaux:
                 return {
                     "nom": planete["nom"],
                     "couleur": planete["couleur"],
-                    "univers": univers["nom"]
+                    "univers": t(f"univers.{univers['id_trad']}", univers["nom"])
                 }
   
     def afficher_transition_zoom(self, ecran):
@@ -1165,19 +1176,19 @@ class MenuNiveaux:
         planete = self.planetes[self.planete_selectionnee]
         
         # Interpoler entre les deux vues
-        t = self.zoom_animation
+        prog = self.zoom_animation
         
         # Fond qui s'éclaircit progressivement
-        ecran.fill((int(10 + t * 20), int(10 + t * 20), int(30 + t * 20)))
+        ecran.fill((int(10 + prog * 20), int(10 + prog * 20), int(30 + prog * 20)))
         
-        if t < 0.5:
+        if prog < 0.5:
             # Première moitié : zoom sur la planète
             self.dessiner_etoiles(ecran)
-            echelle = 1 + t * 10
+            echelle = 1 + prog * 10
             self.dessiner_planete(ecran, planete, echelle, LARGEUR_ECRAN // 2, HAUTEUR_ECRAN // 2)
         else:
             # Deuxième moitié : fondu vers la vue planète
-            alpha = int((t - 0.5) * 2 * 255)
+            alpha = int((prog - 0.5) * 2 * 255)
             self.afficher_planete(ecran)
     
     def afficher_selection(self, ecran):
@@ -1259,12 +1270,12 @@ class MenuNiveaux:
                     self.portail_animation = 0
                     self.teleportation_en_cours = True
             else:
-                t = self.mage_saut_progression
-                self.mage_x = self.mage_saut_start_x + (self.mage_cible_x - self.mage_saut_start_x) * t
+                prog = self.mage_saut_progression
+                self.mage_x = self.mage_saut_start_x + (self.mage_cible_x - self.mage_saut_start_x) * prog
                 
                 # saut en arc de cercle
                 # https://stackoverflow.com/questions/3522032/how-to-make-a-character-jump-in-a-2d-game
-                self.mage_y = (self.mage_saut_start_y + (self.mage_cible_y - self.mage_saut_start_y) * t - self.mage_hauteur_saut * math.sin(math.pi * t))
+                self.mage_y = (self.mage_saut_start_y + (self.mage_cible_y - self.mage_saut_start_y) * prog - self.mage_hauteur_saut * math.sin(math.pi * prog))
         
         # Animation du portail
         if self.portail_actif:
@@ -1469,7 +1480,7 @@ class MenuNiveaux:
                 # Niveau pas encore sorti = afficher une alerte
                 if numero > NIVEAUX_DISPONIBLES:
                     if self.alerte is not None:
-                        self.alerte.afficher("Niveau bientot disponible !")
+                        self.alerte.afficher(t("alerte.niveau_bientot"))
                     return None
 
                 # Si le mage est déjà sur cette plaque, lancer directement

@@ -148,7 +148,8 @@ class ConfigManager:
                 "pieces_gagnees_total": self.config.get("pieces_gagnees_total", 0),
                 "pieces_collectees": self.config.get("pieces_collectees", {}),
                 "pages_vues": self.config.get("pages_vues", []),
-                "powerups_achetes": self.config.get("powerups_achetes", [])
+                "powerups_achetes": self.config.get("powerups_achetes", []),
+                "langue": self.config.get("langue", "en")
             }
         # Ajouter la signature anti triche
         config["signature"] = self.generer_signature(config)

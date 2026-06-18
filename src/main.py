@@ -18,6 +18,8 @@ from ui.chronometre import Chronometre
 from ui.profil import Profil
 from ui.intro import Intro
 from ui.alerte import Alerte
+import core.i18n as i18n
+from core.i18n import t
 
 class Game:
     """Classe principale gérant le jeu"""
@@ -29,6 +31,10 @@ class Game:
         # Charger la configuration
         self.gestionnaire_config = ConfigManager()
         
+        # Initialisation de la langue
+        langue_choisie = self.gestionnaire_config.config.get("langue", "en")
+        i18n.init(langue_choisie)
+        
         # Créer l'écran
         self.plein_ecran = False
         icone = pygame.image.load(resource_path("assets/img/ui/logo.ico"))
@@ -36,18 +42,6 @@ class Game:
         self.ecran = pygame.display.set_mode((LARGEUR_ECRAN, HAUTEUR_ECRAN), pygame.SCALED | pygame.RESIZABLE)
         pygame.display.set_caption("ColorMage")
 
-        # Lancer l'intro
-        intro = Intro(self.ecran, self.gestionnaire_config, self)
-        resultat_intro = intro.lancer()
-        if resultat_intro == "quitter":
-            pygame.quit()
-            sys.exit()
-
-        # Précharger tout le jeu derrière l'écran de chargement
-        self.preparer_ecran_chargement()
-        etapes = etapes_prechargement()
-        etapes.append((self.creer_sous_systemes, ()))
-        self.executer_prechargement(etapes)
 
         # Annonce de boss (ex: enrage) affichée temporairement à l'écran
         self.boss_annonce = None
@@ -110,14 +104,6 @@ class Game:
         chemin_enrage = resource_path(os.path.join("assets/audio", "pyrolord_enrage.wav"))
         self.son_enrage = pygame.mixer.Sound(chemin_enrage)
         
-        # Alerte
-        self.alerte = Alerte(self.gestionnaire_config)
-        self.menu_niveaux.alerte = self.alerte
-
-        # Vérifier si la sauvegarde a été corrompue (modifiée à la main)
-        if self.gestionnaire_config.sauvegarde_corrompue:
-            self.alerte.afficher("Sauvegarde corrompue, progression réinitialisée !")
-            self.gestionnaire_config.sauvegarde_corrompue = False
 
         # Appliquer le volume des effets sonores depuis les paramètres
         volumes = self.gestionnaire_config.obtenir_volumes()
@@ -996,7 +982,7 @@ class Game:
                     for avatar in self.profil.avatars:
                         niv = avatar.get("niveau_associe")
                         if niv is not None and niv == self.niveau_actuel:
-                            self.alerte.afficher("Nouvel avatar dans le marché !")
+                            self.alerte.afficher(t("alerte.nouvel_avatar"))
                             break
             return  # Ne pas mettre à jour le jeu pendant l'animation
         
@@ -1647,6 +1633,28 @@ class Game:
 
     def run(self):
         """Lance la boucle principale"""
+        # Lancer l'intro
+        intro = Intro(self.ecran, self.gestionnaire_config, self)
+        resultat_intro = intro.lancer()
+        if resultat_intro == "quitter":
+            pygame.quit()
+            sys.exit()
+
+        # Précharger tout le jeu derrière l'écran de chargement
+        self.preparer_ecran_chargement()
+        etapes = etapes_prechargement()
+        etapes.append((self.creer_sous_systemes, ()))
+        self.executer_prechargement(etapes)
+
+        # Alerte
+        self.alerte = Alerte(self.gestionnaire_config)
+        self.menu_niveaux.alerte = self.alerte
+
+        # Vérifier si la sauvegarde est corrompue et réinitialiser si nécessaire
+        if self.gestionnaire_config.sauvegarde_corrompue:
+            self.alerte.afficher(t("alerte.sauvegarde_corrompue_reset"))
+            self.gestionnaire_config.sauvegarde_corrompue = False
+
         temps.init()
         while self.en_cours:
             if self.etat == "jeu":
@@ -1660,7 +1668,7 @@ class Game:
             self.afficher()
             self.horloge.tick(FPS)
         pygame.quit()
-        sys.exit()
+        return
 
 if __name__ == "__main__":
     jeu = Game()

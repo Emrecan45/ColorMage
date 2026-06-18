@@ -1,3 +1,4 @@
+from core.i18n import t
 import pygame
 import os
 import cv2
@@ -25,7 +26,7 @@ class Intro:
         """Affiche un écran 'Chargement...'"""
         self.ecran.fill((0, 0, 0))
         font = pygame.font.Font(None, 60)
-        texte = font.render("Chargement...", True, (255, 255, 255))
+        texte = font.render(t("intro.chargement"), True, (255, 255, 255))
         texte_rect = texte.get_rect(center=(LARGEUR_ECRAN // 2, HAUTEUR_ECRAN // 2))
         self.ecran.blit(texte, texte_rect)
         pygame.display.flip()

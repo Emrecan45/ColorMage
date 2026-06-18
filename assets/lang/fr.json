@@ -1,0 +1,230 @@
+{
+  "menu": {
+    "jouer": "Jouer",
+    "grimoire": "Grimoire",
+    "parametres": "Paramètres",
+    "quitter": "Quitter"
+  },
+  "pause": {
+    "titre": "Pause",
+    "continuer": "Continuer",
+    "recommencer": "Recommencer",
+    "parametres": "Paramètres",
+    "quitter": "Quitter",
+    "planete": "Planète",
+    "niv": "Niv.",
+    "menu_principal": "Menu Principal"
+  },
+  "marche": {
+    "marche": "Marché",
+    "bientot_dispo": "Bientôt disponible",
+    "retour": "Retour",
+    "avatars": "Avatars",
+    "pouvoirs": "Pouvoirs",
+    "niv": "Niv.",
+    "acquis": "Acquis",
+    "confirmer": "Confirmer l'achat",
+    "acheter": "Acheter",
+    "annuler": "Annuler"
+  },
+  "avatar": {
+    "mage1": "Mage 1",
+    "mage2": "Mage 2",
+    "mage3": "Mage 3",
+    "grimoire": "Grimoire",
+    "mage4": "Mage 4",
+    "sorcier": "Sorcier",
+    "squelette": "Squelette",
+    "slime_vert1": "Slime Vert",
+    "slime_violet": "Slime Violet",
+    "mage5": "Mage 5",
+    "slime_vert2": "Slime Ancien",
+    "mage6": "Mage 6",
+    "demon": "Démon",
+    "pyrolord": "Pyrolord"
+  },
+  "power": {
+    "cristal_temps": "Cristal prolongé",
+    "desc_cristal_temps": [
+      "Augmente la durée du pouvoir de",
+      "tir octroyé par le Cristal de feu.",
+      "(10s -> 15s)"
+    ],
+    "cristal_vitesse": "Cristal accéléré",
+    "desc_cristal_vitesse": [
+      "Augmente la vitesse des",
+      "projectiles de feu du Cristal de feu."
+    ]
+  },
+  "planet": {
+    "1": "Terra",
+    "2": "Pyros",
+    "3": "Aquaris",
+    "4": "Nebula",
+    "5": "Cryon",
+    "6": "Solara",
+    "7": "Vortex",
+    "8": "Obscura"
+  },
+  "param": {
+    "titre": "Paramètres",
+    "sauvegarde": "Sauvegarde",
+    "volumes": "Volumes",
+    "config": "Configuration",
+    "touches": "des touches",
+    "musique": "Musiques",
+    "sfx": "Effets sonores",
+    "droite": "Droite",
+    "gauche": "Gauche",
+    "sauter": "Sauter",
+    "tir": "Tir",
+    "exporter": "Exporter",
+    "importer": "Importer",
+    "reset": "Réinitialiser",
+    "retour": "Retour",
+    "langue": "Langue",
+    "langue_actuelle": "Français"
+  },
+  "popup": {
+    "bases": "Les bases",
+    "bases_lore": "Le Prisme s'est brisé. Seuls ceux qui maîtrisent le chant des couleurs peuvent traverser ce monde.",
+    "bases_tuto": [
+      "- Attrape les potions pour changer ta couleur.",
+      "- Tu ne peux toucher que les blocs noirs ou de ta propre couleur.",
+      "- Les autres blocs sont immatériels : tu passeras au travers.",
+      "- Atteins le portail jaune pour t'échapper."
+    ],
+    "blocs": "Blocs enchantés",
+    "blocs_lore": "Certains fragments du monde refusent de rester immobiles, animés par une magie résiduelle.",
+    "blocs_tuto": [
+      "- Des blocs bougent horizontalement ou verticalement.",
+      "- Ils peuvent te transporter s'ils sont noirs ou de ta couleur.",
+      "- Ne te fais pas écraser par un bloc et ne tombe pas dans le vide !",
+      "- Observe leur cycle avant de sauter !"
+    ],
+    "sorcier": "Sorcier",
+    "sorcier_lore": "Des mages corrompus par l'obsidienne. Ils canalisent leur haine sous forme de crânes spectraux.",
+    "garde": "Garde d'os",
+    "garde_lore": "D'anciens gardiens relevés par le néant. Ils patrouillent sans fin, frappant tout intrus.",
+    "slimes": "Slimes",
+    "slimes_lore": "Des résidus de magie condensés. Leurs noyaux sont durs, mais leur corps est élastique.",
+    "cristal": "Cristal de feu",
+    "cristal_lore": "Un cristal ardent, résidu d'une magie ancienne. Il confère de mystérieux pouvoirs brulants.",
+    "brasier": "Brasier",
+    "brasier_lore": "Des flammes éternelles jaillissent du sol, vestiges de la fureur de Pyros.",
+    "butin": "Butin",
+    "butin_lore": "En s'éteignant, les créatures relâchent parfois l'énergie qu'elles avaient absorbée.",
+    "demon": "Démon volant",
+    "demon_lore": "Une créature des abysses qui plane sans répit, le regard rivé sur sa proie.",
+    "pyrolord": "Pyrolord",
+    "pyrolord_lore": "Un petit slime de braise sautille au fond de l'antre. Il a l'air inoffensif... vraiment ?",
+    "pyrolord_tuto": [
+      "- Quelque chose se cache sous cette enveloppe ardente...",
+      "- Réveille le en lui sautant dessus ou en lui tirant dessus.",
+      "- Il est rapide et peut te surprendre si tu ne fais pas attention."
+    ],
+    "grimoire": "Grimoire du Mage",
+    "mystere": "???",
+    "cadenas": "Continue ta progression pour débloquer !",
+    "bravo": "Bravo ! Niveau terminé",
+    "temps": "Temps : ",
+    "suivant": "Suivant",
+    "niveau_suivant": "Niveau suivant",
+    "gameover": "Game Over ! Vous êtes mort",
+    "confirmation": "Confirmation",
+    "oui": "Oui",
+    "non": "Non",
+    "import_titre": "Voulez-vous vraiment importer",
+    "import_desc": "cette sauvegarde ?",
+    "import_warn": "Votre sauvegarde actuelle sera écrasée.",
+    "param_titre": "Voulez-vous vraiment réinitialiser",
+    "param_desc": "les paramètres ?",
+    "param_warn": "Cette action est irréversible.",
+    "reset_titre": "Voulez-vous vraiment réinitialiser",
+    "reset_desc": "votre sauvegarde ?",
+    "reset_warn": "Cette action est irréversible.",
+    "meilleur_temps": "Meilleur temps : ",
+    "sorcier_tuto": [
+      "- Il reste immobile mais attaque à distance.",
+      "- Il projette des crânes maudits en ligne droite.",
+      "- Le moindre contact avec lui ou ses crânes te sera fatal.",
+      "- Trouve le bon timing pour passer entre les tirs !"
+    ],
+    "garde_tuto": [
+      "- Ce soldat fait des allers-retours constants.",
+      "- Il attaque au corps-à-corps.",
+      "- Si tu le touches, c'est la fin.",
+      "- Saute par-dessus ou passe dans son dos !"
+    ],
+    "slimes_tuto": [
+      "- Utilise le rebond sur leur tête pour atteindre des hauteurs.",
+      "- Verts : Fragiles, 1 seul saut suffit pour les détruire.",
+      "- Violets : Résistants, il faut 2 sauts pour les détruire.",
+      "- Attention : toucher un slime ailleurs que sur la tête est mortel !"
+    ],
+    "cristal_tuto": [
+      "- Attrape le cristal pour obtenir le pouvoir du feu.",
+      "- Tu pourras tirer des flammes sur les ennemis.",
+      "- Il apparaît dans des emplacements spécifiques.",
+      "- Attention : tu ne peux pas rester éternellement avec ce pouvoir."
+    ],
+    "brasier_tuto": [
+      "- Le feu est mortel au contact, comme les pics.",
+      "- Le feu ne peut pas être éteint.",
+      "- Aucune couleur ne te protège : il brûle tout.",
+      "- Saute par-dessus ou contourne-le !"
+    ],
+    "butin_tuto": [
+      "- Certains ennemis lâchent un objet à leur mort.",
+      "- Pièces, potions ou cristaux de feu... Tout peut tomber.",
+      "-Élimine-les pour récupérer leur butin.",
+      "- Le butin apparaît là où l'ennemi a péri."
+    ],
+    "demon_tuto": [
+      "- Il vole et te fait face en permanence.",
+      "- Toutes les 3 secondes, il tire ou fonce droit sur toi.",
+      "- Le toucher est fatal : esquive sa charge et ses projectiles.",
+      "- Tire-lui dessus, trois tirs suffisent pour l'abattre."
+    ],
+    "pyrolord_lore2": [
+      "- Quelque chose se cache sous cette enveloppe ardente...",
+      "- Réveille-le en lui sautant dessus ou en lui tirant dessus.",
+      "- Il est rapide et peut te surprendre si tu ne fais pas attention."
+    ],
+    "confirmer": "Confirmer",
+    "annuler": "Annuler",
+    "fermer": "Fermer"
+  },
+  "alerte": {
+    "sauvegarde_corrompue_reset": "Sauvegarde corrompue, progression réinitialisée !",
+    "nouvel_avatar": "Nouvel avatar dans le marché !",
+    "niveau_bientot": "Niveau bientot disponible !",
+    "export_ok": "Sauvegarde exportée !",
+    "fichier_introuvable": "Fichier introuvable !",
+    "fichier_invalide": "Fichier invalide !",
+    "sauvegarde_corrompue": "Sauvegarde corrompue !",
+    "sauvegarde_non_signee": "Sauvegarde non signée !"
+  },
+  "intro": {
+    "chargement": "Chargement..."
+  },
+  "menu_niveaux": {
+    "niveaux": "Niveaux"
+  },
+  "profil": {
+    "titre": "Profil",
+    "pseudo": "Pseudo",
+    "avatar": "Avatar",
+    "statistiques": "Statistiques",
+    "progression": "Progression",
+    "temps_total": "Temps total (records)",
+    "pieces": "Pièces gagnées",
+    "reset": "Réinitialiser",
+    "retour": "Retour",
+    "niv": "Niv."
+  },
+  "univers": {
+    "nord": "Royaume Nord",
+    "sud": "Royaume Sud"
+  }
+}
