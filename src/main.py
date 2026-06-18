@@ -156,7 +156,7 @@ class Game:
 
         # Étoiles
         for x, y, taille, brillance_base, vitesse, phase in self.etoiles_chargement:
-            b = int(brillance_base * (0.5 + 0.5 * math.sin(temps * vitesse + phase)))
+            b = int(brillance_base * (0.5 + 0.5 * math.sin((temps * 60.0) * vitesse + phase)))
             b = max(50, min(255, b))
             pygame.draw.circle(ecran, (b, b, b), (x, y), taille)
 

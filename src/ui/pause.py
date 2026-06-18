@@ -1,7 +1,7 @@
 import pygame
 import sys
 import os
-from core.config import LARGEUR_ECRAN, HAUTEUR_ECRAN, resource_path
+from core.config import LARGEUR_ECRAN, HAUTEUR_ECRAN, resource_path, FPS
 from core.config_manager import ConfigManager
 from ui.parametres import Parametres
 from ui.popup import Popup
@@ -108,17 +108,27 @@ class Pause:
         
         # Dessiner les boutons
         for rect, texte in boutons:
+            # bouton Quitter
+            if texte == "Quitter":
+                couleur_survol = (150, 50, 50)
+                couleur_normal = (120, 30, 30)
+                couleur_texte = (255, 255, 255)
+            else:
+                couleur_survol = (200, 200, 200)
+                couleur_normal = (230, 230, 230)
+                couleur_texte = (0, 0, 0)
+
             # Effet de survol
             if rect.collidepoint(pygame.mouse.get_pos()):
-                pygame.draw.rect(ecran, (200, 200, 200), rect, border_radius=10)
+                pygame.draw.rect(ecran, couleur_survol, rect, border_radius=10)
             else:
-                pygame.draw.rect(ecran, (230, 230, 230), rect, border_radius=10)
-            
+                pygame.draw.rect(ecran, couleur_normal, rect, border_radius=10)
+
             # Bordure
             pygame.draw.rect(ecran, (0, 0, 0), rect, 3, border_radius=10)
             
             # Texte du bouton
-            texte_surface = self.font.render(texte, True, (0, 0, 0))
+            texte_surface = self.font.render(texte, True, couleur_texte)
             texte_x = rect.x + (rect.width - texte_surface.get_width()) // 2
             texte_y = rect.y + (rect.height - texte_surface.get_height()) // 2
             ecran.blit(texte_surface, (texte_x, texte_y))
@@ -159,8 +169,10 @@ class Pause:
         en_pause = True
         action = "continuer"
         self.maj_volume()
-        
+        clock = pygame.time.Clock()
+
         while en_pause:
+            clock.tick(FPS)
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     pygame.quit()
@@ -180,6 +192,7 @@ class Pause:
                         popup = Popup()
                         en_params = True
                         while en_params:
+                            clock.tick(FPS)
                             for ev in pygame.event.get():
                                 if ev.type == pygame.QUIT:
                                     pygame.quit()

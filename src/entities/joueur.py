@@ -450,7 +450,7 @@ class Joueur:
         if "cristal_vitesse" in self.gestionnaire_config.config.get("powerups_achetes", []):
             vitesse_feu *= 1.8
 
-        proj = ProjectileFeu(fx, fy, direction=self.direction, speed=vitesse_feu)
+        proj = ProjectileFeu(fx, fy, direction=self.direction, speed=vitesse_feu, joueur_source=self)
         return proj
 
     def maj_tir(self):

@@ -94,9 +94,9 @@ class Menu:
         
         # Bouton Quitter
         if self.bouton_quitter.collidepoint(mouse_pos):
-            couleur_quitter = COULEUR_SURVOL
+            couleur_quitter = (150, 50, 50)  # Rouge clair au survol
         else:
-            couleur_quitter = COULEUR_BOUTON
+            couleur_quitter = (120, 30, 30)  # Rouge sombre
         self.dessiner_bouton_arrondi(ecran, self.bouton_quitter, couleur_quitter, "Quitter", self.font_1)
         
         # Bouton Profil (en haut à droite avec icône)
