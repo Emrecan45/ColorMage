@@ -10,7 +10,7 @@ def resource_path(relative_path):
     return os.path.join(base_path, relative_path)
 
 # Version du jeu
-VERSION_JEU = "v2.2"
+VERSION_JEU = "v2.3"
 
 # Nombre de niveaux réellement disponibles
 NIVEAUX_DISPONIBLES = 10

@@ -1,28 +1,28 @@
 <div align="center">
 
-![logo](img/logo.png)
+![logo](assets/img/ui/logo.png)
 
 **ColorMage** est un jeu de plateforme-puzzle développé en **Python** avec **Pygame**.
 
 Vous incarnez un Mage capable de changer de couleur pour naviguer dans des niveaux remplis de plateformes, de pièges et d'ennemis.  
 La clé du succès : vous ne pouvez interagir qu'avec les éléments qui correspondent à **votre couleur**.
 
-![Version](https://img.shields.io/badge/version-v2.2-blue)
+![Version](https://img.shields.io/badge/version-v2.3-blue)
 ![Python](https://img.shields.io/badge/python-3.8%2B-yellow)
 ![Pygame](https://img.shields.io/badge/pygame-latest-green)
 ![Licence](https://img.shields.io/badge/licence-MIT-lightgrey)
 
 </div>
 
----
+
 
 ## 📷 Screenshots
 
 | Menu principal | Gameplay |
 |:-:|:-:|
-| ![Menu](img/screenshot_menu.png) | ![Gameplay](img/screenshot_game.png) |
+| ![Menu](assets/img/screenshot_menu.png) | ![Gameplay](assets/img/screenshot_game.png) |
 
----
+
 
 ## 🎮 Gameplay
 
@@ -37,38 +37,59 @@ Le joueur doit résoudre des parcours en changeant sa couleur pour utiliser les 
 ### Ennemis
 
 | Ennemi | Description |
-|--------|-------------|
+|--|-|
 | 🧙 Sorcier | Tire des projectiles dans sa portée |
 | 💀 Squelette | Patrouille sur une zone définie |
-| 🟢 Slime | Ennemi coloré, dangereux au contact |
+| 🟢 Slime | Ennemi coloré, dangereux au contact (rebond sur la tête) |
+| 👹 Démon volant | Te poursuit, fonce et tire des projectiles |
+| 🔥 Pyrolord | Boss de feu : se révèle après son réveil et enchaîne ses attaques |
 
-### Blocs spéciaux
+> Certains ennemis lâchent un **butin** (pièce, potion ou cristal) à leur mort.
 
-| Bloc | Effet |
+### Blocs spéciaux & objets
+
+| Bloc / Objet | Effet |
 |------|-------|
 | Bloc mobile | Se déplace horizontalement ou verticalement |
 | Potion de couleur | Change la couleur du Mage |
 | Pic | Mort instantanée au contact |
-| Pièce | +1 au compteur de pièces du profil |
+| Feu | Brasier mortel au contact, ne peut être éteint |
+| Cristal de feu | Confère temporairement le pouvoir de tirer des flammes |
+| Pièce | +1 au compteur de pièces (re-collectable à chaque partie) |
 
----
 
 ## 🗺️ Niveaux
 
-Le jeu contient actuellement **5 niveaux** jouables, répartis sur plusieurs planètes débloquées progressivement.  
-Chaque niveau possède un **meilleur temps** enregistré. Un **Grimoire** se débloque au fil de l'aventure - à vous de le découvrir.
+**10 niveaux** sont actuellement jouables, répartis sur les planètes **Terra** et **Pyros** (cette dernière s'achevant par un **combat de boss**). Les autres planètes (Aquaris, Nebula, Cryon, Solara, Vortex, Obscura) sont **à venir** dans de prochaines mises à jour.  
+Chaque niveau possède un **meilleur temps** enregistré, et un **Grimoire** se complète au fil de l'aventure - à vous de le découvrir.
 
----
 
 ## 👤 Profil
 
 - Pseudo personnalisable
-- Avatar sélectionnable (déblocables en battant des ennemis)
-- Statistiques : niveau max atteint, pièces collectées, temps de jeu total
+- Avatar sélectionnable (débloqués en battant des ennemis, puis achetés au marché)
+- Statistiques : niveau max atteint, pièces gagnées, temps de jeu total
+- Réinitialisation de la progression
 
----
 
-## ⚙️ Installation
+## 🛒 Marché
+
+Dépense les pièces gagnées en terminant les niveaux :
+
+- **Avatars** : nouvelles apparences débloquées au fil de la progression.
+- **Power-ups** : améliorations permanentes du cristal de feu - *cristal prolongé* (durée allongée) et *cristal accéléré* (projectiles plus rapides), débloqués à certains niveaux.
+
+
+
+## 🎮 Téléchargement
+
+Pour jouer, télécharge la dernière version dans l'onglet [**Releases**](https://github.com/Emrecan45/ColorMage/releases) : l'exécutable est **autonome**, aucune installation requise.
+
+
+
+## ⚙️ Installation depuis les sources
+
+> Pour les développeurs souhaitant lancer le jeu depuis le code.
 
 **Prérequis :** Python 3.8 ou supérieur
 
@@ -79,7 +100,7 @@ cd ColorMage
 python3 -m venv venv
 source venv/bin/activate
 pip install -r requirements.txt
-python3 src/ColorMage.py
+python3 src/main.py
 ```
 
 **Windows (PowerShell) :**
@@ -87,97 +108,80 @@ python3 src/ColorMage.py
 git clone https://github.com/Emrecan45/ColorMage.git
 cd ColorMage
 pip install -r requirements.txt
-python src/ColorMage.py
+python src/main.py
 ```
 
----
 
-## 🛠️ Compilation en exécutable
 
-Pour générer un exécutable :
-
-**Windows (PowerShell) :**
-```powershell
-pip install pyinstaller
-python -m PyInstaller --onefile --icon "img/logo.ico" --add-data "audio;audio" --add-data "img;img" --add-data "niveaux;niveaux" src/ColorMage.py
-```
-
-**Linux / macOS :**
-```bash
-pip3 install pyinstaller
-python3 -m PyInstaller --onefile --icon "img/logo.ico" --add-data "audio:audio" --add-data "img:img" --add-data "niveaux:niveaux" src/ColorMage.py
-```
-
-L'exécutable généré se trouve dans `dist/` et est autonome - aucune installation Python requise pour l'utilisateur final.
-
----
-
-## �🕹️ Contrôles
+## 🕹️ Contrôles
 
 | Action | Touche (défaut) |
-|--------|-----------------|
+|--|--|
 | Aller à droite | `→` |
 | Aller à gauche | `←` |
 | Sauter | `↑` |
+| Tirer (avec le Cristal de feu) | `E` |
 | Pause | `P` ou `Échap` |
 
 > Les touches sont **reconfigurables** depuis le menu Paramètres.
 
----
+
 
 ## 🔧 Paramètres
 
-- Remappage des touches (droite, gauche, sauter)
+- Remappage des touches (droite, gauche, sauter, tirer)
 - Volume musique et effets sonores indépendants
 - Export / Import de sauvegarde
-- Réinitialisation de la progression
 
----
+
 
 ## 📁 Structure du projet
 
 ```
 ColorMage/
-├── src/               # Code source Python
-│   ├── ColorMage.py   # Boucle principale du jeu
-│   ├── niveau.py      # Chargement et rendu des niveaux
-│   ├── joueur.py      # Logique du joueur
-│   ├── enemies.py     # Ennemis et objets
-│   ├── menu.py        # Menu principal
-│   ├── profil.py      # Page profil
-│   ├── parametres.py  # Paramètres (touches, volumes...)
-│   ├── pause.py       # Menu pause
-│   ├── popup.py       # Popups victoire / défaite / grimoire
-│   ├── chronometre.py # Chronomètre en jeu
-│   ├── alerte.py      # Notifications en overlay
-│   ├── config_manager.py # Gestion de la sauvegarde
-│   ├── config.py      # Constantes et configuration globale
-│   ├── intro.py       # Écran d'introduction
-│   └── menu_niveaux.py # Menu de sélection des niveaux
-├── niveaux/           # Fichiers JSON des 40 niveaux
-├── audio/             # Sons et musiques
-├── img/               # Images, avatars, sprites
-├── LICENSE            # Licence du projet (MIT)
-├── CREDITS.md         # Crédits et sources des assets
-├── .gitignore         # Fichiers à ignorer par Git
-├── README.md          # Ce fichier
-└── requirements.txt   # Dépendances
+├── src/                    # Code source Python
+│   ├── main.py             # Boucle principale du jeu (point d'entrée)
+│   ├── core/               # Cœur : config, sauvegarde, niveaux, temps, assets
+│   │   ├── config.py       # Constantes et configuration globale
+│   │   ├── config_manager.py # Gestion de la sauvegarde
+│   │   ├── niveau.py       # Chargement et rendu des niveaux
+│   │   ├── assets.py       # Chargement des ressources
+│   │   └── temps.py        # Gestion du temps de jeu
+│   ├── entities/           # Joueur, ennemis, boss, projectiles, objets
+│   │   ├── joueur.py
+│   │   ├── monstres.py
+│   │   ├── objets.py
+│   │   ├── projectiles.py
+│   │   ├── obstacles.py
+│   │   └── boss/           # Boss (Pyrolord...)
+│   └── ui/                 # Interfaces : menus, profil, marché, popups...
+│       ├── menu.py, menu_niveaux.py, profil.py, parametres.py
+│       ├── pause.py, popup.py, chronometre.py, alerte.py, intro.py
+├── levels/                 # Fichiers JSON des niveaux (par planète) + guide
+├── assets/                 # Ressources du jeu
+│   ├── audio/              # Sons et musiques
+│   └── img/                # Images, avatars, sprites, UI
+├── LICENSE                 # Licence du projet (MIT)
+├── CREDITS.md              # Crédits et sources des assets
+├── .gitignore              # Fichiers à ignorer par Git
+├── README.md               # Ce fichier
+└── requirements.txt        # Dépendances
 ```
 
----
+
 
 ## 🧠 Conception
 
 **ColorMage** explore une mécanique de jeu où **couleur et stratégie** sont indissociables.  
 Chaque niveau est un puzzle de déplacement : anticiper les changements de couleur nécessaires pour progresser sans tomber dans le vide ou se faire tuer.
 
----
+
 
 ## 🎨 Crédits
 
 Ce projet utilise des ressources graphiques originales et des contributions externes. La liste des auteurs et des sources associées est disponible dans le fichier [`CREDITS.md`](CREDITS.md).
 
----
+
 
 ## 📄 Licence
 
