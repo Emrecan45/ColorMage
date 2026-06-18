@@ -56,6 +56,12 @@ class Joueur:
         # Sons de spawn et de fin de niveau
         self.son_spawn = pygame.mixer.Sound(resource_path(os.path.join("assets/audio", "spawn.wav")))
         self.son_finish = pygame.mixer.Sound(resource_path(os.path.join("assets/audio", "finish.wav")))
+
+        # Son de ramassage d'un cristal de feu
+        self.son_cristal_feu = pygame.mixer.Sound(resource_path(os.path.join("assets/audio", "cristal_feu.wav")))
+
+        # Son du tir de feu du mage
+        self.son_tir_feu = pygame.mixer.Sound(resource_path(os.path.join("assets/audio", "mage_feu.wav")))
         
         son_change_couleur1 = pygame.mixer.Sound(resource_path(os.path.join("assets/audio", "color_change1.wav")))
         son_change_couleur2 = pygame.mixer.Sound(resource_path(os.path.join("assets/audio", "color_change2.wav")))
@@ -388,9 +394,15 @@ class Joueur:
 
     def activer_pouvoir_feu(self):
         """Active le pouvoir de tir de feu."""
+        # Power-up "Cristal Prolongé"
+        if "cristal_temps" in self.gestionnaire_config.config.get("powerups_achetes", []):
+            self.duree_feu = 15000
+        else:
+            self.duree_feu = 10000
         self.peut_tirer_feu = True
         self.feu_debut_temps = temps.obtenir_temps()
         self.temps_feu_restant = self.duree_feu
+        self.son_cristal_feu.play()
 
     def maj_pouvoir_feu(self):
         """Met à jour le timer du pouvoir feu. Appelé chaque frame."""
@@ -430,7 +442,15 @@ class Joueur:
         else:
             fy = self.y + self.hauteur * 0.25 + 2
 
-        proj = ProjectileFeu(fx, fy, direction=self.direction)
+        if self.son_tir_feu is not None:
+            self.son_tir_feu.play()
+
+        # Power-up "Cristal Accéléré"
+        vitesse_feu = VITESSE_DEPLACEMENT
+        if "cristal_vitesse" in self.gestionnaire_config.config.get("powerups_achetes", []):
+            vitesse_feu *= 1.8
+
+        proj = ProjectileFeu(fx, fy, direction=self.direction, speed=vitesse_feu)
         return proj
 
     def maj_tir(self):
@@ -550,6 +570,9 @@ class Joueur:
         self.son_victoire.set_volume(volume)
         self.son_spawn.set_volume(volume)
         self.son_finish.set_volume(volume)
+        self.son_cristal_feu.set_volume(volume)
+        if self.son_tir_feu is not None:
+            self.son_tir_feu.set_volume(volume)
         
         # Mettre à jour tous les sons de changement de couleur
         for son in self.sons_changement:
@@ -578,6 +601,39 @@ class Joueur:
         if self.au_sol and not self.en_animation:
             self.frame_index = 0
     
+    def construire_glow_feu(self):
+        """Construit la lueur rouge/orange affichée derrière le mage sous pouvoir de feu."""
+        taille = int(max(self.largeur, self.hauteur) * 1.6)
+        surf = pygame.Surface((taille, taille), pygame.SRCALPHA)
+        centre = taille // 2
+        rayon_max = centre
+        for r in range(rayon_max, 0, -1):
+            t = 1 - r / rayon_max  # 0 au bord, 1 au centre
+            alpha = int(140 * (t ** 2))
+            couleur = (255, int(70 + 110 * t), int(20 + 30 * t), alpha)
+            pygame.draw.circle(surf, couleur, (centre, centre), r)
+        return surf
+
+    def dessiner_glow_feu(self, ecran):
+        """Dessine la lueur du pouvoir de feu derrière le mage (clignote en fin de pouvoir)."""
+        if not self.peut_tirer_feu:
+            return
+        if getattr(self, "glow_feu", None) is None:
+            self.glow_feu = self.construire_glow_feu()
+
+        maintenant = temps.obtenir_temps()
+        # Clignotement quand il reste moins de 3 s de pouvoir
+        if self.temps_feu_restant <= 3000 and (maintenant // 160) % 2 == 0:
+            return
+
+        pulse = 0.6 + 0.4 * (0.5 + 0.5 * math.sin(maintenant * 0.005))
+        a = max(0, min(255, int(255 * pulse)))
+        glow = self.glow_feu.copy()
+        glow.fill((255, 255, 255, a), special_flags=pygame.BLEND_RGBA_MULT)
+        gx = int(self.x + self.largeur // 2 - glow.get_width() // 2)
+        gy = int(self.y + self.hauteur // 2 - glow.get_height() // 2)
+        ecran.blit(glow, (gx, gy))
+
     def dessiner(self, ecran):
         """Dessine le joueur avec effet miroir en fonction du sens"""
         image_res = None
@@ -627,6 +683,7 @@ class Joueur:
 
         self.visual_x = self.x
         self.visual_y = draw_y
+        self.dessiner_glow_feu(ecran)
         ecran.blit(img, (draw_x, draw_y))
 
     def obtenir_image_courante(self):

@@ -70,7 +70,8 @@ class ConfigManager:
             "pseudo": "Mage",
             "pieces_total": 0,
             "pieces_gagnees_total": 0,
-            "pieces_collectees": {}
+            "pieces_collectees": {},
+            "powerups_achetes": []
         }
         
         # Si le fichier existe, le charger
@@ -141,7 +142,8 @@ class ConfigManager:
                 "pieces_total": self.config.get("pieces_total", 0),
                 "pieces_gagnees_total": self.config.get("pieces_gagnees_total", 0),
                 "pieces_collectees": self.config.get("pieces_collectees", {}),
-                "pages_vues": self.config.get("pages_vues", [])
+                "pages_vues": self.config.get("pages_vues", []),
+                "powerups_achetes": self.config.get("powerups_achetes", [])
             }
         # Ajouter la signature anti triche
         config["signature"] = self.generer_signature(config)
@@ -242,6 +244,7 @@ class ConfigManager:
         self.config["pieces_gagnees_total"] = 0
         self.config["pieces_collectees"] = {}
         self.config["pages_vues"] = []
+        self.config["powerups_achetes"] = []
         
         # Restaurer les paramètres et le pseudo
         self.config["pseudo"] = pseudo_actuel
@@ -280,30 +283,14 @@ class ConfigManager:
         self.config["pseudo"] = pseudo
         self.sauvegarder_config()
 
-    def obtenir_pieces_collectees(self, niveau):
-        """Retourne la liste des positions [x,y] de pièces déjà collectées pour un niveau"""
-        toutes = self.config.get("pieces_collectees", {})
-        return toutes.get(str(niveau), [])
-
-    def sauvegarder_piece_collectee(self, niveau, cell_x, cell_y):
-        """Enregistre qu'une pièce a été collectée et incrémente le total"""
-        toutes = self.config.get("pieces_collectees", {})
-        niveau_str = str(niveau)
-        if niveau_str not in toutes:
-            toutes[niveau_str] = []
-        position = [cell_x, cell_y]
-        # Éviter les doublons
-        deja_present = False
-        for p in toutes[niveau_str]:
-            if p[0] == cell_x and p[1] == cell_y:
-                deja_present = True
-                break
-        if not deja_present:
-            toutes[niveau_str].append(position)
-            self.config["pieces_collectees"] = toutes
-            self.config["pieces_total"] = self.config.get("pieces_total", 0) + 1
-            self.config["pieces_gagnees_total"] = self.config.get("pieces_gagnees_total", 0) + 1
-            self.sauvegarder_config()
+    def ajouter_pieces_gagnees(self, nombre):
+        """Ajoute au total les pièces ramassées en terminant un niveau.
+        """
+        if nombre <= 0:
+            return
+        self.config["pieces_total"] = self.config.get("pieces_total", 0) + nombre
+        self.config["pieces_gagnees_total"] = self.config.get("pieces_gagnees_total", 0) + nombre
+        self.sauvegarder_config()
 
     def obtenir_pieces_total(self):
         """Retourne le nombre total de pièces collectées"""
