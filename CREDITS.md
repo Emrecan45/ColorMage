@@ -2,8 +2,6 @@
 
 Merci aux créateurs dont les ressources ont rendu ce projet possible.
 
----
-
 ## 🎨 Assets graphiques
 
 ### Sprites & personnages
@@ -23,8 +21,6 @@ Merci aux créateurs dont les ressources ont rendu ce projet possible.
 
 Les autres visuels non listés ci-dessus ont été générés par intelligence artificielle.
 
----
-
 ## 🔊 Audio
 
 Les effets sonores et musiques utilisés dans le jeu proviennent des plateformes suivantes :
@@ -36,8 +32,6 @@ Les effets sonores et musiques utilisés dans le jeu proviennent des plateformes
 - **Brackeys Platformer Bundle** - https://brackeysgames.itch.io/brackeys-platformer-bundle
 - **ElevenLabs** - https://elevenlabs.io/
 
----
-
 ## 🛠️ Outils & bibliothèques
 
 | Outil | Usage |
@@ -45,12 +39,8 @@ Les effets sonores et musiques utilisés dans le jeu proviennent des plateformes
 | [Python](https://www.python.org/) | Langage principal |
 | [Pygame](https://www.pygame.org/) | Moteur de jeu |
 
----
-
 ## 👤 Développeur
 
 **Emrecan45** - Conception, programmation, level design, et intégration de tous les assets.
-
----
 
 *Les assets tiers sont utilisés conformément à leurs licences respectives (libre de droits / usage personnel). Le code source de ColorMage est distribué sous licence MIT.*
