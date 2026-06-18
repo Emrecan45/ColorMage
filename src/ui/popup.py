@@ -235,14 +235,25 @@ class Popup:
                 ]
             },
             8: {
+                "titre": "Butin",
+                "images": [self.img_piece, self.img_potion, self.img_cristal],
+                "lore": "En s'éteignant, les créatures relâchent parfois l'énergie qu'elles avaient absorbée.",
+                "lignes": [
+                    "- Certains ennemis lâchent un objet à leur mort.",
+                    "- Pièces, potions ou cristaux de feu... Tout peut tomber.",
+                    "- Élimine-les pour récupérer leur butin.",
+                    "- Le butin apparaît là où l'ennemi a péri."
+                ]
+            },
+            9: {
                 "titre": "Démon volant",
                 "images": [self.img_demon],
                 "lore": "Une créature des abysses qui plane sans répit, le regard rivé sur sa proie.",
                 "lignes": [
                     "- Il vole et te fait face en permanence.",
-                    "- Toutes les 5 secondes, il fonce droit sur toi.",
-                    "- Le toucher est fatal : esquive sa charge ou tire-lui dessus.",
-                    "- Deux tirs suffisent à l'abattre."
+                    "- Toutes les 3 secondes, il tire ou fonce droit sur toi.",
+                    "- Le toucher est fatal : esquive sa charge et ses projectiles.",
+                    "- Tire-lui dessus, trois tirs suffisent pour l'abattre."
                 ]
             },
             10: {
@@ -397,7 +408,7 @@ class Popup:
         
         grimoire = self.grimoires[numero_niveau]
         titre = grimoire["titre"]
-        images = grimoire["images"]
+        images = self.redimensionner_images_grimoire(grimoire["images"], 70)
         lignes = grimoire["lignes"]
         
         # Dimensions du popup
@@ -519,7 +530,9 @@ class Popup:
         resultat = []
         for img in images:
             if img is self.img_cristal:
-                h = 75
+                h = 70
+            elif img is self.img_piece:
+                h = 70
             else:
                 h = hauteur_cible
             if img.get_height() == 0:
@@ -629,8 +642,13 @@ class Popup:
                         max_h = im.get_height()
                 bas_ligne = zone_img_haut + (zone_img_hauteur + max_h) // 2
                 decalage_x = 0
-                for img in images_redimensionnees:
-                    y_img = bas_ligne - img.get_height()
+                bas_cristal = zone_img_haut + (zone_img_hauteur + hauteur_cible) // 2
+                for i in range(len(images_redimensionnees)):
+                    img = images_redimensionnees[i]
+                    if images[i] is self.img_cristal:
+                        y_img = bas_cristal - img.get_height() - 12
+                    else:
+                        y_img = bas_ligne - img.get_height()
                     ecran.blit(img, (x_depart_images + decalage_x, y_img))
                     decalage_x = decalage_x + img.get_width() + ecart_images
 

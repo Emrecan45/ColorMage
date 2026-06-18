@@ -233,7 +233,22 @@ class Pause:
             squelettes = niveau.squelettes
             for s in squelettes:
                 s.dessiner(ecran)
-            joueur.dessiner(ecran)
+            jeu = self.game
+            montrer_joueur = True
+            if jeu is not None:
+                montrer_joueur = jeu.joueur_visible and not jeu.portail_entree_actif and not jeu.portail_sortie_actif
+            if montrer_joueur:
+                joueur.dessiner(ecran)
+            if jeu is not None:
+                if jeu.portail_entree_actif:
+                    jeu.dessiner_portail_jeu(jeu.joueur.x + jeu.joueur.largeur // 2, jeu.joueur.y + jeu.joueur.hauteur // 2)
+                if jeu.portail_sortie_actif:
+                    jeu.dessiner_portail_jeu(jeu.portail_sortie_x, jeu.portail_sortie_y, "sortie")
+                if jeu.explosion_actif and jeu.explosion_frame < len(jeu.explosion_frames):
+                    ecran.blit(jeu.explosion_frames[jeu.explosion_frame], (jeu.explosion_x, jeu.explosion_y))
+                for explosion in jeu.explosions_mob:
+                    if explosion["frame"] < len(jeu.explosion_frames):
+                        ecran.blit(jeu.explosion_frames[explosion["frame"]], (explosion["x"], explosion["y"]))
             chrono.dessiner(ecran)
             
             # Dessiner le popup de pause avec le numéro de niveau
