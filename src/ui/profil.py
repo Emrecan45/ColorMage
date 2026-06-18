@@ -47,17 +47,45 @@ class Profil:
         self.avatars = [
             {"nom": "Mage 1", "fichier": "mage1.png", "prix": 0},
             {"nom": "Mage 2", "fichier": "mage2.png", "prix": 5},
-            {"nom": "Mage 3", "fichier": "mage3.png", "prix": 5},
-            {"nom": "Mage 4", "fichier": "mage4.png", "prix": 5},
-            {"nom": "Grimoire", "fichier": "grimoire.png", "prix": 5},
-            {"nom": "Sorcier", "fichier": "sorcier.png", "niveau_associe": 3, "prix": 10},
-            {"nom": "Squelette", "fichier": "squelette.png", "niveau_associe": 4, "prix": 10},
-            {"nom": "Slime Vert1", "fichier": "slime_vert1.png", "niveau_associe": 5, "prix": 15},
-            {"nom": "Slime Violet", "fichier": "slime_violet.png", "niveau_associe": 5, "prix": 15},
-            {"nom": "Mage 5", "fichier": "mage5.png", "niveau_associe": 6, "prix": 20},
-            {"nom": "Slime Vert2", "fichier": "slime_vert2.png", "niveau_associe": 7, "prix": 25},
-            {"nom": "Mage 6", "fichier": "mage6.png", "niveau_associe": 8, "prix": 30},
-            {"nom": "Pyrolord", "fichier": "pyrolord.png", "niveau_associe": 10, "prix": 40},
+            {"nom": "Mage 3", "fichier": "mage3.png", "prix": 10},
+            {"nom": "Mage 4", "fichier": "mage4.png", "prix": 15},
+            {"nom": "Grimoire", "fichier": "grimoire.png", "prix": 15},
+            {"nom": "Sorcier", "fichier": "sorcier.png", "niveau_associe": 3, "prix": 20},
+            {"nom": "Squelette", "fichier": "squelette.png", "niveau_associe": 4, "prix": 20},
+            {"nom": "Slime Vert1", "fichier": "slime_vert1.png", "niveau_associe": 5, "prix": 25},
+            {"nom": "Slime Violet", "fichier": "slime_violet.png", "niveau_associe": 5, "prix": 25},
+            {"nom": "Mage 5", "fichier": "mage5.png", "niveau_associe": 6, "prix": 30},
+            {"nom": "Slime Vert2", "fichier": "slime_vert2.png", "niveau_associe": 7, "prix": 35},
+            {"nom": "Mage 6", "fichier": "mage6.png", "niveau_associe": 8, "prix": 40},
+            {"nom": "Démon", "fichier": "demon.png", "niveau_associe": 9, "prix": 45},
+            {"nom": "Pyrolord", "fichier": "pyrolord.png", "niveau_associe": 10, "prix": 50},
+        ]
+
+        # Power-ups achetables (améliorations permanentes)
+        self.powerups = [
+            {
+                "id": "cristal_temps",
+                "nom": "Cristal prolongé",
+                "description": [
+                    "Augmente la durée du pouvoir de",
+                    "tir octroyé par le Cristal de feu.",
+                    "(10s -> 15s)",
+                ],
+                "fichier": "cristal_feu_temps_up.png",
+                "niveau_associe": 7,
+                "prix": 50,
+            },
+            {
+                "id": "cristal_vitesse",
+                "nom": "Cristal accéléré",
+                "description": [
+                    "Augmente la vitesse des",
+                    "projectiles de feu du Cristal de feu.",
+                ],
+                "fichier": "cristal_feu_up_vitesse.png",
+                "niveau_associe": 9,
+                "prix": 60,
+            },
         ]
         
         self.avatar_actuel = self.gestionnaire_config.config.get("avatar_profil", 0)
@@ -125,6 +153,22 @@ class Profil:
         """Vérifie si un avatar est possédé (acheté) par le joueur"""
         achetes = self.gestionnaire_config.config.get("avatars_achetes", [0])
         return index in achetes
+
+    def powerup_est_achete(self, index):
+        """Vérifie si un power-up est déjà acheté par le joueur."""
+        achetes = self.gestionnaire_config.config.get("powerups_achetes", [])
+        return self.powerups[index]["id"] in achetes
+
+    def powerup_est_disponible_marche(self, index):
+        """Vérifie si un power-up est dispo au marché (niveau associé terminé)."""
+        powerup = self.powerups[index]
+        niveau = powerup.get("niveau_associe")
+        if niveau is None:
+            return True
+        config = self.gestionnaire_config.config
+        pages_vues = config.get("pages_vues", [])
+        meilleurs_temps = config.get("meilleurs_temps", {})
+        return niveau in pages_vues and meilleurs_temps.get(str(niveau)) is not None
 
     def avatar_est_disponible_marche(self, index):
         """Vérifie si un avatar est dispo au marché (niveau associé terminé)."""
