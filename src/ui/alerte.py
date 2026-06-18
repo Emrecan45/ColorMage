@@ -1,11 +1,12 @@
 import pygame
-from core.config import LARGEUR_ECRAN, HAUTEUR_ECRAN
+import os
+from core.config import LARGEUR_ECRAN, HAUTEUR_ECRAN, resource_path
 
 
 class Alerte:
     """Petite notification en bas à droite qui glisse puis disparaît"""
 
-    def __init__(self):
+    def __init__(self, gestionnaire_config=None):
         self.font = pygame.font.SysFont(None, 32)
         self.actif = False
         self.texte = ""
@@ -18,11 +19,22 @@ class Alerte:
         self.x = 0
         self.y = HAUTEUR_ECRAN - self.hauteur - self.marge
 
+        self.gestionnaire_config = gestionnaire_config
+        self.son_alerte = pygame.mixer.Sound(resource_path(os.path.join("assets/audio", "alerte.wav")))
+        self.maj_volume()
+
+    def maj_volume(self):
+        """Applique le volume des effets au son d'alerte."""
+        if self.gestionnaire_config is not None:
+            vol = self.gestionnaire_config.volumes.get("effets", 50) / 100
+            self.son_alerte.set_volume(vol)
+
     def afficher(self, texte):
         """Lance une alerte avec le texte donné"""
         self.texte = texte
         self.actif = True
         self.timer = 0
+        self.son_alerte.play()
         surface_texte = self.font.render(self.texte, True, (255, 255, 255))
         self.largeur = surface_texte.get_width() + 40
         self.x = LARGEUR_ECRAN
