@@ -1,0 +1,251 @@
+{
+    "menu": {
+        "jouer": "Play",
+        "grimoire": "Grimoire",
+        "parametres": "Settings",
+        "quitter": "Quit"
+    },
+    "pause": {
+        "titre": "Pause",
+        "continuer": "Resume",
+        "recommencer": "Restart",
+        "parametres": "Settings",
+        "quitter": "Quit",
+        "planete": "Planet",
+        "niv": "Lv.",
+        "menu_principal": "Main Menu"
+    },
+    "marche": {
+        "marche": "Shop",
+        "bientot_dispo": "Coming soon",
+        "retour": "Back",
+        "avatars": "Avatars",
+        "pouvoirs": "Powers",
+        "niv": "Lv.",
+        "acquis": "Owned",
+        "confirmer": "Confirm purchase",
+        "acheter": "Buy",
+        "annuler": "Cancel"
+    },
+    "avatar": {
+        "mage1": "Apprentice",
+        "mage2": "Enchanter",
+        "mage3": "Mystic",
+        "grimoire": "Grimoire",
+        "mage4": "Astrologer",
+        "sorcier": "Witch",
+        "squelette": "Bone guard",
+        "slime_vert1": "Green slime",
+        "slime_violet": "Purple slime",
+        "mage5": "Hermit",
+        "slime_vert2": "Elder slime",
+        "mage6": "Archmage",
+        "demon": "Flying demon",
+        "pyrolord": "Pyrolord"
+    },
+    "power": {
+        "cristal_temps": "Extended crystal",
+        "desc_cristal_temps": [
+            "Increases the duration of the",
+            "fire power granted by the fire crystal.",
+            "(10s -> 15s)"
+        ],
+        "cristal_vitesse": "Accelerated crystal",
+        "desc_cristal_vitesse": [
+            "Increases the speed of the",
+            "fire projectiles from the fire crystal."
+        ]
+    },
+    "planet": {
+        "1": "Terra",
+        "2": "Pyros",
+        "3": "Aquaris",
+        "4": "Nebula",
+        "5": "Cryon",
+        "6": "Solara",
+        "7": "Vortex",
+        "8": "Obscura"
+    },
+    "param": {
+        "titre": "Settings",
+        "sauvegarde": "Save Data",
+        "volumes": "Volumes",
+        "config": "Configuration",
+        "touches": "of controls",
+        "musique": "Musics",
+        "sfx": "Sound effects",
+        "droite": "Right",
+        "gauche": "Left",
+        "sauter": "Jump",
+        "tir": "Shoot",
+        "exporter": "Export",
+        "importer": "Import",
+        "reset": "Reset",
+        "retour": "Back",
+        "langue": "Language",
+        "langue_actuelle": "English",
+        "joystick": "Joystick",
+        "joystick_fixe": "Fixed",
+        "joystick_dynamique": "Dynamic"
+    },
+    "popup": {
+        "bases": "The basics",
+        "bases_lore": "The prism has shattered. Only those who master the song of colors can traverse this world.",
+        "bases_tuto": [
+            "- Catch potions to change your color.",
+            "- You can only touch black blocks or blocks of your color.",
+            "- Other blocks are immaterial: you will pass through them.",
+            "- Reach the yellow portal to escape."
+        ],
+        "blocs": "Enchanted blocks",
+        "blocs_lore": "Some fragments of the world refuse to stay still, animated by residual magic.",
+        "blocs_tuto": [
+            "- Blocks move horizontally or vertically.",
+            "- They can carry you if they are black or your color.",
+            "- Don't get crushed and don't fall into the void!",
+            "- Observe their cycle before jumping!"
+        ],
+        "sorcier": "Witch",
+        "sorcier_lore": "Mages corrupted by obsidian. They channel their hatred as spectral skulls.",
+        "garde": "Bone guard",
+        "garde_lore": "Ancient guards raised by the void. They patrol endlessly, striking any intruder.",
+        "slimes": "Slimes",
+        "slimes_lore": "Condensed magic residues. Their cores are hard, but their bodies are elastic.",
+        "cristal": "Fire crystal",
+        "cristal_lore": "A burning crystal, residue of ancient magic. It grants mysterious fiery powers.",
+        "brasier": "Brazier",
+        "brasier_lore": "Eternal flames burst from the ground, remnants of Pyros's fury.",
+        "butin": "Loot",
+        "butin_lore": "When dying, creatures sometimes release the energy they had absorbed.",
+        "demon": "Flying demon",
+        "demon_lore": "A creature from the abyss that glides relentlessly, its gaze fixed on its prey.",
+        "pyrolord": "Pyrolord",
+        "pyrolord_lore": "A small ember slime hops at the bottom of the lair. It looks harmless... really?",
+        "pyrolord_tuto": [
+            "- Something hides beneath this fiery shell...",
+            "- Wake it up by jumping on it or shooting it.",
+            "- It is fast and can surprise you if you are not careful."
+        ],
+        "grimoire": "Mage's Grimoire",
+        "mystere": "???",
+        "cadenas": "Keep progressing to unlock!",
+        "bravo": "Well done! Level complete",
+        "temps": "Time: ",
+        "suivant": "Next",
+        "niveau_suivant": "Next level",
+        "gameover": "Game Over! You died",
+        "confirmation": "Confirmation",
+        "oui": "Yes",
+        "non": "No",
+        "import_titre": "Do you really want to import",
+        "import_desc": "this save file?",
+        "import_warn": "Your current save will be overwritten.",
+        "param_titre": "Do you really want to reset",
+        "param_desc": "the settings?",
+        "param_warn": "This action cannot be undone.",
+        "reset_titre": "Do you really want to reset",
+        "reset_desc": "your save data?",
+        "reset_warn": "This action cannot be undone.",
+        "meilleur_temps": "Best time: ",
+        "sorcier_tuto": [
+            "- It stays still but attacks from a distance.",
+            "- It shoots cursed skulls in a straight line.",
+            "- Any contact with it or its skulls will be fatal.",
+            "- Find the right timing to slip between shots!"
+        ],
+        "garde_tuto": [
+            "- This soldier constantly walks back and forth.",
+            "- It attacks in melee.",
+            "- If you touch it, it's the end.",
+            "- Jump over it or get behind it!"
+        ],
+        "slimes_tuto": [
+            "- Bounce on their heads to reach higher places.",
+            "- Green: Fragile, 1 bounce is enough to destroy them.",
+            "- Purple: Tough, it takes 2 bounces to destroy them.",
+            "- Warning: touching a slime anywhere but the head is fatal!"
+        ],
+        "cristal_tuto": [
+            "- Catch the crystal to obtain the power of fire.",
+            "- You will be able to shoot flames at enemies.",
+            "- It appears in specific locations.",
+            "- Warning: you cannot keep this power forever."
+        ],
+        "brasier_tuto": [
+            "- Fire is deadly on contact, just like spikes.",
+            "- Fire cannot be extinguished.",
+            "- No color protects you: it burns everything.",
+            "- Jump over it or go around it!"
+        ],
+        "butin_tuto": [
+            "- Some enemies drop an item when they die.",
+            "- Coins, potions, or fire crystals... Anything can drop.",
+            "- Eliminate them to collect their loot.",
+            "- Loot appears where the enemy perished."
+        ],
+        "demon_tuto": [
+            "- It flies and always faces you.",
+            "- Every 3 seconds, it shoots or charges straight at you.",
+            "- Touching it is fatal: dodge its charge and projectiles.",
+            "- Shoot it, three hits are enough to take it down."
+        ],
+        "pyrolord_lore2": [
+            "- Something hides beneath this fiery shell...",
+            "- Wake it up by jumping on it or shooting it.",
+            "- It is fast and can surprise you if you are not careful."
+        ],
+        "confirmer": "Confirm",
+        "annuler": "Cancel",
+        "fermer": "Close",
+        "commencer": "Let's go!",
+        "record": "New record!",
+        "feu": "Fire"
+    },
+    "alerte": {
+        "sauvegarde_corrompue_reset": "Save corrupted, progress reset!",
+        "nouvel_avatar": "New avatar in the shop!",
+        "niveau_bientot": "Level coming soon!",
+        "export_ok": "Save data exported!",
+        "fichier_introuvable": "File not found!",
+        "fichier_invalide": "Invalid file!",
+        "sauvegarde_corrompue": "Save data corrupted!",
+        "sauvegarde_non_signee": "Unsigned save data!",
+        "non_supporte_web": "Not supported on Web version"
+    },
+    "intro": {
+        "chargement": "Loading..."
+    },
+    "menu_niveaux": {
+        "niveaux": "Levels"
+    },
+    "profil": {
+        "titre": "Profile",
+        "pseudo": "Nickname",
+        "avatar": "Avatar",
+        "statistiques": "Statistics",
+        "progression": "Progression",
+        "temps_total": "Total time (records)",
+        "pieces": "Coins earned",
+        "reset": "Reset",
+        "retour": "Back",
+        "niv": "Lv."
+    },
+    "univers": {
+        "nord": "North Kingdom",
+        "sud": "South Kingdom"
+    },
+    "patch_notes": {
+        "titre": "What's new",
+        "bouton": "Got it!",
+        "v2.4": {
+            "titre": "Version 2.4",
+            "lignes": [
+                "- The game is now playable in your browser! (available on Itch.io)",
+                "- Mobile and tablet support with integrated touch gamepad.",
+                "- Complete translation system (English / French).",
+                "- Major performance optimization.",
+                "- Improvement: loot now avoids falling into obstacles."
+            ]
+        }
+    }
+}

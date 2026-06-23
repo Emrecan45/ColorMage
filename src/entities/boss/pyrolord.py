@@ -5,6 +5,7 @@ import math
 import random
 
 from core.config import TAILLE_CELLULE, resource_path, VITESSE_DEPLACEMENT, LARGEUR_ECRAN, HAUTEUR_ECRAN
+from core.son import Son
 from core.assets import charger_image
 
 
@@ -28,15 +29,15 @@ def charger_sons_pyrolord():
     """Charge les sons du Pyrolord."""
     if cache_sons_pyrolord:
         return cache_sons_pyrolord
-    cache_sons_pyrolord["epee"] = pygame.mixer.Sound(resource_path(os.path.join("assets/audio", "pyrolord_epee.wav")))
-    cache_sons_pyrolord["marche"] = pygame.mixer.Sound(resource_path(os.path.join("assets/audio", "pyrolord_marche.wav")))
-    cache_sons_pyrolord["souffle"] = pygame.mixer.Sound(resource_path(os.path.join("assets/audio", "pyrolord_souffle_feu.wav")))
-    cache_sons_pyrolord["degat"] = pygame.mixer.Sound(resource_path(os.path.join("assets/audio", "hurt.wav")))
-    cache_sons_pyrolord["transfo"] = pygame.mixer.Sound(resource_path(os.path.join("assets/audio", "pyrolord_transformation.wav")))
-    cache_sons_pyrolord["mort"] = pygame.mixer.Sound(resource_path(os.path.join("assets/audio", "pyrolord_mort.wav")))
-    cache_sons_pyrolord["tire"] = pygame.mixer.Sound(resource_path(os.path.join("assets/audio", "pyrolord_tire.wav")))
-    cache_sons_pyrolord["saut"] = pygame.mixer.Sound(resource_path(os.path.join("assets/audio", "pyrolord_saut.wav")))
-    cache_sons_pyrolord["atter"] = pygame.mixer.Sound(resource_path(os.path.join("assets/audio", "pyrolord_atterissage.wav")))
+    cache_sons_pyrolord["epee"] = Son(resource_path(os.path.join("assets/audio", "pyrolord_epee.wav")))
+    cache_sons_pyrolord["marche"] = Son(resource_path(os.path.join("assets/audio", "pyrolord_marche.wav")))
+    cache_sons_pyrolord["souffle"] = Son(resource_path(os.path.join("assets/audio", "pyrolord_souffle_feu.wav")))
+    cache_sons_pyrolord["degat"] = Son(resource_path(os.path.join("assets/audio", "hurt.wav")))
+    cache_sons_pyrolord["transfo"] = Son(resource_path(os.path.join("assets/audio", "pyrolord_transformation.wav")))
+    cache_sons_pyrolord["mort"] = Son(resource_path(os.path.join("assets/audio", "pyrolord_mort.wav")))
+    cache_sons_pyrolord["tire"] = Son(resource_path(os.path.join("assets/audio", "pyrolord_tire.wav")))
+    cache_sons_pyrolord["saut"] = Son(resource_path(os.path.join("assets/audio", "pyrolord_saut.wav")))
+    cache_sons_pyrolord["atter"] = Son(resource_path(os.path.join("assets/audio", "pyrolord_atterissage.wav")))
     return cache_sons_pyrolord
 
 
@@ -89,6 +90,61 @@ def charger_assets_pyrolord(echelle):
     a = dict(box_w=box_w, box_h=box_h, masks=masks, bboxes=bboxes, feet_bottom=fb)
     cache_assets_pyro[key] = a
     return a
+
+
+cache_assets_pyro_partiel = {}
+
+
+def precharger_pyrolord_etat(echelle, state):
+    """Construit les masques d'un seul etat."""
+    key = round(echelle, 4)
+    if key in cache_assets_pyro:
+        return
+    partiel = cache_assets_pyro_partiel.get(key)
+    if partiel is None:
+        frames = charger_frames_natives_pyrolord()
+        partiel = {
+            "frames": frames,
+            "box_w": int(Pyrolord.CW * echelle),
+            "box_h": int(Pyrolord.CH * echelle),
+            "masks": {},
+            "bboxes": {},
+        }
+        cache_assets_pyro_partiel[key] = partiel
+    box_w = partiel["box_w"]
+    box_h = partiel["box_h"]
+    ml = []
+    bl = []
+    for native in partiel["frames"][state]:
+        scaled = pygame.transform.scale(native, (box_w, box_h))
+        flipped = pygame.transform.flip(scaled, True, False)
+        ml.append((pygame.mask.from_surface(scaled), pygame.mask.from_surface(flipped)))
+        bl.append((scaled.get_bounding_rect(), flipped.get_bounding_rect()))
+    partiel["masks"][state] = ml
+    partiel["bboxes"][state] = bl
+
+
+def finaliser_pyrolord(echelle):
+    """Assemble le resultat une fois tous les etats construits."""
+    key = round(echelle, 4)
+    if key in cache_assets_pyro:
+        return
+    partiel = cache_assets_pyro_partiel.pop(key, None)
+    if partiel is None:
+        return
+    masks = partiel["masks"]
+    bboxes = partiel["bboxes"]
+    box_w = partiel["box_w"]
+    box_h = partiel["box_h"]
+    grounded = ("slime", "slime_hurt", "bounce", "walk", "sword", "fire", "proj", "hurt")
+    fb = 0
+    for st in grounded:
+        for (b0, b1) in bboxes[st]:
+            if b0.h > 0:
+                fb = max(fb, b0.bottom)
+    if fb == 0:
+        fb = box_h
+    cache_assets_pyro[key] = dict(box_w=box_w, box_h=box_h, masks=masks, bboxes=bboxes, feet_bottom=fb)
 
 
 class Pyrolord(Boss):

@@ -7,4 +7,8 @@ dist/
 build/
 *.spec
 
-tools/
+tools/*
+!tools/build_web.py
+!tools/web.tmpl
+!tools/templates/
+!tools/templates/index.html

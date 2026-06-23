@@ -1,4 +1,6 @@
 import pygame
+from core.assets import police
+from core.i18n import t
 
 class Chronometre:
     """Gère le chronomètre du jeu"""
@@ -10,8 +12,8 @@ class Chronometre:
         self.temps_final = 0
         self.actif = False
         self.en_pause = False
-        self.font = pygame.font.SysFont(None, 48)
-        self.font_petit = pygame.font.SysFont(None, 36)
+        self.font = police(48)
+        self.font_petit = police(36)
         self.meilleur_temps = None
     
     def demarrer(self):
@@ -86,11 +88,11 @@ class Chronometre:
             texte_chrono = self.formater_temps(temps_ecoule)
             
             # Afficher le temps actuel
-            surface_chrono = self.font.render("Temps : " + texte_chrono, True, (255, 255, 255))
+            surface_chrono = self.font.render(t("popup.temps") + texte_chrono, True, (255, 255, 255))
             ecran.blit(surface_chrono, (x, y))
             
             # Afficher le meilleur temps s'il existe
             if self.meilleur_temps is not None:
                 texte_meilleur = self.formater_temps(self.meilleur_temps)
-                surface_meilleur = self.font_petit.render("Meilleur temps : " + texte_meilleur, True, (255, 215, 0))
+                surface_meilleur = self.font_petit.render(t("popup.meilleur_temps") + texte_meilleur, True, (255, 215, 0))
                 ecran.blit(surface_meilleur, (x, y + 50))

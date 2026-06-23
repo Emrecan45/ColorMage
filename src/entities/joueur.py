@@ -5,6 +5,7 @@ import os
 import random
 import math
 from core.config import TAILLE_CELLULE, COULEURS, GRAVITE, VITESSE_DEPLACEMENT, FORCE_SAUT, LARGEUR_GRILLE, HAUTEUR_GRILLE, resource_path
+from core.son import Son
 from core.config_manager import ConfigManager
 
 
@@ -49,23 +50,23 @@ class Joueur:
         self.controls = self.gestionnaire_config.obtenir_controles()
         
         # Chargement des bruitages
-        self.son_saut = pygame.mixer.Sound(resource_path(os.path.join("assets/audio", "jump.wav")))
-        self.son_mort = pygame.mixer.Sound(resource_path(os.path.join("assets/audio", "death.wav")))
-        self.son_victoire = pygame.mixer.Sound(resource_path(os.path.join("assets/audio", "win.wav")))
+        self.son_saut = Son(resource_path(os.path.join("assets/audio", "jump.wav")))
+        self.son_mort = Son(resource_path(os.path.join("assets/audio", "death.wav")))
+        self.son_victoire = Son(resource_path(os.path.join("assets/audio", "win.wav")))
 
         # Sons de spawn et de fin de niveau
-        self.son_spawn = pygame.mixer.Sound(resource_path(os.path.join("assets/audio", "spawn.wav")))
-        self.son_finish = pygame.mixer.Sound(resource_path(os.path.join("assets/audio", "finish.wav")))
+        self.son_spawn = Son(resource_path(os.path.join("assets/audio", "spawn.wav")))
+        self.son_finish = Son(resource_path(os.path.join("assets/audio", "finish.wav")))
 
         # Son de ramassage d'un cristal de feu
-        self.son_cristal_feu = pygame.mixer.Sound(resource_path(os.path.join("assets/audio", "cristal_feu.wav")))
+        self.son_cristal_feu = Son(resource_path(os.path.join("assets/audio", "cristal_feu.wav")))
 
         # Son du tir de feu du mage
-        self.son_tir_feu = pygame.mixer.Sound(resource_path(os.path.join("assets/audio", "mage_feu.wav")))
+        self.son_tir_feu = Son(resource_path(os.path.join("assets/audio", "mage_feu.wav")))
         
-        son_change_couleur1 = pygame.mixer.Sound(resource_path(os.path.join("assets/audio", "color_change1.wav")))
-        son_change_couleur2 = pygame.mixer.Sound(resource_path(os.path.join("assets/audio", "color_change2.wav")))
-        son_change_couleur3 = pygame.mixer.Sound(resource_path(os.path.join("assets/audio", "color_change3.wav")))
+        son_change_couleur1 = Son(resource_path(os.path.join("assets/audio", "color_change1.wav")))
+        son_change_couleur2 = Son(resource_path(os.path.join("assets/audio", "color_change2.wav")))
+        son_change_couleur3 = Son(resource_path(os.path.join("assets/audio", "color_change3.wav")))
         # Liste des sons de changements de couleur
         self.sons_changement = [son_change_couleur1, son_change_couleur2, son_change_couleur3]
         
@@ -91,7 +92,7 @@ class Joueur:
         for couleur in couleurs:
             # Charger le spritesheet
             chemin = resource_path("assets/img/entities/joueur_" + couleur + ".png")
-            spritesheet = pygame.image.load(chemin)
+            spritesheet = pygame.image.load(chemin).convert_alpha()
             self.spritesheets[couleur] = spritesheet
             
             # Extraire les frames du spritesheet
@@ -262,6 +263,11 @@ class Joueur:
     
     def deplacer(self, touches, niveau):
         """Gère le déplacement du joueur"""
+        # Vérifier si le joueur est coincé dans un bloc
+        rect_debut = pygame.Rect(self.x + self.marge_x, self.y + self.marge_y_haut, self.largeur - 2 * self.marge_x, self.hauteur - self.marge_y_haut - self.marge_y_bas)
+        if niveau.collision(rect_debut, self.couleur):
+            return "mort"
+
         self.etait_au_sol = self.au_sol
         self.pousse_plateforme = False
         if self.en_changement_couleur and self.etape_changement < 3:

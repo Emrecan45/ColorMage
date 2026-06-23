@@ -116,7 +116,7 @@ class Sorcier:
         proj_size = 100
         center_x = self.x + self.width // 2
         center_y = self.y + self.height // 2
-        muzzle_x = int(center_x + (self.width // 2 - proj_size // 2) * self.direction)
+        muzzle_x = int(center_x + (self.width // 2) * self.direction - proj_size // 2)
         muzzle_y = int(center_y - proj_size // 2)
         proj = Projectile(muzzle_x, muzzle_y, direction=self.direction, size=proj_size)
         # appliquer la portée si fournie

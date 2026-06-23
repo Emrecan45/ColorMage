@@ -1,15 +1,18 @@
 import pygame
 import os
 from core.config import LARGEUR_ECRAN, HAUTEUR_ECRAN, resource_path
+from core.son import Son
+from core.assets import police
+from core.i18n import t
 
 
 class Alerte:
     """Petite notification en bas à droite qui glisse puis disparaît"""
 
     def __init__(self, gestionnaire_config=None):
-        self.font = pygame.font.SysFont(None, 32)
+        self.font = police(32)
         self.actif = False
-        self.texte = ""
+        self.cle = ""  # clé i18n, traduite à l'affichage
         self.timer = 0
         self.duree = 360  # durée totale en frames
         self.duree_glisse = 20
@@ -20,7 +23,7 @@ class Alerte:
         self.y = HAUTEUR_ECRAN - self.hauteur - self.marge
 
         self.gestionnaire_config = gestionnaire_config
-        self.son_alerte = pygame.mixer.Sound(resource_path(os.path.join("assets/audio", "alerte.wav")))
+        self.son_alerte = Son(resource_path(os.path.join("assets/audio", "alerte.wav")))
         self.maj_volume()
 
     def maj_volume(self):
@@ -29,14 +32,13 @@ class Alerte:
             vol = self.gestionnaire_config.volumes.get("effets", 50) / 100
             self.son_alerte.set_volume(vol)
 
-    def afficher(self, texte):
-        """Lance une alerte avec le texte donné"""
-        self.texte = texte
+    def afficher(self, cle):
+        """Lance une alerte à partir d'une clé i18n (ex: "alerte.export_ok")."""
+        self.cle = cle
         self.actif = True
         self.timer = 0
         self.son_alerte.play()
-        surface_texte = self.font.render(self.texte, True, (255, 255, 255))
-        self.largeur = surface_texte.get_width() + 40
+        self.largeur = self.font.size(t(self.cle))[0] + 40
         self.x = LARGEUR_ECRAN
 
     def mise_a_jour(self):
@@ -65,6 +67,10 @@ class Alerte:
         if not self.actif:
             return
 
+        # Traduire à chaque frame pour suivre la langue courante
+        texte = t(self.cle)
+        self.largeur = self.font.size(texte)[0] + 40
+
         self.mise_a_jour()
 
         rect = pygame.Rect(int(self.x), self.y, self.largeur, self.hauteur)
@@ -76,7 +82,7 @@ class Alerte:
         pygame.draw.rect(ecran, (255, 200, 50), rect, 3, border_radius=10)
 
         # Texte
-        surface_texte = self.font.render(self.texte, True, (255, 255, 255))
+        surface_texte = self.font.render(texte, True, (255, 255, 255))
         tx = rect.x + (rect.width - surface_texte.get_width()) // 2
         ty = rect.y + (rect.height - surface_texte.get_height()) // 2
         ecran.blit(surface_texte, (tx, ty))

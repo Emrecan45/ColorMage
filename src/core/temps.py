@@ -25,3 +25,11 @@ def set_pause(pause_active):
 
 def obtenir_temps():
     return temps_jeu
+
+
+def avancer(ms):
+    """Avance le temps de jeu d'un pas fixe (rattrapage de frames)."""
+    global temps_jeu, dernier_temps_reel
+    if not en_pause:
+        temps_jeu = temps_jeu + ms
+    dernier_temps_reel = pygame.time.get_ticks()

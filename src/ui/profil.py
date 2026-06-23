@@ -1,10 +1,13 @@
+from core.i18n import t
 import pygame
 import sys
 import os
 import random
 import math
 from datetime import datetime
-from core.config import LARGEUR_ECRAN, HAUTEUR_ECRAN, COULEUR_BOUTON, COULEUR_SURVOL, COULEUR_BORDURE, resource_path
+from core.config import LARGEUR_ECRAN, HAUTEUR_ECRAN, COULEUR_BOUTON, COULEUR_SURVOL, COULEUR_BORDURE, resource_path, EST_WEB
+from core.son import Son
+from core.assets import police, position_centree
 from core.config_manager import ConfigManager
 
 class Profil:
@@ -12,10 +15,10 @@ class Profil:
     
     def __init__(self, gestionnaire_config=None):
         # Polices (mêmes que paramètres pour uniformité)
-        self.font_titre = pygame.font.SysFont(None, 80)
-        self.font_1 = pygame.font.SysFont(None, 50)  # Pour texte boutons
-        self.font_2 = pygame.font.SysFont(None, 40)  # Pour contenu stats
-        self.font_3 = pygame.font.SysFont(None, 35)  # Pour labels stats
+        self.font_titre = police(80)
+        self.font_1 = police(50)  # Pour texte boutons
+        self.font_2 = police(40)  # Pour contenu stats
+        self.font_3 = police(35)  # Pour labels stats
         
         # Gestionnaire de config
         if gestionnaire_config is None:
@@ -27,7 +30,7 @@ class Profil:
         self.pseudo = self.gestionnaire_config.obtenir_pseudo()
         
         # Son des clics
-        self.son_select = pygame.mixer.Sound(resource_path(os.path.join("assets/audio", "select.wav")))
+        self.son_select = Son(resource_path(os.path.join("assets/audio", "select.wav")))
         self.maj_volume()
         
         # Générer les étoiles
@@ -45,43 +48,36 @@ class Profil:
         # Avatars disponibles (images dans img/avatars/)
         # niveau_associe = niveau dont l'ennemi doit être vaincu pour débloquer
         self.avatars = [
-            {"nom": "Mage 1", "fichier": "mage1.png", "prix": 0},
-            {"nom": "Mage 2", "fichier": "mage2.png", "prix": 3},
-            {"nom": "Mage 3", "fichier": "mage3.png", "prix": 3},
-            {"nom": "Grimoire", "fichier": "grimoire.png", "niveau_associe": 1, "prix": 4},
-            {"nom": "Mage 4", "fichier": "mage4.png", "niveau_associe": 2, "prix": 8},
-            {"nom": "Sorcier", "fichier": "sorcier.png", "niveau_associe": 3, "prix": 12},
-            {"nom": "Squelette", "fichier": "squelette.png", "niveau_associe": 4, "prix": 16},
-            {"nom": "Slime Vert1", "fichier": "slime_vert1.png", "niveau_associe": 5, "prix": 20},
-            {"nom": "Slime Violet", "fichier": "slime_violet.png", "niveau_associe": 5, "prix": 20},
-            {"nom": "Mage 5", "fichier": "mage5.png", "niveau_associe": 6, "prix": 24},
-            {"nom": "Slime Vert2", "fichier": "slime_vert2.png", "niveau_associe": 7, "prix": 28},
-            {"nom": "Mage 6", "fichier": "mage6.png", "niveau_associe": 8, "prix": 32},
-            {"nom": "Démon", "fichier": "demon.png", "niveau_associe": 9, "prix": 36},
-            {"nom": "Pyrolord", "fichier": "pyrolord.png", "niveau_associe": 10, "prix": 40},
+            {"nom_cle": "avatar.mage1", "fichier": "mage1.png", "prix": 0},
+            {"nom_cle": "avatar.mage2", "fichier": "mage2.png", "prix": 3},
+            {"nom_cle": "avatar.mage3", "fichier": "mage3.png", "prix": 3},
+            {"nom_cle": "avatar.grimoire", "fichier": "grimoire.png", "niveau_associe": 1, "prix": 4},
+            {"nom_cle": "avatar.mage4", "fichier": "mage4.png", "niveau_associe": 2, "prix": 8},
+            {"nom_cle": "avatar.sorcier", "fichier": "sorcier.png", "niveau_associe": 3, "prix": 12},
+            {"nom_cle": "avatar.squelette", "fichier": "squelette.png", "niveau_associe": 4, "prix": 16},
+            {"nom_cle": "avatar.slime_vert1", "fichier": "slime_vert1.png", "niveau_associe": 5, "prix": 20},
+            {"nom_cle": "avatar.slime_violet", "fichier": "slime_violet.png", "niveau_associe": 5, "prix": 20},
+            {"nom_cle": "avatar.mage5", "fichier": "mage5.png", "niveau_associe": 6, "prix": 24},
+            {"nom_cle": "avatar.slime_vert2", "fichier": "slime_vert2.png", "niveau_associe": 7, "prix": 28},
+            {"nom_cle": "avatar.mage6", "fichier": "mage6.png", "niveau_associe": 8, "prix": 32},
+            {"nom_cle": "avatar.demon", "fichier": "demon.png", "niveau_associe": 9, "prix": 36},
+            {"nom_cle": "avatar.pyrolord", "fichier": "pyrolord.png", "niveau_associe": 10, "prix": 40},
         ]
 
         # Power-ups achetables (améliorations permanentes)
         self.powerups = [
             {
                 "id": "cristal_temps",
-                "nom": "Cristal prolongé",
-                "description": [
-                    "Augmente la durée du pouvoir de",
-                    "tir octroyé par le Cristal de feu.",
-                    "(10s -> 15s)",
-                ],
+                "nom_cle": "power.cristal_temps",
+                "desc_cle": "power.desc_cristal_temps",
                 "fichier": "cristal_feu_temps_up.png",
                 "niveau_associe": 7,
                 "prix": 30,
             },
             {
                 "id": "cristal_vitesse",
-                "nom": "Cristal accéléré",
-                "description": [
-                    "Augmente la vitesse des",
-                    "projectiles de feu du Cristal de feu.",
-                ],
+                "nom_cle": "power.cristal_vitesse",
+                "desc_cle": "power.desc_cristal_vitesse",
                 "fichier": "cristal_feu_up_vitesse.png",
                 "niveau_associe": 9,
                 "prix": 30,
@@ -95,7 +91,7 @@ class Profil:
                 break
         
         # Charger l'icône de changement
-        self.icone_change = pygame.image.load(resource_path("assets/img/ui/change.png"))
+        self.icone_change = pygame.image.load(resource_path("assets/img/ui/change.png")).convert_alpha()
         self.icone_change = pygame.transform.scale(self.icone_change, (40, 40))
         
         # Positions centrées
@@ -145,7 +141,7 @@ class Profil:
         """Charge l'image d'avatar actuelle"""
         avatar = self.avatars[self.avatar_actuel]
         chemin = resource_path(os.path.join("assets", "img", "ui", "avatars", avatar["fichier"]))
-        image = pygame.image.load(chemin)
+        image = pygame.image.load(chemin).convert_alpha()
         taille = self.cadre_avatar.width - 6
         self.image_avatar = pygame.transform.scale(image, (taille, taille))
 
@@ -216,7 +212,7 @@ class Profil:
         
         # Calculer la planète correspondante
         planete = (niveau_max - 1) // 5 + 1
-        noms_planetes = ["Terra", "Pyros", "Aquaris", "Nebula", "Cryon", "Solara", "Vortex", "Obscura"]
+        noms_planetes = [t("planet.1"), t("planet.2"), t("planet.3"), t("planet.4"), t("planet.5"), t("planet.6"), t("planet.7"), t("planet.8")]
         if planete > 0:
             idx = min(planete - 1, len(noms_planetes) - 1)
             nom_planete = noms_planetes[idx]
@@ -276,13 +272,13 @@ class Profil:
         self.dessiner_etoiles(ecran)
         
         # Titre "Profil"
-        titre = self.font_titre.render("Profil", True, (255, 255, 255))
+        titre = self.font_titre.render(t("profil.titre"), True, (255, 255, 255))
         ecran.blit(titre, (LARGEUR_ECRAN // 2 - titre.get_width() // 2, 30))
         
         mouse_pos = pygame.mouse.get_pos()
         
         # Sous-titre "Pseudo"
-        sous_titre_pseudo = self.font_3.render("Pseudo", True, (180, 180, 180))
+        sous_titre_pseudo = self.font_3.render(t("profil.pseudo"), True, (180, 180, 180))
         ecran.blit(sous_titre_pseudo, (LARGEUR_ECRAN // 2 - sous_titre_pseudo.get_width() // 2, 130))
         
         # Cadre du pseudo
@@ -304,12 +300,11 @@ class Profil:
         if self.edition_pseudo and self.curseur_visible:
             texte_pseudo += "|"
         pseudo_txt = self.font_1.render(texte_pseudo, True, (255, 255, 255))
-        ecran.blit(pseudo_txt, (pseudo_zone.centerx - pseudo_txt.get_width() // 2,
-                               pseudo_zone.centery - pseudo_txt.get_height() // 2))
+        ecran.blit(pseudo_txt, position_centree(pseudo_txt, self.font_1, pseudo_zone.centerx, pseudo_zone.centery))
         self.pseudo_rect = pseudo_zone
         
         # Sous-titre "Avatar"
-        sous_titre_avatar = self.font_3.render("Avatar", True, (180, 180, 180))
+        sous_titre_avatar = self.font_3.render(t("profil.avatar"), True, (180, 180, 180))
         ecran.blit(sous_titre_avatar, (self.cadre_avatar.centerx - sous_titre_avatar.get_width() // 2, self.cadre_avatar.y - 25))
         
         # Cadre de l'avatar
@@ -334,23 +329,23 @@ class Profil:
         stats = self.calculer_statistiques()
         
         # Sous-titre "Statistiques"
-        sous_titre_stats = self.font_3.render("Statistiques", True, (180, 180, 180))
+        sous_titre_stats = self.font_3.render(t("profil.statistiques"), True, (180, 180, 180))
         ecran.blit(sous_titre_stats, (self.zone_niveau_max.centerx - sous_titre_stats.get_width() // 2, self.zone_niveau_max.y - 25))
         
         # Zone niveau maximum / planète
         pygame.draw.rect(ecran, COULEUR_BOUTON, self.zone_niveau_max, border_radius=10)
         pygame.draw.rect(ecran, COULEUR_BORDURE, self.zone_niveau_max, 3, border_radius=10)
-        niveau_txt = self.font_3.render("Progression", True, (200, 200, 200))
+        niveau_txt = self.font_3.render(t("profil.progression"), True, (200, 200, 200))
         niveau_y = self.zone_niveau_max.y + 10
         ecran.blit(niveau_txt, (self.zone_niveau_max.x + 15, niveau_y))
-        progression_txt = self.font_2.render(f"{stats['planete']} - Niv. {stats['niveau_max']}", True, (255, 255, 255))
+        progression_txt = self.font_2.render(f"{stats['planete']} - {t('profil.niv')} {stats['niveau_max']}", True, (255, 255, 255))
         progression_y = self.zone_niveau_max.y + self.zone_niveau_max.height - progression_txt.get_height() - 12 + 6
         ecran.blit(progression_txt, (self.zone_niveau_max.x + 15, progression_y))
         
         # Zone temps total (records)
         pygame.draw.rect(ecran, COULEUR_BOUTON, self.zone_temps_total, border_radius=10)
         pygame.draw.rect(ecran, COULEUR_BORDURE, self.zone_temps_total, 3, border_radius=10)
-        temps_label = self.font_3.render("Temps total (records)", True, (200, 200, 200))
+        temps_label = self.font_3.render(t("profil.temps_total"), True, (200, 200, 200))
         temps_label_y = self.zone_temps_total.y + 10
         ecran.blit(temps_label, (self.zone_temps_total.x + 15, temps_label_y))
         temps_txt = self.font_2.render(self.formater_temps(stats['temps_total_ms']), True, (255, 255, 255))
@@ -360,7 +355,7 @@ class Profil:
         # Zone pièces collectées
         pygame.draw.rect(ecran, COULEUR_BOUTON, self.zone_cibles, border_radius=10)
         pygame.draw.rect(ecran, COULEUR_BORDURE, self.zone_cibles, 3, border_radius=10)
-        pieces_label = self.font_3.render("Pièces gagnées", True, (200, 200, 200))
+        pieces_label = self.font_3.render(t("profil.pieces"), True, (200, 200, 200))
         pieces_label_y = self.zone_cibles.y + 10
         ecran.blit(pieces_label, (self.zone_cibles.x + 15, pieces_label_y))
         pieces_txt = self.font_2.render(str(stats.get('pieces_total', 0)), True, (255, 255, 255))
@@ -373,9 +368,9 @@ class Profil:
         else:
             pygame.draw.rect(ecran, (120, 30, 30), self.bouton_reset_save, border_radius=10)
         pygame.draw.rect(ecran, COULEUR_BORDURE, self.bouton_reset_save, 3, border_radius=10)
-        reset_txt = self.font_1.render("Réinitialiser", True, (255, 255, 255))
-        ecran.blit(reset_txt, (self.bouton_reset_save.centerx - reset_txt.get_width() // 2,
-                              self.bouton_reset_save.centery - reset_txt.get_height() // 2))
+        reset_txt = self.font_1.render(t("profil.reset"), True, (255, 255, 255))
+        ecran.blit(reset_txt, position_centree(reset_txt, self.font_1,
+                                               self.bouton_reset_save.centerx, self.bouton_reset_save.centery))
         
         # Bouton retour
         if self.bouton_retour.collidepoint(mouse_pos):
@@ -384,32 +379,55 @@ class Profil:
             couleur_retour = COULEUR_BOUTON
         pygame.draw.rect(ecran, couleur_retour, self.bouton_retour, border_radius=10)
         pygame.draw.rect(ecran, COULEUR_BORDURE, self.bouton_retour, 3, border_radius=10)
-        retour_txt = self.font_1.render("Retour", True, (255, 255, 255))
-        ecran.blit(retour_txt, (self.bouton_retour.centerx - retour_txt.get_width() // 2,
-                               self.bouton_retour.centery - retour_txt.get_height() // 2))
+        retour_txt = self.font_1.render(t("profil.retour"), True, (255, 255, 255))
+        ecran.blit(retour_txt, position_centree(retour_txt, self.font_1,
+                                                self.bouton_retour.centerx, self.bouton_retour.centery))
         
         return None
     
+    def ouvrir_clavier(self):
+        """Active l'édition du pseudo et ouvre le clavier (mobile/web)."""
+        self.pseudo_avant_edition = self.pseudo
+        if EST_WEB:
+            import platform
+            valeur = platform.window.prompt(t("profil.pseudo"), self.pseudo)
+            if valeur is not None:
+                valeur = valeur.strip()[:15]
+                if valeur:
+                    self.pseudo = valeur
+                else:
+                    self.pseudo = self.pseudo_avant_edition
+                self.gestionnaire_config.sauvegarder_pseudo(self.pseudo)
+            return
+        self.edition_pseudo = True
+        pygame.key.start_text_input()
+        pygame.key.set_text_input_rect(self.pseudo_rect)
+
+    def fermer_clavier(self):
+        """Désactive l'édition et ferme le clavier."""
+        self.edition_pseudo = False
+        if not EST_WEB:
+            pygame.key.stop_text_input()
+
     def gerer_events(self, evenement):
         """Gère les événements de la page profil"""
-        if evenement.type == pygame.MOUSEBUTTONDOWN:
+        if evenement.type == pygame.MOUSEBUTTONDOWN and evenement.button == 1:
             # Clic sur le bouton retour
             if self.bouton_retour.collidepoint(evenement.pos):
                 self.son_select.play()
-                self.edition_pseudo = False
+                self.fermer_clavier()
                 return "quitter"
             
             # Clic sur le pseudo pour l'éditer
             if self.pseudo_rect.collidepoint(evenement.pos):
                 self.son_select.play()
-                self.pseudo_avant_edition = self.pseudo  # Sauvegarder avant édition
-                self.edition_pseudo = True
+                self.ouvrir_clavier()
                 return None
             
             # Clic sur le bouton reset
             if self.bouton_reset_save.collidepoint(evenement.pos):
                 self.son_select.play()
-                self.edition_pseudo = False
+                self.fermer_clavier()
                 # Recharger le pseudo depuis la config pour annuler toute modification en cours
                 self.pseudo = self.gestionnaire_config.obtenir_pseudo()
                 return "reset_save"
@@ -422,7 +440,7 @@ class Profil:
             
             # Clic ailleurs = désactiver l'édition du pseudo
             if self.edition_pseudo:
-                self.edition_pseudo = False
+                self.fermer_clavier()
                 # Si le pseudo est vide, restaurer l'ancien
                 if not self.pseudo.strip():
                     self.pseudo = self.pseudo_avant_edition
@@ -431,14 +449,14 @@ class Profil:
         # Gestion de la saisie du pseudo
         if evenement.type == pygame.KEYDOWN and self.edition_pseudo:
             if evenement.key == pygame.K_RETURN:
-                self.edition_pseudo = False
+                self.fermer_clavier()
                 # Si le pseudo est vide, restaurer l'ancien
                 if not self.pseudo.strip():
                     self.pseudo = self.pseudo_avant_edition
                 self.gestionnaire_config.sauvegarder_pseudo(self.pseudo)
             elif evenement.key == pygame.K_ESCAPE:
                 # Échap annule les modifications
-                self.edition_pseudo = False
+                self.fermer_clavier()
                 self.pseudo = self.pseudo_avant_edition
             elif evenement.key == pygame.K_BACKSPACE:
                 self.pseudo = self.pseudo[:-1]

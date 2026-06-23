@@ -1,9 +1,13 @@
 import pygame
+import asyncio
 import sys
 import os
 import random
 import math
+from core.i18n import t
 from core.config import LARGEUR_ECRAN, HAUTEUR_ECRAN, COULEURS, COULEUR_BOUTON, COULEUR_SURVOL, COULEUR_BORDURE, NIVEAUX_DISPONIBLES, resource_path
+from core.son import Son
+from core.assets import police, position_centree
 from core.config_manager import ConfigManager
 from ui.chronometre import Chronometre
 from ui.profil import Profil
@@ -21,13 +25,13 @@ class Popup:
             self.gestionnaire_config = ConfigManager()
         else:
             self.gestionnaire_config = gestionnaire_config
-        self.son_select = pygame.mixer.Sound(resource_path(os.path.join("assets/audio", "select.wav")))
+        self.son_select = Son(resource_path(os.path.join("assets/audio", "select.wav")))
         
         # Sons de portail (changement de couleur) pour clic sur nouvelle planète
         self.sons_portail = [
-            pygame.mixer.Sound(resource_path(os.path.join("assets/audio", "color_change1.wav"))),
-            pygame.mixer.Sound(resource_path(os.path.join("assets/audio", "color_change2.wav"))),
-            pygame.mixer.Sound(resource_path(os.path.join("assets/audio", "color_change3.wav")))
+            Son(resource_path(os.path.join("assets/audio", "color_change1.wav"))),
+            Son(resource_path(os.path.join("assets/audio", "color_change2.wav"))),
+            Son(resource_path(os.path.join("assets/audio", "color_change3.wav")))
         ]
         
         # Configuration des planètes (doit correspondre à menu_niveaux)
@@ -46,7 +50,7 @@ class Popup:
 
         # Charger les images des mobs pour le grimoire
         ennemy_path = resource_path(os.path.join("assets/img/entities", "ennemy.png"))
-        self.ennemy_sheet = pygame.image.load(ennemy_path)
+        self.ennemy_sheet = pygame.image.load(ennemy_path).convert_alpha()
         sprite_w = 192
         sprite_h = 192
         
@@ -59,12 +63,12 @@ class Popup:
         self.img_squelette = pygame.transform.scale(self.ennemy_sheet.subsurface(squelette_rect), (100, 100))
         
         # Slime vert
-        slime_vert_sheet = pygame.image.load(resource_path(os.path.join("assets/img/entities", "slime_vert.png")))
+        slime_vert_sheet = pygame.image.load(resource_path(os.path.join("assets/img/entities", "slime_vert.png"))).convert_alpha()
         slime_vert_rect = pygame.Rect(0, 24, 24, 24)
         self.img_slime = pygame.transform.scale(slime_vert_sheet.subsurface(slime_vert_rect), (80, 80))
         
         # Slime violet
-        slime_violet_sheet = pygame.image.load(resource_path(os.path.join("assets/img/entities", "slime_violet.png")))
+        slime_violet_sheet = pygame.image.load(resource_path(os.path.join("assets/img/entities", "slime_violet.png"))).convert_alpha()
         slime_violet_rect = pygame.Rect(0, 24, 24, 24)
         self.img_slime_violet = pygame.transform.scale(slime_violet_sheet.subsurface(slime_violet_rect), (80, 80))
 
@@ -128,11 +132,11 @@ class Popup:
         self.img_potion = pygame.transform.smoothscale(self.img_potion, (taille_illu, taille_illu))
 
         # Pic
-        self.img_pic_tuto = pygame.image.load(resource_path(os.path.join("assets", "img", "items", "pic.png")))
+        self.img_pic_tuto = pygame.image.load(resource_path(os.path.join("assets", "img", "items", "pic.png"))).convert_alpha()
         self.img_pic_tuto = pygame.transform.scale(self.img_pic_tuto, (taille_illu, taille_illu))
 
         # Porte
-        self.img_porte_tuto = pygame.image.load(resource_path(os.path.join("assets", "img", "items", "porte.png")))
+        self.img_porte_tuto = pygame.image.load(resource_path(os.path.join("assets", "img", "items", "porte.png"))).convert_alpha()
         self.img_porte_tuto = pygame.transform.scale(self.img_porte_tuto, (taille_illu, taille_illu))
 
         # Feu
@@ -156,119 +160,8 @@ class Popup:
         self.img_demon = pygame.transform.scale(demon_frame, (max(1, int(demon_frame.get_width() * ratio_demon)), 95))
 
         # pages du grimoire (par niveau)
-        self.grimoires = {
-            1: {
-                "titre": "Les bases",
-                "images": [self.img_potion, self.img_bloc_rouge, self.img_pic_tuto, self.img_porte_tuto],
-                "lore": "Le Prisme s'est brisé. Seuls ceux qui maîtrisent le chant des couleurs peuvent traverser ce monde.",
-                "lignes": [
-                    "- Attrape les potions pour changer ta couleur.",
-                    "- Tu ne peux toucher que les blocs noirs ou de ta propre couleur.",
-                    "- Les autres blocs sont immatériels : tu passeras au travers.",
-                    "- Atteins le portail jaune pour t'échapper."
-                ]
-            },
-            2: {
-                "titre": "Blocs enchantés",
-                "images": [self.img_mobile_bleu],
-                "lore": "Certains fragments du monde refusent de rester immobiles, animés par une magie résiduelle.",
-                "lignes": [
-                    "- Des blocs bougent horizontalement ou verticalement.",
-                    "- Ils peuvent te transporter s'ils sont noirs ou de ta couleur.",
-                    "- Ne te fais pas écraser par un bloc et ne tombe pas dans le vide !",
-                    "- Observe leur cycle avant de sauter !"
-                ]
-            },
-            3: {
-                "titre": "Sorcier",
-                "images": [self.img_sorcier],
-                "lore": "Des mages corrompus par l'obsidienne. Ils canalisent leur haine sous forme de crânes spectraux.",
-                "lignes": [
-                    "- Il reste immobile mais attaque à distance.",
-                    "- Il projette des crânes maudits en ligne droite.",
-                    "- Le moindre contact avec lui ou ses crânes te sera fatal.",
-                    "- Trouve le bon timing pour passer entre les tirs !"
-                ]
-            },
-            4: {
-                "titre": "Garde d'os",
-                "images": [self.img_squelette],
-                "lore": "D'anciens gardiens relevés par le néant. Ils patrouillent sans fin, frappant tout intrus.",
-                "lignes": [
-                    "- Ce soldat fait des allers-retours constants.",
-                    "- Il attaque au corps-à-corps",
-                    "- Si tu le touches, c'est la fin",
-                    "- Saute par-dessus ou passe dans son dos !"
-                ]
-            },
-            5: {
-                "titre": "Slimes",
-                "images": [self.img_slime, self.img_slime_violet],
-                "lore": "Des résidus de magie condensés. Leurs noyaux sont durs, mais leur corps est élastique.",
-                "lignes": [
-                    "- Utilise le rebond sur leur tête pour atteindre des hauteurs.",
-                    "- Verts : Fragiles, 1 seul suffit pour les détruire.",
-                    "- Violets : Résistants, il faut 2 sauts pour les détruire.",
-                    "- Attention : toucher un slime ailleurs que sur la tête est mortel !"
-                ]
-            },
-            6: {
-                "titre": "Cristal de feu",
-                "images": [self.img_cristal],
-                "lore": "Un cristal ardent, résidu d'une magie ancienne. Il confère de mystérieux pouvoirs brulants.",
-                "lignes": [
-                    "- Attrape le cristal pour obtenir le pouvoir du feu.",
-                    "- Tu pourras tirer des flammes sur les ennemis",
-                    "- Il apparait dans des emplacements spécifiques.",
-                    "- Attention : tu ne peux pas rester eternellement avec ce pouvoir."
-               ]
-            },
-            7: {
-                "titre": "Brasier",
-                "images": [self.img_feu],
-                "lore": "Des flammes éternelles jaillissent du sol, vestiges de la fureur de Pyros.",
-                "lignes": [
-                    "- Le feu est mortel au contact, comme les pics.",
-                    "- Le feu ne peut pas être éteint.",
-                    "- Aucune couleur ne te protège : il brûle tout.",
-                    "- Saute par-dessus ou contourne-le !"
-                ]
-            },
-            8: {
-                "titre": "Butin",
-                "images": [self.img_piece, self.img_potion, self.img_cristal],
-                "lore": "En s'éteignant, les créatures relâchent parfois l'énergie qu'elles avaient absorbée.",
-                "lignes": [
-                    "- Certains ennemis lâchent un objet à leur mort.",
-                    "- Pièces, potions ou cristaux de feu... Tout peut tomber.",
-                    "- Élimine-les pour récupérer leur butin.",
-                    "- Le butin apparaît là où l'ennemi a péri."
-                ]
-            },
-            9: {
-                "titre": "Démon volant",
-                "images": [self.img_demon],
-                "lore": "Une créature des abysses qui plane sans répit, le regard rivé sur sa proie.",
-                "lignes": [
-                    "- Il vole et te fait face en permanence.",
-                    "- Toutes les 3 secondes, il tire ou fonce droit sur toi.",
-                    "- Le toucher est fatal : esquive sa charge et ses projectiles.",
-                    "- Tire-lui dessus, trois tirs suffisent pour l'abattre."
-                ]
-            },
-            10: {
-                "titre": "Pyrolord",
-                "images": [self.img_slime_feu],
-                "lore": "Un petit slime de braise sautille au fond de l'antre. "
-                        "Il a l'air inoffensif... vraiment ?",
-                "lignes": [
-                    "- Quelque chose se cache sous cette enveloppe ardente...",
-                    "- Réveille le en lui sautant dessus ou en lui tirant dessus.",
-                    "- Il est rapide et peut te surprendre si tu ne fais pas attention.",
-                ]
-            }
-        }
-        
+        self.construire_grimoires()
+
         # Rectangle du popup
         self.popup_rect = pygame.Rect((LARGEUR_ECRAN - self.largeur_popup) // 2, (HAUTEUR_ECRAN - self.hauteur_popup) // 2, self.largeur_popup, self.hauteur_popup)
         
@@ -401,10 +294,76 @@ class Popup:
             return "quitter"
         return None
 
-    def afficher_popup_grimoire(self, ecran, numero_niveau, draw_background=None, alerte=None):
+    def construire_grimoires(self):
+        """Construit les pages du grimoire (rappelé pour suivre la langue)."""
+        self.grimoires = {
+            1: {
+                "titre": t("popup.bases"),
+                "images": [self.img_potion, self.img_bloc_rouge, self.img_pic_tuto, self.img_porte_tuto],
+                "lore": t("popup.bases_lore"),
+                "lignes": t("popup.bases_tuto")
+            },
+            2: {
+                "titre": t("popup.blocs"),
+                "images": [self.img_mobile_bleu],
+                "lore": t("popup.blocs_lore"),
+                "lignes": t("popup.blocs_tuto")
+            },
+            3: {
+                "titre": t("popup.sorcier"),
+                "images": [self.img_sorcier],
+                "lore": t("popup.sorcier_lore"),
+                "lignes": t("popup.sorcier_tuto")
+            },
+            4: {
+                "titre": t("popup.garde"),
+                "images": [self.img_squelette],
+                "lore": t("popup.garde_lore"),
+                "lignes": t("popup.garde_tuto")
+            },
+            5: {
+                "titre": t("popup.slimes"),
+                "images": [self.img_slime, self.img_slime_violet],
+                "lore": t("popup.slimes_lore"),
+                "lignes": t("popup.slimes_tuto")
+            },
+            6: {
+                "titre": t("popup.cristal"),
+                "images": [self.img_cristal],
+                "lore": t("popup.cristal_lore"),
+                "lignes": t("popup.cristal_tuto")
+            },
+            7: {
+                "titre": t("popup.brasier"),
+                "images": [self.img_feu],
+                "lore": t("popup.brasier_lore"),
+                "lignes": t("popup.brasier_tuto")
+            },
+            8: {
+                "titre": t("popup.butin"),
+                "images": [self.img_piece, self.img_potion, self.img_cristal],
+                "lore": t("popup.butin_lore"),
+                "lignes": t("popup.butin_tuto")
+            },
+            9: {
+                "titre": t("popup.demon"),
+                "images": [self.img_demon],
+                "lore": t("popup.demon_lore"),
+                "lignes": t("popup.demon_tuto")
+            },
+            10: {
+                "titre": t("popup.pyrolord"),
+                "images": [self.img_slime_feu],
+                "lore": t("popup.pyrolord_lore"),
+                "lignes": t("popup.pyrolord_lore2")
+            }
+        }
+
+    async def afficher_popup_grimoire(self, ecran, numero_niveau, draw_background=None, alerte=None):
         """Affiche un popup grimoire pour un niveau donné
         Freeze jusqu'à ce que le joueur clique OK.
         """
+        self.construire_grimoires()
         if numero_niveau not in self.grimoires:
             return
         
@@ -432,8 +391,9 @@ class Popup:
         # Fond du jeu
         fond_capture = pygame.Surface((LARGEUR_ECRAN, HAUTEUR_ECRAN))
         fond_capture.blit(ecran, (0, 0))
-        
+
         while True:
+            await asyncio.sleep(0)
             for evenement in pygame.event.get():
                 if evenement.type == pygame.QUIT:
                     pygame.quit()
@@ -442,7 +402,7 @@ class Popup:
                     if evenement.key == pygame.K_RETURN or evenement.key == pygame.K_SPACE:
                         self.son_select.play()
                         return
-                elif evenement.type == pygame.MOUSEBUTTONDOWN:
+                elif evenement.type == pygame.MOUSEBUTTONDOWN and evenement.button == 1:
                     if bouton_ok.collidepoint(evenement.pos):
                         self.son_select.play()
                         return
@@ -500,8 +460,109 @@ class Popup:
             else:
                 pygame.draw.rect(ecran, (50, 130, 50), bouton_ok, border_radius=10)
             pygame.draw.rect(ecran, (255, 255, 255), bouton_ok, 2, border_radius=10)
-            ok_surface = font_bouton.render("C'est parti !", True, (255, 255, 255))
-            ecran.blit(ok_surface, (bouton_ok.centerx - ok_surface.get_width() // 2, bouton_ok.centery - ok_surface.get_height() // 2))
+            ok_surface = font_bouton.render(t("popup.commencer"), True, (255, 255, 255))
+            ecran.blit(ok_surface, position_centree(ok_surface, font_bouton, bouton_ok.centerx, bouton_ok.centery))
+            if alerte:
+                alerte.dessiner(ecran)
+            pygame.display.flip()
+            pygame.time.Clock().tick(60)
+
+    async def afficher_patch_notes(self, ecran, version, alerte=None):
+        """Affiche un popup de patch notes pour une version donnée.
+        Freeze jusqu'à ce que le joueur clique OK.
+        """
+        # Récupérer le contenu des patch notes depuis les fichiers dans lang/
+        patch_notes_dict = t("patch_notes")
+        if type(patch_notes_dict) != dict or version not in patch_notes_dict:
+            return
+            
+        titre_popup = patch_notes_dict.get("titre")
+        titre_version = patch_notes_dict[version].get("titre")
+        lignes = patch_notes_dict[version].get("lignes")
+        texte_bouton = patch_notes_dict.get("bouton")
+
+        # Si la clé n'existe pas, ne rien afficher
+        if not lignes or type(lignes) == str:
+            return
+
+        y_lignes = 140
+        hauteur_lignes = len(lignes) * 36
+        y_fin_lignes = y_lignes + hauteur_lignes
+        marge_haut_bouton = 15
+        marge_bas_bouton = 35
+        hauteur_bouton = 50
+
+        # Dimensions du popup
+        popup_largeur = 1050
+        popup_hauteur = y_fin_lignes + marge_haut_bouton + hauteur_bouton + marge_bas_bouton
+        popup_rect = pygame.Rect((LARGEUR_ECRAN - popup_largeur) // 2, (HAUTEUR_ECRAN - popup_hauteur) // 2, popup_largeur, popup_hauteur)
+
+        # Bouton OK
+        bouton_ok = pygame.Rect(0, 0, 200, hauteur_bouton)
+        bouton_ok.centerx = popup_rect.centerx
+        bouton_ok.top = popup_rect.top + y_fin_lignes + marge_haut_bouton
+
+        # Fonts
+        font_titre_popup = police(42)
+        font_version = police(36)
+        font_texte = police(28)
+        font_bouton = police(36)
+
+        self.maj_volume()
+
+        # Fond
+        fond_capture = pygame.Surface((LARGEUR_ECRAN, HAUTEUR_ECRAN))
+        fond_capture.blit(ecran, (0, 0))
+
+        while True:
+            await asyncio.sleep(0)
+            for evenement in pygame.event.get():
+                if evenement.type == pygame.QUIT:
+                    pygame.quit()
+                    sys.exit()
+                elif evenement.type == pygame.KEYDOWN:
+                    if evenement.key == pygame.K_RETURN or evenement.key == pygame.K_SPACE:
+                        self.son_select.play()
+                        return
+                elif evenement.type == pygame.MOUSEBUTTONDOWN and evenement.button == 1:
+                    if bouton_ok.collidepoint(evenement.pos):
+                        self.son_select.play()
+                        return
+
+            ecran.blit(fond_capture, (0, 0))
+
+            overlay = pygame.Surface((LARGEUR_ECRAN, HAUTEUR_ECRAN), pygame.SRCALPHA)
+            overlay.fill((0, 0, 0, 180))
+            ecran.blit(overlay, (0, 0))
+
+            pygame.draw.rect(ecran, (35, 35, 60), popup_rect, border_radius=15)
+            pygame.draw.rect(ecran, (255, 200, 50), popup_rect, 3, border_radius=15)
+
+            # Titre
+            titre_surface = font_titre_popup.render(titre_popup, True, (255, 200, 50))
+            ecran.blit(titre_surface, (popup_rect.centerx - titre_surface.get_width() // 2, popup_rect.top + 30))
+
+            # Titre de la version
+            version_surface = font_version.render(titre_version, True, (200, 200, 255))
+            ecran.blit(version_surface, (popup_rect.centerx - version_surface.get_width() // 2, popup_rect.top + 85))
+
+            # Lignes de patch notes
+            for idx in range(len(lignes)):
+                ligne = lignes[idx]
+                couleur_ligne = (255, 255, 255)
+                texte_surface = font_texte.render(ligne, True, couleur_ligne)
+                ecran.blit(texte_surface, (popup_rect.centerx - texte_surface.get_width() // 2, popup_rect.top + 140 + idx * 36))
+
+            # Bouton OK
+            souris = pygame.mouse.get_pos()
+            if bouton_ok.collidepoint(souris):
+                pygame.draw.rect(ecran, (80, 160, 80), bouton_ok, border_radius=10)
+            else:
+                pygame.draw.rect(ecran, (50, 130, 50), bouton_ok, border_radius=10)
+            pygame.draw.rect(ecran, (255, 255, 255), bouton_ok, 2, border_radius=10)
+            ok_surface = font_bouton.render(texte_bouton, True, (255, 255, 255))
+            ecran.blit(ok_surface, position_centree(ok_surface, font_bouton, bouton_ok.centerx, bouton_ok.centery))
+
             if alerte:
                 alerte.dessiner(ecran)
             pygame.display.flip()
@@ -538,8 +599,9 @@ class Popup:
             resultat.append(pygame.transform.smoothscale(img, (w, h)))
         return resultat
 
-    def afficher_grimoire_complet(self, ecran, alerte=None):
+    async def afficher_grimoire_complet(self, ecran, alerte=None):
         """Affiche le grimoire complet et les infos non débloqués apparaissent en silhouette noire hehe"""
+        self.construire_grimoires()
         # Collecter tous les pages disponibles
         numeros = list(self.grimoires.keys())
         numeros.sort()
@@ -569,10 +631,11 @@ class Popup:
         bouton_suiv = pygame.Rect(0, 0, arrow_w, arrow_h)
         bouton_prec.center = (bouton_fermer.left - spacing - arrow_w // 2, bouton_fermer.centery)
         bouton_suiv.center = (bouton_fermer.right + spacing + arrow_w // 2, bouton_fermer.centery)
-        
+
         self.maj_volume()
-        
+
         while True:
+            await asyncio.sleep(0)
             for evenement in pygame.event.get():
                 if evenement.type == pygame.QUIT:
                     pygame.quit()
@@ -585,7 +648,7 @@ class Popup:
                         page_idx = page_idx - 1
                     elif evenement.key == pygame.K_RIGHT and page_idx < len(numeros) - 1:
                         page_idx = page_idx + 1
-                elif evenement.type == pygame.MOUSEBUTTONDOWN:
+                elif evenement.type == pygame.MOUSEBUTTONDOWN and evenement.button == 1:
                     if bouton_fermer.collidepoint(evenement.pos):
                         self.son_select.play()
                         return
@@ -601,7 +664,7 @@ class Popup:
             ecran.fill((10, 10, 30))
             self.dessiner_etoiles(ecran)
             
-            titre_gen = font_titre.render("Grimoire du Mage", True, (255, 215, 0))
+            titre_gen = font_titre.render(t("popup.grimoire"), True, (255, 215, 0))
             ecran.blit(titre_gen, (popup_rect.centerx - titre_gen.get_width() // 2, popup_rect.top + 12))
             
             # Page courante
@@ -659,11 +722,11 @@ class Popup:
 
                 for idx in range(len(grimoire["lignes"])):
                     ligne = grimoire["lignes"][idx]
-                    t = font_texte.render(ligne, True, (220, 220, 220))
-                    ecran.blit(t, (popup_rect.centerx - t.get_width() // 2, texte_y + idx * 32))
+                    txt_rendu = font_texte.render(ligne, True, (220, 220, 220))
+                    ecran.blit(txt_rendu, (popup_rect.centerx - txt_rendu.get_width() // 2, texte_y + idx * 32))
             else:
                 # Titre mystere
-                sous_titre = font_page.render("???", True, (100, 100, 120))
+                sous_titre = font_page.render(t("popup.mystere"), True, (100, 100, 120))
                 ecran.blit(sous_titre, (popup_rect.centerx - sous_titre.get_width() // 2, popup_rect.top + 110))
                 
                 # Images sous ombre noire
@@ -696,7 +759,7 @@ class Popup:
                 # Icône cadenas
                 cadenas_path = resource_path(os.path.join("assets", "img", "ui", "cadena.png"))
                 font_cadenas = pygame.font.Font(None, 36)
-                texte_cadenas = font_cadenas.render("Continue ta progression pour débloquer !", True, (120, 120, 140))
+                texte_cadenas = font_cadenas.render(t("popup.cadenas"), True, (120, 120, 140))
                 if os.path.exists(cadenas_path):
                     cadenas_img = pygame.image.load(cadenas_path).convert_alpha()
                     taille_cadenas = 40
@@ -716,7 +779,7 @@ class Popup:
             souris = pygame.mouse.get_pos()
             
             # Bouton précédent
-            font_button = pygame.font.SysFont(None, 50)
+            font_button = police(50)
             if page_idx > 0:
                 if bouton_prec.collidepoint(souris):
                     couleur_prec = COULEUR_SURVOL
@@ -725,7 +788,7 @@ class Popup:
                 pygame.draw.rect(ecran, couleur_prec, bouton_prec, border_radius=10)
                 pygame.draw.rect(ecran, COULEUR_BORDURE, bouton_prec, 3, border_radius=10)
                 prec_txt = font_nav.render("<", True, (255, 255, 255))
-                ecran.blit(prec_txt, (bouton_prec.centerx - prec_txt.get_width() // 2, bouton_prec.centery - prec_txt.get_height() // 2))
+                ecran.blit(prec_txt, position_centree(prec_txt, font_nav, bouton_prec.centerx, bouton_prec.centery))
             # Bouton suivant
             if page_idx < len(numeros) - 1:
                 if bouton_suiv.collidepoint(souris):
@@ -735,7 +798,7 @@ class Popup:
                 pygame.draw.rect(ecran, couleur_suiv, bouton_suiv, border_radius=10)
                 pygame.draw.rect(ecran, COULEUR_BORDURE, bouton_suiv, 3, border_radius=10)
                 suiv_txt = font_nav.render(">", True, (255, 255, 255))
-                ecran.blit(suiv_txt, (bouton_suiv.centerx - suiv_txt.get_width() // 2, bouton_suiv.centery - suiv_txt.get_height() // 2))
+                ecran.blit(suiv_txt, position_centree(suiv_txt, font_nav, bouton_suiv.centerx, bouton_suiv.centery))
             
             
             # Bouton fermer 
@@ -745,8 +808,8 @@ class Popup:
                 couleur_fermer = (120, 40, 40)
             pygame.draw.rect(ecran, couleur_fermer, bouton_fermer, border_radius=10)
             pygame.draw.rect(ecran, COULEUR_BORDURE, bouton_fermer, 3, border_radius=10)
-            fermer_txt = font_button.render("Fermer", True, (255, 255, 255))
-            ecran.blit(fermer_txt, (bouton_fermer.centerx - fermer_txt.get_width() // 2, bouton_fermer.centery - fermer_txt.get_height() // 2))
+            fermer_txt = font_button.render(t("popup.fermer"), True, (255, 255, 255))
+            ecran.blit(fermer_txt, position_centree(fermer_txt, font_button, bouton_fermer.centerx, bouton_fermer.centery))
             if alerte:
                 alerte.dessiner(ecran)
             pygame.display.flip()
@@ -769,7 +832,7 @@ class Popup:
         pygame.draw.rect(ecran, (0, 0, 0), self.popup_rect, 4)
 
         # Titre
-        titre_surface = self.font.render("Bravo ! Niveau terminé", True, (0, 0, 0))
+        titre_surface = self.font.render(t("popup.bravo"), True, (0, 0, 0))
         titre_x = self.popup_rect.x + (self.popup_rect.width - titre_surface.get_width()) // 2
         titre_y = self.popup_rect.y + 40
         ecran.blit(titre_surface, (titre_x, titre_y))
@@ -783,7 +846,7 @@ class Popup:
         else:
             nom_planete = f"Planète {planete}"
         
-        niveau_texte = f"Planète {nom_planete} - Niv. {niveau_actuel}"
+        niveau_texte = f"{nom_planete} - {t('pause.niv')} {niveau_actuel}"
         niveau_surface = self.font_niveau.render(niveau_texte, True, (100, 100, 100))
         niveau_x = self.popup_rect.x + (self.popup_rect.width - niveau_surface.get_width()) // 2
         niveau_y = self.popup_rect.y + 80
@@ -795,7 +858,7 @@ class Popup:
 
         temps_surface = None
         if temps_ms > 0:
-            temps_texte = "Temps : " + Chronometre.formater_temps(self, temps_ms)
+            temps_texte = t("popup.temps") + Chronometre.formater_temps(self, temps_ms)
             temps_surface = font_temps.render(temps_texte, True, (0, 0, 0))
 
         # compteur de pièces
@@ -818,7 +881,7 @@ class Popup:
         
         # Afficher "Nouveau record !" si c'est le cas
         if est_record:
-            record_surface = self.font.render("Nouveau record !", True, (0, 180, 0))
+            record_surface = self.font.render(t("popup.record"), True, (0, 180, 0))
             record_x = self.popup_rect.x + (self.popup_rect.width - record_surface.get_width()) // 2
             record_y = self.popup_rect.y + 145
             ecran.blit(record_surface, (record_x, record_y))
@@ -834,7 +897,7 @@ class Popup:
             premier_bouton_y = 180
         
         # Ajouter le bouton "Niveau suivant" ou nom de la planète/univers suivant seulement s'il existe
-        texte_bouton_suivant = "Niveau suivant"
+        texte_bouton_suivant = t("popup.niveau_suivant")
         couleur_planete = None
         
         if self.niveau_existe(niveau_actuel + 1):
@@ -850,7 +913,7 @@ class Popup:
                     texte_bouton_suivant = nom_univers
                     couleur_planete = (255, 215, 0)  # Couleur or pour univers
                 else:
-                    texte_bouton_suivant = "Suivant"
+                    texte_bouton_suivant = t("popup.suivant")
                     couleur_planete = (60, 180, 60)
             # Changer le texte si c'est le dernier niveau de la planète
             elif self.est_dernier_niveau_planete(niveau_actuel):
@@ -878,7 +941,7 @@ class Popup:
                     }
                     couleur_planete = couleurs_planetes.get(nom_planete, (60, 180, 60))
                 else:
-                    texte_bouton_suivant = "Suivant"
+                    texte_bouton_suivant = t("popup.suivant")
                     couleur_planete = (60, 180, 60)
             
             boutons.append((self.bouton_suivant, texte_bouton_suivant, couleur_planete))
@@ -888,8 +951,8 @@ class Popup:
             self.bouton_recommencer.center = (self.popup_rect.centerx, self.popup_rect.top + premier_bouton_y)
             self.bouton_quitter.center = (self.popup_rect.centerx, self.popup_rect.top + premier_bouton_y + 90)
         
-        boutons.append((self.bouton_recommencer, "Recommencer", None))
-        boutons.append((self.bouton_quitter, "Quitter", None))
+        boutons.append((self.bouton_recommencer, t("pause.recommencer"), None))
+        boutons.append((self.bouton_quitter, t("pause.quitter"), (200, 70, 70)))
 
         # Dessiner les boutons
         for item in boutons:
@@ -917,9 +980,7 @@ class Popup:
 
             # Texte du bouton
             texte_surface = self.font.render(texte, True, (0, 0, 0))
-            texte_x = rect.x + (rect.width - texte_surface.get_width()) // 2
-            texte_y = rect.y + (rect.height - texte_surface.get_height()) // 2
-            ecran.blit(texte_surface, (texte_x, texte_y))
+            ecran.blit(texte_surface, position_centree(texte_surface, self.font, rect.centerx, rect.centery))
 
     def dessiner_popup_defaite(self, ecran, niveau_actuel=None):
         """Dessine le popup de défaite
@@ -935,7 +996,7 @@ class Popup:
         pygame.draw.rect(ecran, (0, 0, 0), self.popup_rect, 4)
 
         # Titre
-        titre_surface = self.font.render("Game Over ! Vous êtes mort", True, (0, 0, 0))
+        titre_surface = self.font.render(t("popup.gameover"), True, (0, 0, 0))
         titre_x = self.popup_rect.x + (self.popup_rect.width - titre_surface.get_width()) // 2
         titre_y = self.popup_rect.y + 60
         ecran.blit(titre_surface, (titre_x, titre_y))
@@ -950,7 +1011,7 @@ class Popup:
             else:
                 nom_planete = f"Planète {planete}"
             
-            niveau_texte = f"Planète {nom_planete} - Niv. {niveau_actuel}"
+            niveau_texte = f"{nom_planete} - {t('pause.niv')} {niveau_actuel}"
             niveau_surface = self.font_niveau.render(niveau_texte, True, (100, 100, 100))
             niveau_x = self.popup_rect.x + (self.popup_rect.width - niveau_surface.get_width()) // 2
             niveau_y = self.popup_rect.y + 110
@@ -960,30 +1021,35 @@ class Popup:
         self.bouton_recommencer.center = (self.popup_rect.centerx, self.popup_rect.top + 210)
         self.bouton_quitter.center = (self.popup_rect.centerx, self.popup_rect.top + 300)
 
-        # Liste des boutons avec leurs textes
+        # Liste des boutons avec leurs textes et leur couleur (quit en rouge)
         boutons = [
-            (self.bouton_recommencer, "Recommencer"),
-            (self.bouton_quitter, "Quitter")
+            (self.bouton_recommencer, t("pause.recommencer"), None),
+            (self.bouton_quitter, t("pause.quitter"), (200, 70, 70))
         ]
 
         # Dessiner les boutons
-        for rect, texte in boutons:
-            # Effet de survol
-            if rect.collidepoint(pygame.mouse.get_pos()):
-                pygame.draw.rect(ecran, (200, 200, 200), rect, border_radius=10)
+        for rect, texte, couleur in boutons:
+            survol = rect.collidepoint(pygame.mouse.get_pos())
+            if couleur:
+                if survol:
+                    couleur_finale = (min(255, couleur[0] + 30), min(255, couleur[1] + 30), min(255, couleur[2] + 30))
+                else:
+                    couleur_finale = couleur
+                pygame.draw.rect(ecran, couleur_finale, rect, border_radius=10)
             else:
-                pygame.draw.rect(ecran, (230, 230, 230), rect, border_radius=10)
+                if survol:
+                    pygame.draw.rect(ecran, (200, 200, 200), rect, border_radius=10)
+                else:
+                    pygame.draw.rect(ecran, (230, 230, 230), rect, border_radius=10)
 
             # Bordure
             pygame.draw.rect(ecran, (0, 0, 0), rect, 3, border_radius=10)
 
             # Texte du bouton
             texte_surface = self.font.render(texte, True, (0, 0, 0))
-            texte_x = rect.x + (rect.width - texte_surface.get_width()) // 2
-            texte_y = rect.y + (rect.height - texte_surface.get_height()) // 2
-            ecran.blit(texte_surface, (texte_x, texte_y))
+            ecran.blit(texte_surface, position_centree(texte_surface, self.font, rect.centerx, rect.centery))
 
-    def afficher_popup_confirmation_reset(self, ecran, parametres=None, type_reset="sauvegarde", alerte=None):
+    async def afficher_popup_confirmation_reset(self, ecran, parametres=None, type_reset="sauvegarde", alerte=None):
         """Affiche un popup de confirmation pour la réinitialisation
         
         Args:
@@ -1009,37 +1075,38 @@ class Popup:
         # Messages selon le type de reset
         if type_reset == "import":
             lignes = [
-                "Voulez-vous vraiment importer",
-                "cette sauvegarde ?",
+                t("popup.import_titre"),
+                t("popup.import_desc"),
                 "",
-                "Votre sauvegarde actuelle sera écrasée."
+                t("popup.import_warn")
             ]
         elif type_reset == "parametres":
             lignes = [
-                "Voulez-vous vraiment réinitialiser",
-                "les paramètres ?",
+                t("popup.param_titre"),
+                t("popup.param_desc"),
                 "",
-                "Cette action est irréversible."
+                t("popup.param_warn")
             ]
         else:
             lignes = [
-                "Voulez-vous vraiment réinitialiser",
-                "votre sauvegarde ?",
+                t("popup.reset_titre"),
+                t("popup.reset_desc"),
                 "",
-                "Cette action est irréversible."
+                t("popup.reset_warn")
             ]
         
         # Mettre à jour le volume du son
         self.maj_volume()
-        
+
         while True:
+            await asyncio.sleep(0)
             for evenement in pygame.event.get():
                 if evenement.type == pygame.QUIT:
                     pygame.quit()
                     sys.exit()
                 elif evenement.type == pygame.KEYDOWN and evenement.key == pygame.K_ESCAPE:
                     return "annuler"
-                elif evenement.type == pygame.MOUSEBUTTONDOWN:
+                elif evenement.type == pygame.MOUSEBUTTONDOWN and evenement.button == 1:
                     if bouton_confirmer.collidepoint(evenement.pos):
                         self.son_select.play()
                         return "confirmer"
@@ -1066,7 +1133,7 @@ class Popup:
             pygame.draw.rect(ecran, (255, 255, 255), popup_rect, 3, border_radius=15)
             
             # Titre
-            titre = pygame.font.Font(None, 40).render("Confirmation", True, (255, 255, 255))
+            titre = pygame.font.Font(None, 40).render(t("popup.confirmation"), True, (255, 255, 255))
             ecran.blit(titre, (popup_rect.centerx - titre.get_width() // 2, popup_rect.top + 30))
             
             # Message
@@ -1095,13 +1162,12 @@ class Popup:
             pygame.draw.rect(ecran, (255, 255, 255), bouton_annuler, 2, border_radius=10)
             
             # Textes des boutons
-            confirmer_text = pygame.font.Font(None, 36).render("Confirmer", True, (255, 255, 255))
-            annuler_text = pygame.font.Font(None, 36).render("Annuler", True, (255, 255, 255))
-            
-            ecran.blit(confirmer_text, (bouton_confirmer.centerx - confirmer_text.get_width() // 2, 
-                                      bouton_confirmer.centery - confirmer_text.get_height() // 2))
-            ecran.blit(annuler_text, (bouton_annuler.centerx - annuler_text.get_width() // 2, 
-                                    bouton_annuler.centery - annuler_text.get_height() // 2))
+            font_conf = police(36)
+            confirmer_text = font_conf.render(t("popup.confirmer"), True, (255, 255, 255))
+            annuler_text = font_conf.render(t("popup.annuler"), True, (255, 255, 255))
+
+            ecran.blit(confirmer_text, position_centree(confirmer_text, font_conf, bouton_confirmer.centerx, bouton_confirmer.centery))
+            ecran.blit(annuler_text, position_centree(annuler_text, font_conf, bouton_annuler.centerx, bouton_annuler.centery))
             if alerte:
                 alerte.dessiner(ecran)
             pygame.display.flip()
