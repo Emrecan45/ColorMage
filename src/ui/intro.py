@@ -1,8 +1,13 @@
 from core.i18n import t
 import pygame
 import os
-import cv2
-from core.config import LARGEUR_ECRAN, HAUTEUR_ECRAN, resource_path
+import asyncio
+try:
+    import cv2
+    HAS_CV2 = True
+except ImportError:
+    HAS_CV2 = False
+from core.config import LARGEUR_ECRAN, HAUTEUR_ECRAN, resource_path, EST_WEB
 
 class Intro:
     """Classe pour gérer l'intro vidéo du jeu"""
@@ -31,8 +36,52 @@ class Intro:
         self.ecran.blit(texte, texte_rect)
         pygame.display.flip()
     
-    def lancer(self):
-        """Lance l'intro vidéo avec opencv"""
+    async def lancer_web(self):
+        """Joue l'intro web (balise <video> du template) et masque l'overlay 'Chargement...'."""
+        import platform
+        try:
+            if self.gestionnaire_config.config.get("intro_vue", False):
+                platform.window.colormage_hide_intro()
+                return "termine"
+            volumes = self.gestionnaire_config.obtenir_volumes()
+            vol_effets = volumes.get("effets", 50) / 100
+            platform.window.colormage_play_intro(vol_effets)
+            # Attente de la fin
+            attente = 0.0
+            while not platform.window.colormage_intro_fini:
+                await asyncio.sleep(0.05)
+                attente += 0.05
+                if attente > 16:
+                    break
+            # Dessiner la barre de chargement sous l'overlay avant de le retirer
+            if self.game is not None:
+                self.game.preparer_ecran_chargement()
+                self.game.dessiner_ecran_chargement(0.0, pygame.time.get_ticks() / 1000.0)
+                pygame.display.flip()
+            platform.window.colormage_hide_intro()
+            self.gestionnaire_config.config["intro_vue"] = True
+            self.gestionnaire_config.sauvegarder_config()
+        except Exception as exc:
+            print(f"Intro web ignoree : {exc}")
+            try:
+                platform.window.colormage_hide_intro()
+            except Exception:
+                pass
+        return "termine"
+
+    async def lancer(self):
+        # Sur le web l'intro est une balise <video> HTML5 (OpenCV indisponible)
+        if EST_WEB:
+            return await self.lancer_web()
+
+        # Sans OpenCV on passe l'intro
+        if not HAS_CV2:
+            return "termine"
+
+        # Vrifier si l'intro est dj passe
+        if self.gestionnaire_config.config.get("intro_vue", False):
+            return "termine"
+
         try:
             # Ouvrir la vidéo
             cap = cv2.VideoCapture(self.video_path)
@@ -55,11 +104,19 @@ class Intro:
             pygame.mixer.music.load(self.audio_path)
             pygame.mixer.music.set_volume(volume_effets)
             pygame.mixer.music.play()
-            
+            pygame.display.flip()
+            await asyncio.sleep(0)
+
+            # variables pour synchro
             temps_debut = pygame.time.get_ticks()
             frame_count = 0
+            horloge = pygame.time.Clock()
             
-            while True:
+            while cap.isOpened():
+                # Limiter les FPS de la boucle Pygame pour pas trop surcharger
+                horloge.tick(60)
+                await asyncio.sleep(0)
+                
                 # Gérer les événements
                 for evenement in pygame.event.get():
                     if evenement.type == pygame.QUIT:
@@ -83,7 +140,8 @@ class Intro:
                         return "menu"
                     frame_count += 1
                 
-                # Lire et afficher la frame actuelle
+                # Lire et afficher la frame
+                await asyncio.sleep(0)
                 ret, frame = cap.read()
                 
                 if not ret:

@@ -1,11 +1,15 @@
 import pygame
+import asyncio
 import sys
 import os
 from core.config import LARGEUR_ECRAN, HAUTEUR_ECRAN, resource_path, FPS
+from core.son import Son
+import core.musique as musique
 from core.config_manager import ConfigManager
 from core.i18n import t
 from ui.parametres import Parametres
 from ui.popup import Popup
+from core.assets import position_centree
 
 class Pause:
     """Gère le menu de pause avec bouton et options"""
@@ -14,7 +18,7 @@ class Pause:
         self.largeur_bouton = 70
         self.hauteur_bouton = 70
         self.marge = 15
-        self.image_pause = pygame.image.load(resource_path("assets/img/ui/pause.png"))
+        self.image_pause = pygame.image.load(resource_path("assets/img/ui/pause.png")).convert_alpha()
         self.image_pause = pygame.transform.scale(self.image_pause, (self.largeur_bouton, self.hauteur_bouton))
         
         # son des clics
@@ -22,7 +26,7 @@ class Pause:
             self.gestionnaire_config = ConfigManager()
         else:
             self.gestionnaire_config = gestionnaire_config
-        self.son_select = pygame.mixer.Sound(resource_path(os.path.join("assets/audio", "select.wav")))
+        self.son_select = Son(resource_path(os.path.join("assets/audio", "select.wav")))
         
         # Appliquer le volume d'effets sauvegardé
         volumes = self.gestionnaire_config.obtenir_volumes()
@@ -93,7 +97,7 @@ class Pause:
             else:
                 nom_planete = f"{t('pause.planete')} {planete}"
 
-            niveau_texte = f"{t('pause.planete')} {nom_planete} - {t('pause.niv')} {numero_niveau}"
+            niveau_texte = f"{nom_planete} - {t('pause.niv')} {numero_niveau}"
             niveau_surface = self.font_niveau.render(niveau_texte, True, (100, 100, 100))
             niveau_x = self.popup_rect.x + (self.popup_rect.width - niveau_surface.get_width()) // 2
             niveau_y = self.popup_rect.y + 100
@@ -109,8 +113,8 @@ class Pause:
         
         # Dessiner les boutons
         for rect, texte in boutons:
-            # bouton Quitter
-            if texte == "Quitter":
+            # bouton Quitter (en rouge)
+            if rect is self.bouton_quitter:
                 couleur_survol = (150, 50, 50)
                 couleur_normal = (120, 30, 30)
                 couleur_texte = (255, 255, 255)
@@ -130,9 +134,7 @@ class Pause:
             
             # Texte du bouton
             texte_surface = self.font.render(texte, True, couleur_texte)
-            texte_x = rect.x + (rect.width - texte_surface.get_width()) // 2
-            texte_y = rect.y + (rect.height - texte_surface.get_height()) // 2
-            ecran.blit(texte_surface, (texte_x, texte_y))
+            ecran.blit(texte_surface, position_centree(texte_surface, self.font, rect.centerx, rect.centery))
     
     def gerer_clic(self, pos):
         """Gère les clics de souris sur le menu pause
@@ -153,7 +155,7 @@ class Pause:
             return "quitter"
         return None
     
-    def afficher_pause(self, ecran, joueur, niveau, numero_niveau, chrono=None, draw_background=None, alerte=None):
+    async def afficher_pause(self, ecran, joueur, niveau, numero_niveau, chrono=None, draw_background=None, alerte=None):
         """Affiche le menu de pause avec options
         
         Args:
@@ -173,13 +175,14 @@ class Pause:
         clock = pygame.time.Clock()
 
         while en_pause:
+            await asyncio.sleep(0)
             clock.tick(FPS)
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     pygame.quit()
                     sys.exit()
                 
-                if event.type == pygame.MOUSEBUTTONDOWN:
+                if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
                     action = self.gerer_clic(event.pos)
                     self.maj_volume()
                     if action == "parametres":
@@ -190,9 +193,14 @@ class Pause:
                         else:
                             cm = self.gestionnaire_config
                         param = Parametres(joueur, cm, niveau, game_ref, depuis_partie=True)
-                        popup = Popup()
+                        # Réutiliser le popup déjà chargé (sinon recharge toutes les images = freeze)
+                        if game_ref is not None:
+                            popup = game_ref.popup
+                        else:
+                            popup = Popup()
                         en_params = True
                         while en_params:
+                            await asyncio.sleep(0)
                             clock.tick(FPS)
                             for ev in pygame.event.get():
                                 if ev.type == pygame.QUIT:
@@ -203,11 +211,11 @@ class Pause:
                                     en_params = False
                                     break
                                 elif resultat == "demander_reset_param":
-                                    resultat_popup = popup.afficher_popup_confirmation_reset(ecran, param, "parametres", alerte=alerte)
+                                    resultat_popup = await popup.afficher_popup_confirmation_reset(ecran, param, "parametres", alerte=alerte)
                                     if resultat_popup == "confirmer":
                                         self.gestionnaire_config.reinitialiser_parametres()
                                         param = Parametres(joueur, self.gestionnaire_config, niveau, game_ref, depuis_partie=True)
-                                        pygame.mixer.music.set_volume(0.5)
+                                        musique.set_volume(0.5)
                                         joueur.maj_controles()
                                         joueur.maj_volume_effets()
                                         niveau.maj_volume_sons()
@@ -271,6 +279,11 @@ class Pause:
                 alerte.dessiner(ecran)
             pygame.display.flip()
         
+        # Au retour de pause, oublier les touches actives et réinitialiser le gamepad virtuel
+        if self.game is not None:
+            self.game.touches_actives.clear()
+            self.game.virtual_gamepad.reset()
+
         # Exécuter l'action demandée
         if action == "recommencer":
             niveau.reset(numero_niveau, ecran)

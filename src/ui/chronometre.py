@@ -1,4 +1,5 @@
 import pygame
+from core.assets import police
 from core.i18n import t
 
 class Chronometre:
@@ -11,8 +12,8 @@ class Chronometre:
         self.temps_final = 0
         self.actif = False
         self.en_pause = False
-        self.font = pygame.font.SysFont(None, 48)
-        self.font_petit = pygame.font.SysFont(None, 36)
+        self.font = police(48)
+        self.font_petit = police(36)
         self.meilleur_temps = None
     
     def demarrer(self):

@@ -5,27 +5,32 @@ import hashlib
 import hmac
 
 from datetime import datetime
+from core.config import EST_WEB
 
 class ConfigManager:
     """Gère la configuration utilisateur (touches, volumes, etc.)"""
     
     def __init__(self, nom_jeu="ColorMage"):
-        # Détermine le chemin selon l'OS
-        if os.name == 'nt':  # Windows
-            chemin_base = os.path.join(os.getenv('APPDATA'), nom_jeu)
-        elif os.name == 'posix':  # Linux/macOS
-            if os.uname().sysname == 'Darwin':  # macOS
-                chemin_base = os.path.join(os.path.expanduser("~"), "Library", "Application Support", nom_jeu)
-            else:  # Linux
-                chemin_base = os.path.join(os.path.expanduser("~"), ".config", nom_jeu)
+        if EST_WEB:
+            # Pas de système de fichiers dans le navigateur : tout passe par localStorage.
+            self.chemin_config = None
         else:
-            # Fallback : dossier courant
-            chemin_base = os.path.join(os.path.expanduser("~"), ".config", nom_jeu)
-        
-        # Créer le dossier s'il n'existe pas
-        os.makedirs(chemin_base, exist_ok=True)
-        
-        self.chemin_config = os.path.join(chemin_base, "save.json")
+            # Détermine le chemin selon l'OS
+            if os.name == 'nt':  # Windows
+                chemin_base = os.path.join(os.getenv('APPDATA'), nom_jeu)
+            elif os.name == 'posix':  # Linux/macOS
+                if os.uname().sysname == 'Darwin':  # macOS
+                    chemin_base = os.path.join(os.path.expanduser("~"), "Library", "Application Support", nom_jeu)
+                else:  # Linux
+                    chemin_base = os.path.join(os.path.expanduser("~"), ".config", nom_jeu)
+            else:
+                # Fallback : dossier courant
+                chemin_base = os.path.join(os.path.expanduser("~"), ".config", nom_jeu)
+
+            # Créer le dossier s'il n'existe pas
+            os.makedirs(chemin_base, exist_ok=True)
+
+            self.chemin_config = os.path.join(chemin_base, "save.json")
         self.sauvegarde_corrompue = False
         self.config = self.charger_config()
         self.controles = self.config.get("controles", {})
@@ -34,7 +39,15 @@ class ConfigManager:
         self.meilleurs_temps = self.config.get("meilleurs_temps", {})
     
     def ecrire_config_atomique(self, config):
-        """Écrit la config de façon a ce que l'écriture d'abord dans un fichier temporaire puis on le renomme = une fermeture du jeu en pleine écriture ne peut pas laisser un save.json corrompu."""
+        """Écrit la config de façon atomique ou via localStorage sur Web"""
+        if EST_WEB:
+            import platform
+            try:
+                platform.window.localStorage.setItem('colormage_save', json.dumps(config))
+            except Exception as e:
+                print("Erreur sauvegarde web:", e)
+            return
+
         chemin_tmp = self.chemin_config + ".tmp"
         with open(chemin_tmp, "w", encoding="utf-8") as f:
             json.dump(config, f, ensure_ascii=False)
@@ -73,6 +86,7 @@ class ConfigManager:
                 "effets": 50
             },
             "niveau_actuel": 1,
+            "joystick_fixe": False,
             "meilleurs_temps": {},
             "pseudo": "Mage",
             "pieces_total": 0,
@@ -81,48 +95,71 @@ class ConfigManager:
             "powerups_achetes": []
         }
         
-        # Si le fichier existe, le charger
-        if os.path.isfile(self.chemin_config):
-            # Lecture du fichier JSON
-            config = None
+        # Si on est sur le Web, on lit depuis le localStorage
+        config = None
+        est_nouveau = False
+        if EST_WEB:
+            import platform
             try:
-                with open(self.chemin_config, "r", encoding="utf-8") as f:
-                    config = json.load(f)
-            except (json.JSONDecodeError, ValueError, OSError):
-                config = None
-
-            if config is not None and type(config) == dict:
-                if "signature" in config:
-                    if not self.verifier_signature(config):
-                        self.sauvegarde_corrompue = True
+                save_data = platform.window.localStorage.getItem('colormage_save')
+                if save_data:
+                    config = json.loads(save_data)
                 else:
-                    self.sauvegarde_corrompue = False
+                    est_nouveau = True
+            except Exception as e:
+                print("Erreur chargement web:", e)
+        else:
+            # Si le fichier existe, le charger
+            if os.path.isfile(self.chemin_config):
+                # Lecture du fichier JSON
+                try:
+                    with open(self.chemin_config, "r", encoding="utf-8") as f:
+                        config = json.load(f)
+                except (json.JSONDecodeError, ValueError, OSError):
+                    config = None
+            else:
+                est_nouveau = True
 
-                # Vérifier que toutes les sections existent
-                if "controles" not in config:
-                    config["controles"] = config_defaut["controles"]
-                if "volumes" not in config:
-                    config["volumes"] = config_defaut["volumes"]
-                
-                # Vérifier que toutes les touches nécessaires sont présentes
-                for cle in config_defaut["controles"]:
-                    if cle not in config["controles"]:
-                        config["controles"][cle] = config_defaut["controles"][cle]
-                
-                # Vérifier que tous les volumes sont présents
-                for cle in config_defaut["volumes"]:
-                    if cle not in config["volumes"]:
-                        config["volumes"][cle] = config_defaut["volumes"][cle]
-                config["signature"] = self.generer_signature(config)
-                self.ecrire_config_atomique(config)
+        if config is not None and type(config) == dict:
+            if "signature" in config:
+                if not self.verifier_signature(config):
+                    self.sauvegarde_corrompue = True
+            else:
+                self.sauvegarde_corrompue = False
 
-                return config
-            # Fichier corrompu = on repart sur une config par défaut propre
+            # Vérifier que toutes les sections existent
+            if "controles" not in config:
+                config["controles"] = config_defaut["controles"]
+            if "volumes" not in config:
+                config["volumes"] = config_defaut["volumes"]
+            
+            # Vérifier que toutes les touches nécessaires sont présentes
+            for cle in config_defaut["controles"]:
+                if cle not in config["controles"]:
+                    config["controles"][cle] = config_defaut["controles"][cle]
+            
+            # Vérifier que tous les volumes sont présents
+            for cle in config_defaut["volumes"]:
+                if cle not in config["volumes"]:
+                    config["volumes"][cle] = config_defaut["volumes"][cle]
+            config["signature"] = self.generer_signature(config)
+
+            self.ecrire_config_atomique(config)
+
+            return config
+            
+        # Si ce n'est pas une nouvelle sauvegarde mais que le config est invalide
+        if not est_nouveau:
             self.sauvegarde_corrompue = True
+        else:
+            self.sauvegarde_corrompue = False
         
         # Sinon, créer le fichier avec config par défaut
         # Adapter les touches selon le clavier (AZERTY/QWERTY)
-        lang = locale.getdefaultlocale()[0]
+        try:
+            lang = locale.getdefaultlocale()[0]
+        except Exception:
+            lang = None
         est_azerty = lang and lang.startswith("fr")
         
         if est_azerty:
@@ -141,7 +178,7 @@ class ConfigManager:
                 "volumes": self.volumes,
                 "niveau_actuel": self.niveau_actuel,
                 "meilleurs_temps": self.meilleurs_temps,
-                "pseudo": self.config.get("pseudo", "Joueur"),
+                "pseudo": self.config.get("pseudo", "Mage"),
                 "avatar_profil": self.config.get("avatar_profil", 0),
                 "avatars_achetes": self.config.get("avatars_achetes", [0]),
                 "pieces_total": self.config.get("pieces_total", 0),
@@ -149,7 +186,9 @@ class ConfigManager:
                 "pieces_collectees": self.config.get("pieces_collectees", {}),
                 "pages_vues": self.config.get("pages_vues", []),
                 "powerups_achetes": self.config.get("powerups_achetes", []),
-                "langue": self.config.get("langue", "en")
+                "langue": self.config.get("langue", "en"),
+                "joystick_fixe": self.config.get("joystick_fixe", False),
+                "derniere_version_vue": self.config.get("derniere_version_vue", "")
             }
         # Ajouter la signature anti triche
         config["signature"] = self.generer_signature(config)
@@ -313,3 +352,13 @@ class ConfigManager:
             pages.append(niveau)
             self.config["pages_vues"] = pages
             self.sauvegarder_config()
+
+    def version_vue(self, version):
+        """Vérifie si les patch notes d'une version ont déjà été affichés"""
+        return self.config.get("derniere_version_vue", "") == version
+
+    def marquer_version_vue(self, version):
+        """Marque les patch notes d'une version comme vus"""
+        self.config["derniere_version_vue"] = version
+        self.sauvegarder_config()
+

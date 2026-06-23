@@ -1,14 +1,20 @@
 import pygame
+import asyncio
 import core.temps as temps
+import core.musique as musique
 import sys
 import os
+import gc
 import random
 import math
-from core.config import LARGEUR_ECRAN, HAUTEUR_ECRAN, FPS, TAILLE_CELLULE, HAUTEUR_GRILLE, LARGEUR_GRILLE, resource_path
+from core.config import LARGEUR_ECRAN, HAUTEUR_ECRAN, FPS, TAILLE_CELLULE, HAUTEUR_GRILLE, LARGEUR_GRILLE, resource_path, EST_WEB, est_tactile, set_tactile, VERSION_JEU
+from core.son import Son
+from core.assets import police, position_centree
 from entities.joueur import Joueur
 from core.niveau import Niveau
 from entities import etapes_prechargement
 from ui.popup import Popup
+from ui.virtual_gamepad import VirtualGamepad
 from ui.pause import Pause
 from ui.menu import Menu
 from ui.parametres import Parametres
@@ -21,13 +27,54 @@ from ui.alerte import Alerte
 import core.i18n as i18n
 from core.i18n import t
 
+
+class TouchesActives:
+    """Émule pygame.key.get_pressed() à partir des touches tenues et du gamepad tactile."""
+    def __init__(self, actives, virtual_gamepad=None, controls=None):
+        self.actives = actives
+        self.virtual_gamepad = virtual_gamepad
+        self.controls = controls
+
+    def code(self, action):
+        """Keycode associé à une action des contrôles, ou None."""
+        nom = self.controls.get(action)
+        if not nom:
+            return None
+        try:
+            return pygame.key.key_code(nom)
+        except (ValueError, TypeError):
+            return None
+
+    def __getitem__(self, keycode):
+        if keycode in self.actives:
+            return True
+        gamepad = self.virtual_gamepad
+        if gamepad is not None and gamepad.actif and self.controls:
+            if gamepad.gauche_presse and keycode == self.code('gauche'):
+                return True
+            if gamepad.droite_presse and keycode == self.code('droite'):
+                return True
+            if gamepad.saut_presse and keycode == self.code('sauter'):
+                return True
+            if gamepad.tir_presse and keycode == self.code('tir'):
+                return True
+        return False
+
+
 class Game:
     """Classe principale gérant le jeu"""
 
     def __init__(self):
+        # Buffer audio web : 1024 = plancher sans grésillement (doit survivre à une frame de
+        # 16.6ms ; 512 sous-alimente le buffer). Compromis latence/grésillement.
+        if EST_WEB:
+            pygame.mixer.pre_init(44100, -16, 2, 1024)
         pygame.init()
         pygame.mixer.init()
-        
+
+        # Touches actuellement tenues (suivi via KEYDOWN/KEYUP, utilisé sur le web)
+        self.touches_actives = set()
+
         # Charger la configuration
         self.gestionnaire_config = ConfigManager()
         
@@ -37,9 +84,16 @@ class Game:
         
         # Créer l'écran
         self.plein_ecran = False
-        icone = pygame.image.load(resource_path("assets/img/ui/logo.ico"))
-        pygame.display.set_icon(icone)
-        self.ecran = pygame.display.set_mode((LARGEUR_ECRAN, HAUTEUR_ECRAN), pygame.SCALED | pygame.RESIZABLE)
+        try:
+            icone = pygame.image.load(resource_path("assets/img/ui/logo.png"))
+            pygame.display.set_icon(icone)
+        except Exception:
+            pass
+        # Pas de SCALED/RESIZABLE sur le web (ratio et clics corrects)
+        if EST_WEB:
+            self.ecran = pygame.display.set_mode((LARGEUR_ECRAN, HAUTEUR_ECRAN))
+        else:
+            self.ecran = pygame.display.set_mode((LARGEUR_ECRAN, HAUTEUR_ECRAN), pygame.SCALED | pygame.RESIZABLE)
         pygame.display.set_caption("ColorMage")
 
 
@@ -50,6 +104,8 @@ class Game:
 
         # Musique de boss
         self.musique_boss_active = False
+        self.boss_music_niveau = None
+        self.boss_music_existe = False
 
         # Séquence d'enrage (gèle le jeu, animation de grossissement + texte)
         self.enrage_actif = False
@@ -89,20 +145,20 @@ class Game:
         self.temps_global = 0
         
         # Sons pour slimes et pièces
-        self.son_hurt = pygame.mixer.Sound(resource_path(os.path.join("assets/audio", "hurt.wav")))
-        self.son_slime_saut = pygame.mixer.Sound(resource_path(os.path.join("assets/audio", "slime_saut.wav")))
-        self.son_piece = pygame.mixer.Sound(resource_path(os.path.join("assets/audio", "piece.wav")))
+        self.son_hurt = Son(resource_path(os.path.join("assets/audio", "hurt.wav")))
+        self.son_slime_saut = Son(resource_path(os.path.join("assets/audio", "slime_saut.wav")))
+        self.son_piece = Son(resource_path(os.path.join("assets/audio", "piece.wav")))
 
         # Son d'explosion
-        self.son_explosion = pygame.mixer.Sound(resource_path(os.path.join("assets/audio", "explosion.wav")))
+        self.son_explosion = Son(resource_path(os.path.join("assets/audio", "explosion.wav")))
         
         # Sons de pause/unpause
-        self.son_pause = pygame.mixer.Sound(resource_path(os.path.join("assets/audio", "pause.wav")))
-        self.son_unpause = pygame.mixer.Sound(resource_path(os.path.join("assets/audio", "unpause.wav")))
+        self.son_pause = Son(resource_path(os.path.join("assets/audio", "pause.wav")))
+        self.son_unpause = Son(resource_path(os.path.join("assets/audio", "unpause.wav")))
 
         # Son d'enragement du boss
         chemin_enrage = resource_path(os.path.join("assets/audio", "pyrolord_enrage.wav"))
-        self.son_enrage = pygame.mixer.Sound(chemin_enrage)
+        self.son_enrage = Son(chemin_enrage)
         
 
         # Appliquer le volume des effets sonores depuis les paramètres
@@ -132,7 +188,7 @@ class Game:
                 random.randint(1, 3), random.randint(120, 255),
                 random.uniform(0.02, 0.08), random.uniform(0, 2 * math.pi),
             ])
-        self.font_chargement_pct = pygame.font.SysFont(None, 50)
+        self.font_chargement_pct = police(50)
 
     def dessiner_ecran_chargement(self, progres, temps):
         """Dessine l'écran de chargement : fond étoilé, logo, barre de progression + %."""
@@ -167,13 +223,14 @@ class Game:
         pct_surf = self.font_chargement_pct.render(f"{pct}%", True, (255, 255, 255))
         ecran.blit(pct_surf, (cx - pct_surf.get_width() // 2, by + barre_h + 16))
 
-    def executer_prechargement(self, etapes):
+    async def executer_prechargement(self, etapes):
         """Exécute les étapes de chargement une par une en affichant la barre de progression."""
         total = len(etapes)
         horloge = pygame.time.Clock()
         progres_affiche = 0.0
         idx = 0
         while idx < total or progres_affiche < 0.999:
+            await asyncio.sleep(0)
             for evenement in pygame.event.get():
                 if evenement.type == pygame.QUIT:
                     pygame.quit()
@@ -194,17 +251,15 @@ class Game:
                 idx += 1
         
         # Démarrer la musique une fois le chargement terminé
-        pygame.mixer.music.play(-1)
+        musique.jouer(resource_path(os.path.join("assets/audio", "main_theme.ogg")))
 
     def creer_sous_systemes(self):
         """Crée les menus, le niveau, le joueur, etc.."""
         volumes = self.gestionnaire_config.obtenir_volumes()
 
         # Musique
-        music_path = resource_path(os.path.join("assets/audio", "main_theme.ogg"))
-        pygame.mixer.music.load(music_path)
         volume_musique = volumes.get("musique", 50) / 100
-        pygame.mixer.music.set_volume(volume_musique)
+        musique.set_volume(volume_musique)
 
         self.horloge = pygame.time.Clock()
 
@@ -243,6 +298,10 @@ class Game:
         self.popup = Popup(self.gestionnaire_config)
         self.popup_actif = None
         self.est_record = False
+
+        # Contrôles tactiles (mobile/tablette) : invisibles tant qu'aucun toucher
+        joystick_fixe = self.gestionnaire_config.config.get("joystick_fixe", False)
+        self.virtual_gamepad = VirtualGamepad(fixe=joystick_fixe)
 
     def charger_frames_explosion(self):
         """Charge les frames du spritesheet d'explosion"""
@@ -353,7 +412,9 @@ class Game:
         self.alerte.maj_volume()
 
     def basculer_plein_ecran(self):
-        """Bascule entre plein écran et fenêtré"""
+        """Bascule entre plein écran et fenêtré (désactivé sur le web)."""
+        if EST_WEB:
+            return
         self.plein_ecran = not self.plein_ecran
         pygame.display.quit()
         pygame.display.init()
@@ -362,11 +423,16 @@ class Game:
         else:
             self.ecran = pygame.display.set_mode((LARGEUR_ECRAN, HAUTEUR_ECRAN), pygame.SCALED | pygame.RESIZABLE)
         pygame.display.set_caption("ColorMage")
-        icone = pygame.image.load(resource_path("assets/img/ui/logo.ico"))
-        pygame.display.set_icon(icone)
+        try:
+            icone = pygame.image.load(resource_path("assets/img/ui/logo.png"))
+            pygame.display.set_icon(icone)
+        except Exception:
+            pass
 
     def gerer_plein_ecran_event(self, evenement):
-        """Gère le basculement plein écran."""
+        """Gère le basculement plein écran (désactivé sur le web)."""
+        if EST_WEB:
+            return
         if evenement.type == pygame.KEYDOWN:
             if evenement.key == pygame.K_F11:
                 self.basculer_plein_ecran()
@@ -375,9 +441,29 @@ class Game:
         elif evenement.type == pygame.WINDOWMAXIMIZED and not self.plein_ecran:
             self.basculer_plein_ecran()
 
-    def gerer_evenements(self):
+    async def gerer_evenements(self):
         """Gère les événements pygame"""
         for evenement in pygame.event.get():
+            if EST_WEB:
+                self.virtual_gamepad.gerer_evenement(evenement)
+                # Bascule du mode d'entrée selon le dernier input (toucher vs souris/clavier)
+                if evenement.type == pygame.FINGERDOWN:
+                    set_tactile(True)
+                elif evenement.type == pygame.MOUSEBUTTONDOWN and evenement.button == 1:
+                    set_tactile(getattr(evenement, "touch", False))
+                elif evenement.type == pygame.KEYDOWN:
+                    set_tactile(False)
+            # Suivi des touches tenues (pour la lecture clavier cohérente sur le web)
+            if evenement.type == pygame.KEYDOWN:
+                self.touches_actives.add(evenement.key)
+            elif evenement.type == pygame.KEYUP:
+                self.touches_actives.discard(evenement.key)
+            elif evenement.type == pygame.WINDOWFOCUSLOST:
+                self.touches_actives.clear()
+                self.virtual_gamepad.reset()
+            elif evenement.type in (pygame.WINDOWRESIZED, pygame.WINDOWSIZECHANGED):
+                self.virtual_gamepad.reset()  # sortie de plein écran
+
             if evenement.type == pygame.QUIT:
                 self.en_cours = False
 
@@ -395,7 +481,7 @@ class Game:
                         action = None
                     
                     if action:
-                        self.traiter_action_popup(action)
+                        await self.traiter_action_popup(action)
                         self.popup_actif = None
             else:
                 # Gestion globale de la touche Échap
@@ -407,7 +493,7 @@ class Game:
                         self.niveau.regler_ambiances(False)
                         self.chrono.pause()
                         temps.set_pause(True)
-                        action = self.pause.afficher_pause(self.ecran, self.joueur, self.niveau, self.niveau_actuel, self.chrono, draw_background=self.dessiner_fond_niveau, alerte=self.alerte)
+                        action = await self.pause.afficher_pause(self.ecran, self.joueur, self.niveau, self.niveau_actuel, self.chrono, draw_background=self.dessiner_fond_niveau, alerte=self.alerte)
                         temps.set_pause(False)
                         
                         # Reprendre le chronomètre
@@ -479,19 +565,19 @@ class Game:
                             # Sinon, Échap quitte le menu avec son de clic
                             if self.etat == "profil":
                                 self.profil.son_select.play()
-                                self.profil.edition_pseudo = False
+                                self.profil.fermer_clavier()
                             elif self.etat == "param":
                                 self.parametres.son_select.play()
                                 self.parametres.champ_actif = None
                             self.etat = "menu"
                 if self.etat == "menu":
-                    if evenement.type == pygame.MOUSEBUTTONDOWN:
+                    if evenement.type == pygame.MOUSEBUTTONDOWN and evenement.button == 1:
                         action = self.menu.gerer_clic(evenement.pos)
                         if action == "jouer":
                             self.menu_niveaux.recharger_donnees()
                             self.etat = "selection"
                         elif action == "grimoire":
-                            self.popup.afficher_grimoire_complet(self.ecran, alerte=self.alerte)
+                            await self.popup.afficher_grimoire_complet(self.ecran, alerte=self.alerte)
                         elif action == "parametres":
                             self.parametres = Parametres(self.joueur, self.gestionnaire_config, self.niveau, self)
                             self.etat = "param"
@@ -507,7 +593,7 @@ class Game:
                         self.etat = "menu"
                     elif action == "reset_save":
                         # Afficher le popup de confirmation
-                        confirmation = self.popup.afficher_popup_confirmation_reset(self.ecran, self.profil, alerte=self.alerte)
+                        confirmation = await self.popup.afficher_popup_confirmation_reset(self.ecran, self.profil, alerte=self.alerte)
                         if confirmation == "confirmer":
                             # Réinitialiser la sauvegarde (uniquement progression)
                             self.gestionnaire_config.reinitialiser_sauvegarde()
@@ -527,19 +613,19 @@ class Game:
                         self.etat = "menu"
                     elif action == "demander_reset_param":
                         # Afficher popup de confirmation pour reset paramètres
-                        resultat = self.popup.afficher_popup_confirmation_reset(self.ecran, self.parametres, "parametres", alerte=self.alerte)
+                        resultat = await self.popup.afficher_popup_confirmation_reset(self.ecran, self.parametres, "parametres", alerte=self.alerte)
                         if resultat == "confirmer":
                             # Reset des paramètres
                             self.gestionnaire_config.reinitialiser_parametres()
                             # Recharger les paramètres
                             self.parametres = Parametres(self.joueur, self.gestionnaire_config, self.niveau, self)
                             # Appliquer le volume de la musique
-                            pygame.mixer.music.set_volume(0.5)
+                            musique.set_volume(0.5)
                             # Mettre à jour les contrôles du joueur
                             self.joueur.maj_controles()
                     elif action == "demander_import":
                         # Afficher popup de confirmation pour import
-                        resultat = self.popup.afficher_popup_confirmation_reset(self.ecran, self.parametres, "import", alerte=self.alerte)
+                        resultat = await self.popup.afficher_popup_confirmation_reset(self.ecran, self.parametres, "import", alerte=self.alerte)
                         if resultat == "confirmer":
                             resultat_import = self.parametres.importer_fichier()
                             if resultat_import == "import_ok":
@@ -550,14 +636,14 @@ class Game:
                             self.parametres.fichier_import_en_attente = None
 
                 elif self.etat == "selection":
-                    if evenement.type == pygame.MOUSEBUTTONDOWN:
+                    if evenement.type == pygame.MOUSEBUTTONDOWN and evenement.button == 1:
                         resultat = self.menu_niveaux.gerer_clic(evenement.pos)
                         if resultat == 0:
                             self.etat = "menu"
                         elif resultat == "marche":
                             self.menu_niveaux.etat_menu = "marche"
                         elif resultat is not None and resultat > 0:
-                            self.lancer_niveau(resultat)
+                            await self.lancer_niveau(resultat)
 
                 elif self.etat == "jeu":
                     if evenement.type == pygame.KEYDOWN and evenement.key == pygame.K_p:
@@ -567,7 +653,7 @@ class Game:
                         self.niveau.regler_ambiances(False)
                         self.chrono.pause()
                         temps.set_pause(True)
-                        action = self.pause.afficher_pause(self.ecran, self.joueur, self.niveau, self.niveau_actuel, self.chrono, draw_background=self.dessiner_fond_niveau, alerte=self.alerte)
+                        action = await self.pause.afficher_pause(self.ecran, self.joueur, self.niveau, self.niveau_actuel, self.chrono, draw_background=self.dessiner_fond_niveau, alerte=self.alerte)
                         temps.set_pause(False)
                         
                         # Reprendre le chronomètre
@@ -600,7 +686,7 @@ class Game:
                             self.etat = "selection"
                     
                     # Gérer le clic sur le bouton pause
-                    if evenement.type == pygame.MOUSEBUTTONDOWN:
+                    if evenement.type == pygame.MOUSEBUTTONDOWN and evenement.button == 1:
                         if self.pause.bouton_rect.collidepoint(evenement.pos):
                             # Mettre en pause le chronomètre
                             self.maj_volume_effets()
@@ -608,7 +694,7 @@ class Game:
                             self.niveau.regler_ambiances(False)
                             self.chrono.pause()
                             temps.set_pause(True)
-                            action = self.pause.afficher_pause(self.ecran, self.joueur, self.niveau, self.niveau_actuel, self.chrono, draw_background=self.dessiner_fond_niveau, alerte=self.alerte)
+                            action = await self.pause.afficher_pause(self.ecran, self.joueur, self.niveau, self.niveau_actuel, self.chrono, draw_background=self.dessiner_fond_niveau, alerte=self.alerte)
                             temps.set_pause(False)
                             
                             # Reprendre le chronomètre
@@ -641,15 +727,16 @@ class Game:
                                 self.menu_niveaux.preparer_retour_niveau(self.niveau_actuel)
                                 self.etat = "selection"
 
-    def lancer_niveau(self, numero):
+    async def lancer_niveau(self, numero):
         """Lance un niveau avec l'animation de portail"""
+        self.virtual_gamepad.reset()
         self.niveau_actuel = numero
         self.pieces_en_cours = []
         self.boss_annonce = None
         self.enrage_actif = False
         self.enrage_boss = None
         self.musique_boss_active = False
-        pygame.mixer.music.set_volume(self.volume_musique_config())
+        musique.set_volume(self.volume_musique_config())
         self.explosions_mob = []
         self.niveau.reset(numero, self.ecran)
         self.joueur.maj_controles()
@@ -667,7 +754,7 @@ class Game:
             self.niveau.dessiner(self.ecran, self.temps_global, update_entities=False)
             for piece in list(self.niveau.pieces):
                 piece.dessiner(self.ecran)
-            self.popup.afficher_popup_grimoire(self.ecran, numero, alerte=self.alerte)
+            await self.popup.afficher_popup_grimoire(self.ecran, numero, alerte=self.alerte)
             self.gestionnaire_config.marquer_page_vue(numero)
             self.chrono.demarrer()
             meilleur_temps = self.gestionnaire_config.obtenir_meilleur_temps(numero)
@@ -681,8 +768,9 @@ class Game:
         self.joueur.son_spawn.play()
         self.etat = "jeu"
     
-    def traiter_action_popup(self, action):
+    async def traiter_action_popup(self, action):
         """Traite l'action sélectionnée dans un popup"""
+        self.virtual_gamepad.reset()
         if action == "suivant":
             self.niveau_actuel += 1
             self.pieces_en_cours = []
@@ -698,7 +786,7 @@ class Game:
             if not self.gestionnaire_config.page_vue(self.niveau_actuel):
                 self.dessiner_fond_niveau(self.ecran)
                 self.niveau.dessiner(self.ecran, self.temps_global, update_entities=False)
-                self.popup.afficher_popup_grimoire(self.ecran, self.niveau_actuel, alerte=self.alerte)
+                await self.popup.afficher_popup_grimoire(self.ecran, self.niveau_actuel, alerte=self.alerte)
                 self.gestionnaire_config.marquer_page_vue(self.niveau_actuel)
                 self.chrono.demarrer()
                 meilleur_temps = self.gestionnaire_config.obtenir_meilleur_temps(self.niveau_actuel)
@@ -729,13 +817,10 @@ class Game:
             planete = self.menu_niveaux.planetes[nouvelle_planete]
             nom_planete = planete["nom"].lower()
             chemin_musique = resource_path(os.path.join("assets/audio", nom_planete + ".ogg"))
-            if os.path.exists(chemin_musique):
-                pygame.mixer.music.stop()
-                pygame.mixer.music.load(chemin_musique)
-                vol = self.gestionnaire_config.obtenir_volumes().get("musique", 50) / 100
-                pygame.mixer.music.set_volume(vol)
-                pygame.mixer.music.play(-1)
-            
+            vol = self.gestionnaire_config.obtenir_volumes().get("musique", 50) / 100
+            musique.set_volume(vol)
+            musique.jouer(chemin_musique)
+
             self.menu_niveaux.etat_menu = "galaxie"
             self.menu_niveaux.zoom_en_cours = True
             self.menu_niveaux.zoom_direction = 1
@@ -750,11 +835,9 @@ class Game:
             nouvel_univers = (self.niveau_actuel - 1) // niveaux_par_univers
             
             # Restaurer la musique principale
-            pygame.mixer.music.stop()
-            pygame.mixer.music.load(resource_path(os.path.join("assets/audio", "main_theme.ogg")))
             vol = self.gestionnaire_config.obtenir_volumes().get("musique", 50) / 100
-            pygame.mixer.music.set_volume(vol)
-            pygame.mixer.music.play(-1)
+            musique.set_volume(vol)
+            musique.jouer(resource_path(os.path.join("assets/audio", "main_theme.ogg")))
             
             # Revenir à la vue galaxie de l'univers précédent
             self.menu_niveaux.etat_menu = "galaxie"
@@ -804,19 +887,16 @@ class Game:
 
     def jouer_musique(self, chemin):
         """Charge et joue une musique en boucle. Ne fait rien si le fichier est absent."""
-        if not os.path.exists(chemin):
-            return False
-        pygame.mixer.music.stop()
-        pygame.mixer.music.load(chemin)
-        pygame.mixer.music.set_volume(self.volume_musique_config())
-        pygame.mixer.music.play(-1)
-        return True
+        musique.set_volume(self.volume_musique_config())
+        return musique.jouer(chemin)
 
     def maj_musique_boss(self):
         """Bascule sur la musique de boss quand le Pyrolord se transforme et restaure la musique de planète à la fin du combat. Reste inerte tant que le fichier."""
         boss = self.niveau.boss
-        if not os.path.exists(self.chemin_musique_boss()):
-            # pas de musique de boss
+        if self.boss_music_niveau != self.niveau_actuel:
+            self.boss_music_niveau = self.niveau_actuel
+            self.boss_music_existe = musique.existe(self.chemin_musique_boss())
+        if not self.boss_music_existe:
             if boss is not None:
                 boss.consommer_event_couper_musique()
             return
@@ -913,7 +993,7 @@ class Game:
                         pf.start_explosion()
                         boss.encaisser(1)
 
-    def maj(self):
+    async def maj(self):
         """Met à jour la logique du jeu"""
         # Incrémenter le timer global
         self.temps_global += 1
@@ -924,7 +1004,7 @@ class Game:
         if self.etat == "selection":
             niveau = self.menu_niveaux.verifier_niveau_a_lancer()
             if niveau is not None:
-                self.lancer_niveau(niveau)
+                await self.lancer_niveau(niveau)
                 return
             self.menu_niveaux.maj()
             return
@@ -982,7 +1062,7 @@ class Game:
                     for avatar in self.profil.avatars:
                         niv = avatar.get("niveau_associe")
                         if niv is not None and niv == self.niveau_actuel:
-                            self.alerte.afficher(t("alerte.nouvel_avatar"))
+                            self.alerte.afficher("alerte.nouvel_avatar")
                             break
             return  # Ne pas mettre à jour le jeu pendant l'animation
         
@@ -1009,7 +1089,11 @@ class Game:
             return
 
         if self.etat == "jeu":
-            touches = pygame.key.get_pressed()
+            # Lecture clavier via event.key sur le web (cohérent AZERTY), get_pressed sinon
+            if EST_WEB:
+                touches = TouchesActives(self.touches_actives, self.virtual_gamepad, self.joueur.controls)
+            else:
+                touches = pygame.key.get_pressed()
             resultat = None
             resultat_deplacement = self.joueur.deplacer(touches, self.niveau)
 
@@ -1357,7 +1441,7 @@ class Game:
                     boss.render_scale = 1.0
                     self.son_enrage.play()
                     # baisse la musique le temps de l'enragement pour entendre le bruitage
-                    pygame.mixer.music.set_volume(self.volume_musique_config() * 0.3)
+                    musique.set_volume(self.volume_musique_config() * 0.3)
 
             # Projectiles du boss
             for bp in list(self.niveau.projectiles_boss):
@@ -1454,6 +1538,8 @@ class Game:
             
             if self.popup_actif is None:
                 self.pause.dessiner_bouton(self.ecran)
+                if est_tactile():
+                    self.virtual_gamepad.dessiner(self.ecran)
             self.chrono.dessiner(self.ecran)
             
             hud_y_offset = 0
@@ -1549,9 +1635,9 @@ class Game:
         pygame.draw.rect(ecran, couleur_barre, (bar_x, bar_y, int(bar_w * ratio), bar_h))
         pygame.draw.rect(ecran, (200, 200, 200), (bar_x, bar_y, bar_w, bar_h), 1)
         # Texte
-        font = pygame.font.SysFont(None, 22)
-        txt = font.render("Feu  " + str(round(secondes, 1)) + "s", True, (255, 255, 255))
-        ecran.blit(txt, (bar_x + bar_w // 2 - txt.get_width() // 2, bar_y + 3))
+        font = police(22)
+        txt = font.render(t("popup.feu") + "  " + str(round(secondes, 1)) + "s", True, (255, 255, 255))
+        ecran.blit(txt, position_centree(txt, font, bar_x + bar_w // 2, bar_y + bar_h // 2))
 
     def dessiner_barre_vie_boss(self, ecran):
         """Dessine la barre de vie du boss en haut de l'écran (HUD)."""
@@ -1575,10 +1661,9 @@ class Game:
         pygame.draw.rect(ecran, (200, 200, 200), (bar_x, bar_y, bar_w, bar_h), 1)
 
         nom = boss.nom
-        font = pygame.font.SysFont(None, 30)
+        font = police(30)
         txt = font.render(nom, True, (255, 255, 255))
-        ecran.blit(txt, (bar_x + bar_w // 2 - txt.get_width() // 2,
-                         bar_y + bar_h // 2 - txt.get_height() // 2))
+        ecran.blit(txt, position_centree(txt, font, bar_x + bar_w // 2, bar_y + bar_h // 2))
 
     def maj_enrage_cutscene(self):
         """Met à jour la séquence d'enrage (jeu gelé) : grossissement animé puis maintien."""
@@ -1586,7 +1671,7 @@ class Game:
         if boss is None or boss is not self.niveau.boss:
             self.enrage_actif = False
             self.enrage_boss = None
-            pygame.mixer.music.set_volume(self.volume_musique_config())
+            musique.set_volume(self.volume_musique_config())
             return
         now = temps.obtenir_temps()
         elapsed = now - self.enrage_start
@@ -1602,7 +1687,7 @@ class Game:
             self.enrage_actif = False
             self.enrage_boss = None
             # restaure le volume de la musique à la fin de l'enragement
-            pygame.mixer.music.set_volume(self.volume_musique_config())
+            musique.set_volume(self.volume_musique_config())
 
     def dessiner_annonce_boss(self, ecran):
         """Affiche l'annonce de boss (ex: enrage) en grand au centre de l'écran."""
@@ -1621,7 +1706,7 @@ class Game:
         else:
             alpha = 255
         alpha = max(0, min(255, alpha))
-        font = pygame.font.SysFont(None, 90)
+        font = police(90)
         txt = font.render(self.boss_annonce, True, (255, 255, 255))
         ombre = font.render(self.boss_annonce, True, (0, 0, 0))
         txt.set_alpha(alpha)
@@ -1631,11 +1716,11 @@ class Game:
         ecran.blit(ombre, (x + 4, y + 4))
         ecran.blit(txt, (x, y))
 
-    def run(self):
-        """Lance la boucle principale"""
+    async def run(self):
+        """Boucle principale du jeu"""
         # Lancer l'intro
         intro = Intro(self.ecran, self.gestionnaire_config, self)
-        resultat_intro = intro.lancer()
+        resultat_intro = await intro.lancer()
         if resultat_intro == "quitter":
             pygame.quit()
             sys.exit()
@@ -1644,7 +1729,7 @@ class Game:
         self.preparer_ecran_chargement()
         etapes = etapes_prechargement()
         etapes.append((self.creer_sous_systemes, ()))
-        self.executer_prechargement(etapes)
+        await self.executer_prechargement(etapes)
 
         # Alerte
         self.alerte = Alerte(self.gestionnaire_config)
@@ -1652,24 +1737,51 @@ class Game:
 
         # Vérifier si la sauvegarde est corrompue et réinitialiser si nécessaire
         if self.gestionnaire_config.sauvegarde_corrompue:
-            self.alerte.afficher(t("alerte.sauvegarde_corrompue_reset"))
+            self.alerte.afficher("alerte.sauvegarde_corrompue_reset")
             self.gestionnaire_config.sauvegarde_corrompue = False
 
+        # Afficher les patch notes si c'est la première fois sur cette version
+        if not self.gestionnaire_config.version_vue(VERSION_JEU):
+            self.menu.afficher_menu(self.ecran)
+            pygame.display.flip()
+            await self.popup.afficher_patch_notes(self.ecran, VERSION_JEU, alerte=self.alerte)
+            self.gestionnaire_config.marquer_version_vue(VERSION_JEU)
+
+        gc.collect()
+        gc.freeze()
+
         temps.init()
+        duree_frame = 1000.0 / FPS
+        dernier_tick = pygame.time.get_ticks()
         while self.en_cours:
-            if self.etat == "jeu":
-                temps.set_pause(False)
-            else:
-                temps.set_pause(True)
-            temps.update()
-            
-            self.gerer_evenements()
-            self.maj()
+            maintenant = pygame.time.get_ticks()
+            dt = maintenant - dernier_tick
+            dernier_tick = maintenant
+
+            await self.gerer_evenements()
+
+            nb_maj = int(round(dt / duree_frame))
+            if nb_maj < 1:
+                nb_maj = 1
+            if nb_maj > 4:
+                nb_maj = 4
+            for _ in range(nb_maj):
+                if self.etat == "jeu":
+                    temps.set_pause(False)
+                else:
+                    temps.set_pause(True)
+                temps.avancer(duree_frame)
+                await self.maj()
+
             self.afficher()
             self.horloge.tick(FPS)
+            await asyncio.sleep(0)
+        if EST_WEB:
+            import platform
+            platform.window.colormage_stop_all_audio()
         pygame.quit()
         return
 
 if __name__ == "__main__":
     jeu = Game()
-    jeu.run()
+    asyncio.run(jeu.run())

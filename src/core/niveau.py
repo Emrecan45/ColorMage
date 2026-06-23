@@ -4,7 +4,9 @@ import json
 import random
 import math
 import os
+import gc
 from core.config import LARGEUR_GRILLE, HAUTEUR_GRILLE, TAILLE_CELLULE, COULEURS, LARGEUR_ECRAN, HAUTEUR_ECRAN, resource_path
+from core.son import Son
 from entities import Sorcier
 from entities import Squelette
 from entities import Slime
@@ -12,7 +14,7 @@ from entities import Piece
 from entities import CristalFeu
 from entities import Pyrolord
 from entities import Demon, DEMON_W, DEMON_H
-from core.assets import charger_image, charger_son_accelere
+from core.assets import charger_image
 from entities.obstacles import FeuBloc, PicBloc
 from core.config_manager import ConfigManager
 from entities import Piece, CristalFeu
@@ -144,6 +146,8 @@ class Niveau:
         self.porte_boss = None  # (x, y) porte de sortie à la mort du boss
         self.intervalle_spawn_cristal = 25000  # 25s entre chaque spawn possible
         self.traversables = ["change_rouge", "change_bleu", "change_vert", "porte", "vide", "pic", "feu"]
+        self.image_porte = pygame.transform.scale(charger_image(resource_path("assets/img/items/porte.png")), (TAILLE_CELLULE, TAILLE_CELLULE))
+        self.image_porte_haute = pygame.transform.scale(self.image_porte, (TAILLE_CELLULE, int(TAILLE_CELLULE * 1.4)))
         self.image_pic = pygame.transform.scale(charger_image(resource_path("assets/img/items/pic.png")), (TAILLE_CELLULE, TAILLE_CELLULE))
         # Feu
         sheet_feu = charger_image(resource_path("assets/img/items/feu.png"))
@@ -195,18 +199,18 @@ class Niveau:
         # Sons aléatoires pour le sorcier (tir) et le squelette (attaque)
         self.sons_sorcier_shot = []
         for i in range(1, 4):
-            son = pygame.mixer.Sound(resource_path(os.path.join("assets/audio", "sorcier_shot" + str(i) + ".wav")))
+            son = Son(resource_path(os.path.join("assets/audio", "sorcier_shot" + str(i) + ".wav")))
             self.sons_sorcier_shot.append(son)
         self.sons_squelette_tape = []
         for i in range(1, 4):
-            son = pygame.mixer.Sound(resource_path(os.path.join("assets/audio", "squelette_tape" + str(i) + ".ogg")))
+            son = Son(resource_path(os.path.join("assets/audio", "squelette_tape" + str(i) + ".ogg")))
             self.sons_squelette_tape.append(son)
         # Tir et charge des démons
-        self.son_demon_tir = pygame.mixer.Sound(resource_path(os.path.join("assets/audio", "demon_tir.wav")))
-        self.son_demon_fonce = pygame.mixer.Sound(resource_path(os.path.join("assets/audio", "demon_fonce.wav")))
+        self.son_demon_tir = Son(resource_path(os.path.join("assets/audio", "demon_tir.wav")))
+        self.son_demon_fonce = Son(resource_path(os.path.join("assets/audio", "demon_fonce.wav")))
         # Ambiances en boucle
-        self.son_feu = pygame.mixer.Sound(resource_path(os.path.join("assets/audio", "feu.wav")))
-        self.son_demon_vol = charger_son_accelere(resource_path(os.path.join("assets/audio", "demon_vol.wav")), 2.5)
+        self.son_feu = Son(resource_path(os.path.join("assets/audio", "feu.wav")))
+        self.son_demon_vol = Son(resource_path(os.path.join("assets/audio", "demon_vol_fast.wav")))
         self.feu_en_cours = False
         self.demon_vol_en_cours = False
         self.maj_volume_sons()
@@ -221,6 +225,9 @@ class Niveau:
             vitesse_scintillement = random.uniform(0.02, 0.08)
             phase = random.uniform(0, 2 * math.pi)
             self.etoiles_fond.append([x, y, taille, brillance, vitesse_scintillement, phase])
+        self.surface_fond = None
+        self.surface_calque = None
+        
         self.dernier_tick_maj_plat = -1
         self.feux = []
         self.pics = []
@@ -288,6 +295,8 @@ class Niveau:
     
     def charger_depuis_json(self, numero):
         """Charge un niveau depuis un fichier JSON"""
+        self.surface_fond = None
+        self.surface_calque = None
         self.numero_niveau = numero
         planetes = ["terra", "pyros", "aquaris", "nebula", "cryon", "solara", "vortex", "obscura"]
         planete_idx = (numero - 1) // 5
@@ -611,6 +620,29 @@ class Niveau:
             self.grille[y][x] = "vide"
         return demon
 
+    def case_libre(self, cell_x, cell_y):
+        """True si la cellule est dans la grille, vide, et sans feu ni pic."""
+        if not (0 <= cell_y < HAUTEUR_GRILLE and 0 <= cell_x < LARGEUR_GRILLE):
+            return False
+        if self.grille[cell_y][cell_x] != "vide":
+            return False
+        rect_case = pygame.Rect(cell_x * TAILLE_CELLULE, cell_y * TAILLE_CELLULE, TAILLE_CELLULE, TAILLE_CELLULE)
+        for feu in self.feux:
+            if feu.rect.colliderect(rect_case):
+                return False
+        for pic in self.pics:
+            if pic.rect.colliderect(rect_case):
+                return False
+        return True
+
+    def trouver_case_drop(self, cell_x, cell_y):
+        """Cherche une cellule libre proche pour poser un drop (evite feu et pic)."""
+        candidats = [(0, 0), (0, -1), (0, -2), (-1, 0), (1, 0), (-1, -1), (1, -1)]
+        for dx, dy in candidats:
+            if self.case_libre(cell_x + dx, cell_y + dy):
+                return (cell_x + dx, cell_y + dy)
+        return (cell_x, cell_y)
+
     def appliquer_drop(self, monstre):
         """Fait apparaître le drop d'un monstre à l'endroit de sa mort."""
         drop = monstre.drop
@@ -629,6 +661,7 @@ class Niveau:
         dans_grille = (0 <= cell_y < HAUTEUR_GRILLE and 0 <= cell_x < LARGEUR_GRILLE)
 
         if drop == "piece":
+            cell_x, cell_y = self.trouver_case_drop(cell_x, cell_y)
             piece = Piece(cell_x * TAILLE_CELLULE, cell_y * TAILLE_CELLULE)
             piece.cell_x = cell_x
             piece.cell_y = cell_y
@@ -637,6 +670,9 @@ class Niveau:
             if dans_grille:
                 self.grille[cell_y][cell_x] = drop
         elif drop == "cristal_feu":
+            cell_x, cell_y = self.trouver_case_drop(cell_x, cell_y)
+            cx_px = cell_x * TAILLE_CELLULE + TAILLE_CELLULE // 2
+            cy_px = cell_y * TAILLE_CELLULE + TAILLE_CELLULE // 2
             cristal = CristalFeu(cx_px, cy_px)
             self.cristaux_feu.append(cristal)
         elif drop == "sorcier":
@@ -665,6 +701,9 @@ class Niveau:
 
     def reset(self, numero, ecran):
         """Réinitialise le niveau"""
+        self.surface_fond = None
+        self.surface_calque = None
+        gc.collect()
         self.charger_niveau(numero, ecran)
     
     def obtenir_bloc(self, x, y):
@@ -891,30 +930,30 @@ class Niveau:
     
     def dessiner(self, ecran, temps_global=0, update_entities=True):
         """Dessine tous les blocs du niveau"""
+        if self.surface_calque is None:
+            self.surface_calque = pygame.Surface((LARGEUR_ECRAN, HAUTEUR_ECRAN), pygame.SRCALPHA)
+            for y in range(HAUTEUR_GRILLE):
+                for x in range(LARGEUR_GRILLE):
+                    bloc = self.grille[y][x]
+                    if bloc != "vide" and bloc != "porte" and "change_" not in bloc:
+                        couleur = COULEURS[bloc]
+                        pygame.draw.rect(self.surface_calque, couleur, (x * TAILLE_CELLULE, y * TAILLE_CELLULE, TAILLE_CELLULE, TAILLE_CELLULE))
+        
+        ecran.blit(self.surface_calque, (0, 0))
+
+        # Eléments statiques dynamiques (porte, potions)
         for y in range(HAUTEUR_GRILLE):
             for x in range(LARGEUR_GRILLE):
                 bloc = self.grille[y][x]
-                
-                if bloc != "vide":
-                    if bloc == "porte" and self.image_porte:
-                        # Dessiner l'image du portail d'arrivée sur 2 blocs de hauteur
-                        image_porte_haute = pygame.transform.scale(self.image_porte, (TAILLE_CELLULE, TAILLE_CELLULE * 1.4))
-                        ecran.blit(image_porte_haute, (x * TAILLE_CELLULE, y * TAILLE_CELLULE - TAILLE_CELLULE * 0.4))
-                    
-                    elif "change_" in bloc:
-                        # Afficher la potion correspondante avec l'effet bobbing
-                        img_port = self.images_potion.get(bloc)
-                        base_lift, bob = self.obtenir_decalage_potion(x, y)
-                        if img_port:
-                            img2 = img_port
-                            px = x * TAILLE_CELLULE + (TAILLE_CELLULE - img2.get_width()) // 2
-                            py = int(y * TAILLE_CELLULE + (TAILLE_CELLULE - img2.get_height()) / 2 - bob - base_lift)
-                            ecran.blit(img2, (px, py))
-                    
-                    else:
-                        # Blocs normaux
-                        couleur = COULEURS[bloc]
-                        pygame.draw.rect(ecran, couleur, (x * TAILLE_CELLULE, y * TAILLE_CELLULE, TAILLE_CELLULE, TAILLE_CELLULE))
+                if bloc == "porte" and self.image_porte:
+                    ecran.blit(self.image_porte_haute, (x * TAILLE_CELLULE, y * TAILLE_CELLULE - TAILLE_CELLULE * 0.4))
+                elif "change_" in bloc:
+                    img_port = self.images_potion.get(bloc)
+                    base_lift, bob = self.obtenir_decalage_potion(x, y)
+                    if img_port:
+                        px = x * TAILLE_CELLULE + (TAILLE_CELLULE - img_port.get_width()) // 2
+                        py = int(y * TAILLE_CELLULE + (TAILLE_CELLULE - img_port.get_height()) / 2 - bob - base_lift)
+                        ecran.blit(img_port, (px, py))
         
         if update_entities:
             # mise à jour plateformes
@@ -927,8 +966,6 @@ class Niveau:
                 if proj is not None:
                     self.projectiles.append(proj)
                     random.choice(self.sons_sorcier_shot).play()
-                # appliquer le déplacement de la plateforme si le sorcier est sur/contre une plateforme
-                self.appliquer_pousse_plateforme_sur_entite(sorcier)
                 sorcier.dessiner(ecran)
 
             for squelette in list(self.squelettes):
@@ -937,7 +974,6 @@ class Niveau:
                 # Jouer un son quand le squelette commence à attaquer
                 if squelette.state == "attacking" and ancien_etat == "pre_attack":
                     random.choice(self.sons_squelette_tape).play()
-                self.appliquer_pousse_plateforme_sur_entite(squelette)
                 squelette.dessiner(ecran)
 
             proj_list = list(self.projectiles)
@@ -955,7 +991,6 @@ class Niveau:
                     self.appliquer_drop(slime)
                     self.slimes.remove(slime)
                 else:
-                    self.appliquer_pousse_plateforme_sur_entite(slime)
                     slime.dessiner(ecran)
 
             for piece in list(self.pieces):
@@ -963,15 +998,12 @@ class Niveau:
                 if not piece.alive:
                     self.pieces.remove(piece)
                 else:
-                    self.appliquer_pousse_plateforme_sur_entite(piece)
                     piece.dessiner(ecran)
 
             for feu in self.feux:
-                self.appliquer_pousse_plateforme_sur_entite(feu)
                 feu.dessiner(ecran, self.frames_feu, self.frames_fumee, temps_global, TAILLE_CELLULE)
 
             for pic in self.pics:
-                self.appliquer_pousse_plateforme_sur_entite(pic)
                 pic.dessiner(ecran, self.image_pic)
 
             # Power ups de feu
@@ -1034,15 +1066,16 @@ class Niveau:
                 dp.dessiner(ecran)
 
     def dessiner_fond(self, ecran, couleur_planete, temps_global=0):
-        """Dessine le fond pour le niveau basé sur la couleur de la planète.
-        """
-        # dégradé du ciel
-        for y in range(HAUTEUR_ECRAN):
-            ratio = y / HAUTEUR_ECRAN
-            r = int(10 + ratio * couleur_planete[0] * 0.3)
-            g = int(10 + ratio * couleur_planete[1] * 0.3)
-            b = int(30 + ratio * couleur_planete[2] * 0.3)
-            pygame.draw.line(ecran, (r, g, b), (0, y), (LARGEUR_ECRAN, y))
+        """Dessine le fond pour le niveau basé sur la couleur de la planète."""
+        if self.surface_fond is None:
+            self.surface_fond = pygame.Surface((LARGEUR_ECRAN, HAUTEUR_ECRAN))
+            for y in range(HAUTEUR_ECRAN):
+                ratio = y / HAUTEUR_ECRAN
+                r = int(10 + ratio * couleur_planete[0] * 0.3)
+                g = int(10 + ratio * couleur_planete[1] * 0.3)
+                b = int(30 + ratio * couleur_planete[2] * 0.3)
+                pygame.draw.line(self.surface_fond, (r, g, b), (0, y), (LARGEUR_ECRAN, y))
+        ecran.blit(self.surface_fond, (0, 0))
 
         # dessiner les étoiles scintillantes
         for etoile in self.etoiles_fond:
@@ -1080,12 +1113,24 @@ class Niveau:
         pygame.draw.circle(ecran, (255, 255, 200), (x, y), rayon // 4)
 
     def maj_plateformes(self, tick):
-        """Met à jour toutes les plateformes mobiles."""
+        """Met à jour les plateformes mobiles et pousse ce qui repose dessus."""
         if tick == self.dernier_tick_maj_plat:
             return
         self.dernier_tick_maj_plat = tick
         for plat in self.platformes_mobiles:
             plat.maj()
+        for feu in self.feux:
+            self.appliquer_pousse_plateforme_sur_entite(feu)
+        for pic in self.pics:
+            self.appliquer_pousse_plateforme_sur_entite(pic)
+        for slime in self.slimes:
+            self.appliquer_pousse_plateforme_sur_entite(slime)
+        for piece in self.pieces:
+            self.appliquer_pousse_plateforme_sur_entite(piece)
+        for sorcier in self.sorciers:
+            self.appliquer_pousse_plateforme_sur_entite(sorcier)
+        for squelette in self.squelettes:
+            self.appliquer_pousse_plateforme_sur_entite(squelette)
 
     def appliquer_pousse_plateforme_sur_entite(self, entite):
         """Applique le déplacement d'une plateforme mobile à une entité si elle est debout dessus."""

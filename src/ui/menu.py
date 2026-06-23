@@ -4,6 +4,8 @@ import os
 import random
 import math
 from core.config import LARGEUR_ECRAN, HAUTEUR_ECRAN, VERSION_JEU, COULEUR_BOUTON, COULEUR_SURVOL, COULEUR_BORDURE, resource_path
+from core.son import Son
+from core.assets import police, position_centree
 from core.i18n import t
 from core.config_manager import ConfigManager
 
@@ -11,16 +13,16 @@ class Menu:
     """Menu du jeu"""
 
     def __init__(self, gestionnaire_config=None):
-        self.font_1 = pygame.font.SysFont(None, 50)
-        self.font_2 = pygame.font.SysFont(None, 40)
+        self.font_1 = police(50)
+        self.font_2 = police(40)
         
         # Charger l'image de fond
-        self.fond = pygame.image.load(resource_path("assets/img/ui/fond_menu1.png"))
+        self.fond = pygame.image.load(resource_path("assets/img/ui/fond_menu1.png")).convert_alpha()
         self.fond = pygame.transform.scale(self.fond, (LARGEUR_ECRAN, HAUTEUR_ECRAN))
         
         # Charger l'icône de profil (conserver les proportions)
         try:
-            self.icone_profil = pygame.image.load(resource_path("assets/img/ui/profile.png"))
+            self.icone_profil = pygame.image.load(resource_path("assets/img/ui/profile.png")).convert_alpha()
             # L'image fait 677x369, on garde les proportions pour 55px de haut
             ratio = self.icone_profil.get_width() / self.icone_profil.get_height()
             nouvelle_hauteur = 55
@@ -40,7 +42,7 @@ class Menu:
             self.gestionnaire_config = ConfigManager()
         else:
             self.gestionnaire_config = gestionnaire_config
-        self.son_select = pygame.mixer.Sound(resource_path(os.path.join("assets/audio", "select.wav")))
+        self.son_select = Son(resource_path(os.path.join("assets/audio", "select.wav")))
         self.maj_volume()
     
     def maj_volume(self):
@@ -54,8 +56,7 @@ class Menu:
         pygame.draw.rect(ecran, COULEUR_BORDURE, rect, 3, border_radius=10)
         
         texte_surface = font.render(texte, True, (255, 255, 255))
-        ecran.blit(texte_surface, (rect.centerx - texte_surface.get_width() // 2,
-                                  rect.centery - texte_surface.get_height() // 2))
+        ecran.blit(texte_surface, position_centree(texte_surface, font, rect.centerx, rect.centery))
     
     def afficher_menu(self, ecran):
         """Affiche le menu"""

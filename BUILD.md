@@ -1,4 +1,39 @@
-# Génération de l'exécutable
+# Génération des builds
+
+Deux cibles : un **exécutable bureau** et une **version web**.
+
+# Version web
+
+Le jeu est compilé en WebAssembly avec **pygbag** et tourne directement dans le navigateur.
+
+## Prérequis
+
+```bash
+pip install -r requirements.txt
+```
+
+## Builder et tester en local
+
+Depuis la racine du projet :
+
+```bash
+python tools/build_web.py
+```
+
+Le script copie le strict nécessaire dans un dossier propre (`build/ColorMage/`),
+sans embarquer `venv/`, `.git/`, la vidéo d'intro, etc., puis lance pygbag et
+sert le jeu sur http://localhost:8000. Ouvrir cette adresse pour tester.
+
+## Générer le fichier zip
+
+```bash
+python tools/build_web.py --archive
+```
+
+Le `.zip` à uploader est généré dans `build/ColorMage/build/web.zip` (≈ 42 Mo).
+Il contient `index.html` à la racine
+
+# Exécutable bureau
 
 Procédure pour packager ColorMage en exécutable avec **PyInstaller**.
 
@@ -38,8 +73,3 @@ python3 -m PyInstaller --noconfirm --onefile --windowed --name ColorMage --icon 
 L'exécutable est généré dans `dist/ColorMage.exe`. Il est autonome : aucune installation de Python n'est nécessaire chez l'utilisateur final.
 
 PyInstaller crée aussi `build/` et `ColorMage.spec` (fichiers temporaires).
-
-## Notes
-
-- L'exécutable pèse une centaine de Mo : la majeure partie vient d'**OpenCV** (`opencv-python`), utilisé  pour la vidéo d'intro.
-- Builder sur la plateforme cible : un build Windows produit un `.exe` Windows, un build Linux un binaire Linux, etc. (PyInstaller ne fait pas de cross-compilation).

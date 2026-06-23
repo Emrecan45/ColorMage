@@ -1,6 +1,23 @@
 import pygame
 
 cache_images = {}
+cache_polices = {}
+
+
+def police(taille):
+    """Retourne une police systeme en cache (SysFont est lent, surtout sur le web)."""
+    if taille not in cache_polices:
+        cache_polices[taille] = pygame.font.SysFont(None, taille)
+    return cache_polices[taille]
+
+
+def position_centree(texte_surface, font, cx, cy):
+    """Position pour centrer le texte sur (cx, cy).
+    """
+    descente = font.get_descent()
+    x = cx - texte_surface.get_width() // 2
+    y = cy - texte_surface.get_height() // 2 - descente // 2
+    return (x, y)
 
 
 def charger_image(chemin, mode="alpha"):
@@ -19,15 +36,3 @@ def charger_image(chemin, mode="alpha"):
 def vider_cache():
     """Vide le cache d'images."""
     cache_images.clear()
-
-
-def charger_son_accelere(chemin, facteur=2.0):
-    """Charge un son et renvoie une version jouée plus vite (facteur > 1) ou plus lentement (facteur < 1)."""
-    base = pygame.mixer.Sound(chemin)
-    try:
-        import numpy as np
-        arr = pygame.sndarray.array(base)
-        idx = np.floor(np.arange(0, len(arr), facteur)).astype(int)
-        return pygame.sndarray.make_sound(np.ascontiguousarray(arr[idx]))
-    except Exception:
-        return base

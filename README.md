@@ -7,7 +7,7 @@
 Vous incarnez un Mage capable de changer de couleur pour naviguer dans des niveaux remplis de plateformes, de pièges et d'ennemis.  
 La clé du succès : vous ne pouvez interagir qu'avec les éléments qui correspondent à **votre couleur**.
 
-![Version](https://img.shields.io/badge/version-v2.3-blue)
+![Version](https://img.shields.io/badge/version-v2.4-blue)
 ![Python](https://img.shields.io/badge/python-3.8%2B-yellow)
 ![Pygame](https://img.shields.io/badge/pygame-latest-green)
 ![Licence](https://img.shields.io/badge/licence-MIT-lightgrey)
@@ -39,7 +39,7 @@ Le joueur doit résoudre des parcours en changeant sa couleur pour utiliser les 
 | Ennemi | Description |
 |--|-|
 | 🧙 Sorcier | Tire des projectiles dans sa portée |
-| 💀 Squelette | Patrouille sur une zone définie |
+| 💀 Garde d'os | Patrouille sur une zone définie |
 | 🟢 Slime | Ennemi coloré, dangereux au contact (rebond sur la tête) |
 | 👹 Démon volant | Te poursuit, fonce et tire des projectiles |
 | 🔥 Pyrolord | Boss de feu : se révèle après son réveil et enchaîne ses attaques |
@@ -84,6 +84,12 @@ Dépense les pièces gagnées en terminant les niveaux :
 ## 🎮 Téléchargement
 
 Pour jouer, télécharge la dernière version dans l'onglet [**Releases**](https://github.com/Emrecan45/ColorMage/releases) : l'exécutable est **autonome**, aucune installation requise.
+
+
+
+## 🌐 Jouer dans le navigateur
+
+Une version **web** (zéro installation) est jouable directement dans le navigateur, compilée en WebAssembly avec [pygbag](https://github.com/pygame-web/pygbag). Elle fonctionne aussi sur **mobile et tablette** grâce à un pad tactile (joystick + boutons). La procédure de génération est décrite dans [BUILD.md](BUILD.md).
 
 
 
@@ -139,8 +145,9 @@ python src/main.py
 
 ```
 ColorMage/
+├── main.py                 # Point d'entrée (bureau + web)
 ├── src/                    # Code source Python
-│   ├── main.py             # Boucle principale du jeu (point d'entrée)
+│   ├── main.py             # Boucle principale du jeu (classe Game)
 │   ├── core/               # Cœur : config, sauvegarde, niveaux, temps, assets
 │   │   ├── config.py       # Constantes et configuration globale
 │   │   ├── config_manager.py # Gestion de la sauvegarde
@@ -161,11 +168,13 @@ ColorMage/
 ├── assets/                 # Ressources du jeu
 │   ├── audio/              # Sons et musiques
 │   └── img/                # Images, avatars, sprites, UI
+├── tools/                  # Outils de build web (build_web.py, web.tmpl)
 ├── LICENSE                 # Licence du projet (MIT)
 ├── CREDITS.md              # Crédits et sources des assets
+├── BUILD.md                # Génération des builds (bureau + web)
 ├── .gitignore              # Fichiers à ignorer par Git
 ├── README.md               # Ce fichier
-└── requirements.txt        # Dépendances
+└── requirements.txt        # Dépendances (jeu + build web pygbag)
 ```
 
 

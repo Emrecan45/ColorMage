@@ -2,8 +2,11 @@ import pygame
 import os
 import math
 import random
+import core.musique as musique
 from core.i18n import t
 from core.config import LARGEUR_ECRAN, HAUTEUR_ECRAN, NIVEAUX_DISPONIBLES, COULEUR_BOUTON, COULEUR_SURVOL, COULEUR_BORDURE, resource_path
+from core.son import Son
+from core.assets import police, position_centree
 from core.config_manager import ConfigManager
 from ui.profil import Profil
 
@@ -11,10 +14,10 @@ class MenuNiveaux:
     """Menu de sélection des niveaux avec système de planètes et univers"""
 
     def __init__(self, gestionnaire_config=None):
-        self.font_1 = pygame.font.SysFont(None, 80)
-        self.font_2 = pygame.font.SysFont(None, 50)
-        self.font_3 = pygame.font.SysFont(None, 40)
-        self.font_petit = pygame.font.SysFont(None, 30)
+        self.font_1 = police(80)
+        self.font_2 = police(50)
+        self.font_3 = police(40)
+        self.font_petit = police(30)
         
         if gestionnaire_config is None:
             self.gestionnaire_config = ConfigManager()
@@ -65,7 +68,7 @@ class MenuNiveaux:
         self.transition_univers = False  # True pendant l'animation de swipe
         
         # Charger l'image du mage pour le menu
-        self.image_mage = pygame.image.load(resource_path("assets/img/entities/joueur_gris.png"))
+        self.image_mage = pygame.image.load(resource_path("assets/img/entities/joueur_gris.png")).convert_alpha()
         sprite_largeur = 192
         sprite_hauteur = 196
         self.mage_sprite = self.image_mage.subsurface(pygame.Rect(0, 0, sprite_largeur, sprite_hauteur))
@@ -73,7 +76,7 @@ class MenuNiveaux:
         self.mage_sprite_flip = pygame.transform.flip(self.mage_sprite, True, False)
         
         # Charger l'icône de pièce
-        piece_sheet = pygame.image.load(resource_path("assets/img/items/piece.png"))
+        piece_sheet = pygame.image.load(resource_path("assets/img/items/piece.png")).convert_alpha()
         piece_frame = piece_sheet.subsurface(pygame.Rect(0, 0, 16, 16))
         self.icone_piece = pygame.transform.scale(piece_frame, (48, 48))
         
@@ -157,28 +160,28 @@ class MenuNiveaux:
         # Bouton retour aligné avec les autres pages (centré, même hauteur)
         self.bouton_retour = pygame.Rect(LARGEUR_ECRAN // 2 - 125, HAUTEUR_ECRAN // 2 + 270, 250, 50)
         
-        self.image_cadenas = pygame.image.load(resource_path("assets/img/ui/cadena.png"))
+        self.image_cadenas = pygame.image.load(resource_path("assets/img/ui/cadena.png")).convert_alpha()
         self.image_cadenas = pygame.transform.scale(self.image_cadenas, (30, 30))
     
         # son des clics
-        self.son_select = pygame.mixer.Sound(resource_path(os.path.join("assets/audio", "select.wav")))
+        self.son_select = Son(resource_path(os.path.join("assets/audio", "select.wav")))
         # Son de pièce (joué lors d'un achat dans le marché)
-        self.son_piece = pygame.mixer.Sound(resource_path(os.path.join("assets/audio", "piece.wav")))
+        self.son_piece = Son(resource_path(os.path.join("assets/audio", "piece.wav")))
         # Sons de portail (changement de couleur) pour clic sur planète
         self.sons_portail = [
-            pygame.mixer.Sound(resource_path(os.path.join("assets/audio", "color_change1.wav"))),
-            pygame.mixer.Sound(resource_path(os.path.join("assets/audio", "color_change2.wav"))),
-            pygame.mixer.Sound(resource_path(os.path.join("assets/audio", "color_change3.wav")))
+            Son(resource_path(os.path.join("assets/audio", "color_change1.wav"))),
+            Son(resource_path(os.path.join("assets/audio", "color_change2.wav"))),
+            Son(resource_path(os.path.join("assets/audio", "color_change3.wav")))
         ]
         # Sons de téléportation pour entrer/sortir d'une planète
         self.sons_teleport = []
         for i in range(1, 7):
-            son = pygame.mixer.Sound(resource_path(os.path.join("assets/audio", "teleport" + str(i) + ".wav")))
+            son = Son(resource_path(os.path.join("assets/audio", "teleport" + str(i) + ".wav")))
             self.sons_teleport.append(son)
         self.maj_volume()
         
         # Charger l'icône du marché
-        self.icone_marche = pygame.image.load(resource_path(os.path.join("assets", "img", "ui", "market.png")))
+        self.icone_marche = pygame.image.load(resource_path(os.path.join("assets", "img", "ui", "market.png"))).convert_alpha()
         self.icone_marche = pygame.transform.scale(self.icone_marche, (48, 48))
         
         # Bouton Marché
@@ -189,8 +192,8 @@ class MenuNiveaux:
         self.marche_section = None
         # Catégories du marché
         self.marche_categories = [
-            {"nom": t("marche.avatars"), "section": "avatars", "disponible": True},
-            {"nom": t("marche.pouvoirs"), "section": "powerups", "disponible": True},
+            {"nom_cle": "marche.avatars", "section": "avatars", "disponible": True},
+            {"nom_cle": "marche.pouvoirs", "section": "powerups", "disponible": True},
         ]
         self.boutons_categories = []
         # Cache des images d'avatars et de power-ups
@@ -770,9 +773,8 @@ class MenuNiveaux:
                 couleur_txt = (255, 255, 255)
             else:
                 couleur_txt = (150, 150, 150)
-            nom_txt = self.font_2.render(cat["nom"], True, couleur_txt)
-            ecran.blit(nom_txt, (rect.centerx - nom_txt.get_width() // 2,
-                                 rect.centery - nom_txt.get_height() // 2))
+            nom_txt = self.font_2.render(t(cat["nom_cle"]), True, couleur_txt)
+            ecran.blit(nom_txt, position_centree(nom_txt, self.font_2, rect.centerx, rect.centery))
 
             if not dispo:
                 bientot = self.font_petit.render(t("marche.bientot_dispo"), True, (180, 180, 180))
@@ -783,11 +785,9 @@ class MenuNiveaux:
         # Lancer la musique
         if not self.musique_marche_active:
             try:
-                pygame.mixer.music.stop()
-                pygame.mixer.music.load(resource_path(os.path.join("assets/audio", "market.ogg")))
                 vol = self.gestionnaire_config.obtenir_volumes().get("musique", 50) / 100
-                pygame.mixer.music.set_volume(vol)
-                pygame.mixer.music.play(-1)
+                musique.set_volume(vol)
+                musique.jouer(resource_path(os.path.join("assets/audio", "market.ogg")))
             except Exception:
                 pass
             self.musique_marche_active = True
@@ -946,7 +946,7 @@ class MenuNiveaux:
                     cad_x = img_x + 120 // 2 - self.image_cadenas.get_width() // 2
                 cad_y = rect.centery - self.image_cadenas.get_height() // 2
                 ecran.blit(self.image_cadenas, (cad_x, cad_y))
-                titre_pw = self.font_2.render(powerup["nom"], True, (150, 150, 150))
+                titre_pw = self.font_2.render(t(powerup["nom_cle"]), True, (150, 150, 150))
                 ecran.blit(titre_pw, (texte_x, rect.top + 50))
                 niv_req = powerup.get("niveau_associe", "?")
                 txt_niv = self.font_3.render(f"{t('marche.niv')} {niv_req}", True, (255, 100, 100))
@@ -978,11 +978,11 @@ class MenuNiveaux:
                 ecran.blit(txt_prix, (gx + piece_img.get_width() + ecart, cy - txt_prix.get_height() // 2))
 
             # Titre et description
-            titre_pw = self.font_2.render(powerup["nom"], True, (255, 255, 255))
+            titre_pw = self.font_2.render(t(powerup["nom_cle"]), True, (255, 255, 255))
             ecran.blit(titre_pw, (texte_x, rect.top + 30))
 
             desc_y = rect.top + 80
-            for ligne in powerup.get("description", []):
+            for ligne in t(powerup["desc_cle"]):
                 ligne_txt = self.font_petit.render(ligne, True, (200, 200, 200))
                 ecran.blit(ligne_txt, (texte_x, desc_y))
                 desc_y += 30
@@ -1012,7 +1012,7 @@ class MenuNiveaux:
         ecran.blit(titre, (boite.centerx - titre.get_width() // 2, boite.top + 25))
 
         # nom de l'article
-        nom = self.font_3.render(article["nom"], True, (255, 255, 255))
+        nom = self.font_3.render(t(article["nom_cle"]), True, (255, 255, 255))
         ecran.blit(nom, (boite.centerx - nom.get_width() // 2, boite.top + 80))
 
         # prix
@@ -1032,8 +1032,8 @@ class MenuNiveaux:
             pygame.draw.rect(ecran, (40, 150, 40), self.bouton_achat_confirmer, border_radius=10)
         pygame.draw.rect(ecran, (255, 255, 255), self.bouton_achat_confirmer, 2, border_radius=10)
         conf_txt = self.font_3.render(t("marche.acheter"), True, (255, 255, 255))
-        ecran.blit(conf_txt, (self.bouton_achat_confirmer.centerx - conf_txt.get_width() // 2,
-                              self.bouton_achat_confirmer.centery - conf_txt.get_height() // 2))
+        ecran.blit(conf_txt, position_centree(conf_txt, self.font_3,
+                                              self.bouton_achat_confirmer.centerx, self.bouton_achat_confirmer.centery))
 
         if self.bouton_achat_annuler.collidepoint(mouse_pos):
             pygame.draw.rect(ecran, (180, 60, 60), self.bouton_achat_annuler, border_radius=10)
@@ -1041,8 +1041,8 @@ class MenuNiveaux:
             pygame.draw.rect(ecran, (150, 40, 40), self.bouton_achat_annuler, border_radius=10)
         pygame.draw.rect(ecran, (255, 255, 255), self.bouton_achat_annuler, 2, border_radius=10)
         ann_txt = self.font_3.render(t("marche.annuler"), True, (255, 255, 255))
-        ecran.blit(ann_txt, (self.bouton_achat_annuler.centerx - ann_txt.get_width() // 2,
-                             self.bouton_achat_annuler.centery - ann_txt.get_height() // 2))
+        ecran.blit(ann_txt, position_centree(ann_txt, self.font_3,
+                                             self.bouton_achat_annuler.centerx, self.bouton_achat_annuler.centery))
 
     def gerer_clic_marche(self, pos):
         """Gère les clics dans le marché : choix de catégorie, puis achats"""
@@ -1117,20 +1117,17 @@ class MenuNiveaux:
         self.achat_en_attente = None
         # Restaurer la musique selon l'état
         try:
-            pygame.mixer.music.stop()
+            chemin_principal = resource_path(os.path.join("assets/audio", "main_theme.ogg"))
+            chemin = chemin_principal
             if self.etat_menu == "planete":
                 planete = self.planetes[self.planete_selectionnee]
                 nom_planete = planete["nom"].lower()
-                chemin_musique = resource_path(os.path.join("assets/audio", nom_planete + ".ogg"))
-                if os.path.exists(chemin_musique):
-                    pygame.mixer.music.load(chemin_musique)
-                else:
-                    pygame.mixer.music.load(resource_path(os.path.join("assets/audio", "main_theme.ogg")))
-            else:
-                pygame.mixer.music.load(resource_path(os.path.join("assets/audio", "main_theme.ogg")))
+                chemin_planete = resource_path(os.path.join("assets/audio", nom_planete + ".ogg"))
+                if os.path.exists(chemin_planete):
+                    chemin = chemin_planete
             vol = self.gestionnaire_config.obtenir_volumes().get("musique", 50) / 100
-            pygame.mixer.music.set_volume(vol)
-            pygame.mixer.music.play(-1)
+            musique.set_volume(vol)
+            musique.jouer(chemin)
         except Exception:
             pass
     
@@ -1149,8 +1146,8 @@ class MenuNiveaux:
         pygame.draw.rect(ecran, COULEUR_BORDURE, self.bouton_retour, 3, border_radius=10)
         
         texte_surface = self.font_2.render(texte, True, (255, 255, 255))
-        ecran.blit(texte_surface, (self.bouton_retour.centerx - texte_surface.get_width() // 2,
-                                    self.bouton_retour.centery - texte_surface.get_height() // 2))
+        ecran.blit(texte_surface, position_centree(texte_surface, self.font_2,
+                                                    self.bouton_retour.centerx, self.bouton_retour.centery))
     
     def obtenir_info_planete(self, numero_niveau):
         """Retourne les informations de la planète pour un numéro de niveau donné"""
@@ -1368,11 +1365,9 @@ class MenuNiveaux:
                 random.choice(self.sons_teleport).play()
                 # Restaurer la musique principale
                 try:
-                    pygame.mixer.music.stop()
-                    pygame.mixer.music.load(resource_path(os.path.join("assets/audio", "main_theme.ogg")))
                     vol = self.gestionnaire_config.obtenir_volumes().get("musique", 50) / 100
-                    pygame.mixer.music.set_volume(vol)
-                    pygame.mixer.music.play(-1)
+                    musique.set_volume(vol)
+                    musique.jouer(resource_path(os.path.join("assets/audio", "main_theme.ogg")))
                 except Exception:
                     pass
                 self.zoom_en_cours = True
@@ -1431,12 +1426,9 @@ class MenuNiveaux:
                 try:
                     nom_planete = planete["nom"].lower()
                     chemin_musique = resource_path(os.path.join("assets/audio", nom_planete + ".ogg"))
-                    if os.path.exists(chemin_musique):
-                        pygame.mixer.music.stop()
-                        pygame.mixer.music.load(chemin_musique)
-                        vol = self.gestionnaire_config.obtenir_volumes().get("musique", 50) / 100
-                        pygame.mixer.music.set_volume(vol)
-                        pygame.mixer.music.play(-1)
+                    vol = self.gestionnaire_config.obtenir_volumes().get("musique", 50) / 100
+                    musique.set_volume(vol)
+                    musique.jouer(chemin_musique)
                 except Exception:
                     pass
                 
@@ -1480,7 +1472,7 @@ class MenuNiveaux:
                 # Niveau pas encore sorti = afficher une alerte
                 if numero > NIVEAUX_DISPONIBLES:
                     if self.alerte is not None:
-                        self.alerte.afficher(t("alerte.niveau_bientot"))
+                        self.alerte.afficher("alerte.niveau_bientot")
                     return None
 
                 # Si le mage est déjà sur cette plaque, lancer directement
