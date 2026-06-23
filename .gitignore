@@ -10,5 +10,5 @@ build/
 tools/*
 !tools/build_web.py
 !tools/web.tmpl
-!tools/itch_shell/
-!tools/itch_shell/index.html
+!tools/templates/
+!tools/templates/index.html

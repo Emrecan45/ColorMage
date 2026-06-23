@@ -65,8 +65,6 @@ class Game:
     """Classe principale gérant le jeu"""
 
     def __init__(self):
-        # Buffer audio web : 1024 = plancher sans grésillement (doit survivre à une frame de
-        # 16.6ms ; 512 sous-alimente le buffer). Compromis latence/grésillement.
         if EST_WEB:
             pygame.mixer.pre_init(44100, -16, 2, 1024)
         pygame.init()

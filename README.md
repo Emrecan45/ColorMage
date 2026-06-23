@@ -137,8 +137,14 @@ python src/main.py
 
 - Remappage des touches (droite, gauche, sauter, tirer)
 - Volume musique et effets sonores indépendants
+- Langue : français ou anglais
 - Export / Import de sauvegarde
 
+
+
+## 📝 Notes de version
+
+À la première ouverture d'une nouvelle version, une popup résume les nouveautés. L'information est mémorisée dans la sauvegarde pour ne s'afficher qu'une seule fois.
 
 
 ## 📁 Structure du projet

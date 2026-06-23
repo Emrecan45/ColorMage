@@ -20,8 +20,7 @@ Depuis la racine du projet :
 python tools/build_web.py
 ```
 
-Le script copie le strict nécessaire dans un dossier propre (`build/ColorMage/`),
-sans embarquer `venv/`, `.git/`, la vidéo d'intro, etc., puis lance pygbag et
+Le script copie le strict nécessaire dans un dossier propre (`build/ColorMage/`) puis lance pygbag et
 sert le jeu sur http://localhost:8000. Ouvrir cette adresse pour tester.
 
 ## Générer le fichier zip
@@ -30,8 +29,16 @@ sert le jeu sur http://localhost:8000. Ouvrir cette adresse pour tester.
 python tools/build_web.py --archive
 ```
 
-Le `.zip` à uploader est généré dans `build/ColorMage/build/web.zip` (≈ 42 Mo).
+Le `.zip` à uploader est généré dans `build/ColorMage/build/web.zip` (≈ 40 Mo).
 Il contient `index.html` à la racine
+
+## Déploiement automatique (GitHub Pages)
+
+À chaque push sur `main`, le workflow [`.github/workflows/deploy-web.yml`](.github/workflows/deploy-web.yml) build le jeu et le publie sur **https://emrecan45.github.io/ColorMage/**.
+
+L'origine de cette URL ne change jamais : les sauvegardes des joueurs (localStorage) persistent entre les mises à jour.
+
+Pour garder la version persistante sur un site, uploader la page [`tools/templates/index.html`](tools/templates/index.html) : elle embarque la version Pages dans une iframe tout en conservant le lecteur du site.
 
 # Exécutable bureau
 
