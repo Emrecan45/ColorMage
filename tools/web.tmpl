@@ -56,18 +56,19 @@ async def custom_site():
             tar.extractall(path=appdir.as_posix(), filter='tar')
             tar.close()
 
-    progres(55, 62, "decompression")
+    progres(55, 70, "decompression")
 
     # preloader will change to work dir and prepend it to sys.path
     platform.run_main(PyConfig, loaderhome= appdir / "assets", loadermain=None)
 
-    progres(64, 90, "compilation")
+    progres(72, 99, "compilation")
 
     # wait preloading complete : that includes images and wasm compilation of bundled modules
     while embed.counter()<0:
         await asyncio.sleep(.1)
 
-    progres(92, 96, "presque")
+    # moteur charge : barre a 100% AVANT de demander le tap (UX type "press start")
+    progres(100, 100, "pret")
 
     main = appdir / "assets" / "main.py"
 
@@ -103,7 +104,7 @@ async def custom_site():
     def ui_callback(pkg):
         platform.window.infobox.innerText = f"installing {pkg}"
 
-    progres(96, 99, "demarrage")
+    progres(100, 100, "demarrage")
     await shell.source(main, callback=ui_callback)
 
     # if you don't reach that step
@@ -350,7 +351,7 @@ height="{{cookiecutter.height}}px"
             </div>
             <div id="intro-bar-pct" style="color:#ffffff; font-size:15px; font-weight:bold; margin-top:10px;">0%</div>
         </div>
-        <div id="intro-tap" style="display:none; position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); color:#fff; font-family:arial; font-size:34px; font-weight:bold; text-align:center; animation:cmpulse 1.3s ease-in-out infinite;">Touchez pour jouer</div>
+        <div id="intro-tap" style="display:none; position:absolute; top:66%; left:50%; transform:translate(-50%,-50%); color:#fff; font-family:arial; font-size:34px; font-weight:bold; text-align:center; animation:cmpulse 1.3s ease-in-out infinite;">Touchez pour jouer</div>
         <video id="intro-video" muted playsinline preload="auto"
             style="display:none; position:absolute; top:0; left:0; width:100%; height:100%; object-fit:contain; background:#000;">
             <source src="video_intro.mp4" type="video/mp4">
@@ -448,7 +449,7 @@ frameborder="1"
             telechargement: "Téléchargement du jeu",
             decompression: "Décompression",
             compilation: "Compilation des modules",
-            presque: "Presque prêt",
+            pret: "Prêt !",
             demarrage: "Démarrage",
             tap: "Touchez pour jouer"
         },
@@ -457,7 +458,7 @@ frameborder="1"
             telechargement: "Downloading game",
             decompression: "Extracting",
             compilation: "Compiling modules",
-            presque: "Almost ready",
+            pret: "Ready!",
             demarrage: "Starting",
             tap: "Tap to play"
         }
@@ -530,6 +531,9 @@ frameborder="1"
         var p = window.colormage_progress;
         if (plancher !== undefined && plancher !== null && plancher > p.floor) {
             p.floor = plancher;
+            if (p.cur < p.floor) {
+                p.cur = p.floor;
+            }
         }
         if (plafond !== undefined && plafond !== null) {
             p.cap = plafond;
@@ -554,6 +558,15 @@ frameborder="1"
                     }
                 }).catch(function () {});
             }
+            var bg = document.getElementById("bg-music");
+            if (bg) {
+                bg.muted = true;
+                bg.play().then(function () {
+                    bg.pause();
+                    bg.currentTime = 0;
+                    bg.muted = false;
+                }).catch(function () { bg.muted = false; });
+            }
             if (window.colormage_actx) {
                 window.colormage_actx.resume();
             }
@@ -568,11 +581,7 @@ frameborder="1"
 
     // Affiche "Touchez pour jouer" quand pygbag attend le geste utilisateur
     window.colormage_show_tap_prompt = function () {
-        var pr = document.getElementById("intro-progress");
         var tap = document.getElementById("intro-tap");
-        if (pr) {
-            pr.style.display = "none";
-        }
         if (tap) {
             tap.innerText = window.colormage_texte_chargement("tap");
             tap.style.display = "block";

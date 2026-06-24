@@ -94,11 +94,12 @@ def builder():
 
     subprocess.run(args, check=True)
     ajouter_fichiers_racine(options)
+    restructurer_landing()
 
     if "--archive" in options:
         print(f"\nPaquet pret a uploader : {STAGING / 'build' / 'web.zip'}")
     else:
-        print(f"\nBuild genere dans : {STAGING / 'build' / 'web'}")
+        print(f"\nBuild genere dans : {STAGING / 'build' / 'web'} (landing a la racine, jeu dans /game/)")
 
 
 def ajouter_fichiers_racine(options):
@@ -117,6 +118,40 @@ def ajouter_fichiers_racine(options):
             for source in FICHIERS_RACINE_WEB:
                 if source.exists():
                     zf.write(source, source.name)
+
+
+IMAGES_LANDING = [
+    RACINE / "assets" / "img" / "ui" / "logo.png",
+    RACINE / "assets" / "img" / "ui" / "logo.ico",
+    RACINE / "assets" / "img" / "screenshot_menu.png",
+    RACINE / "assets" / "img" / "screenshot_game.png",
+]
+
+
+def restructurer_landing():
+    """Deplace le jeu dans web/game/ et place la landing (meme origine) a la racine."""
+    web = STAGING / "build" / "web"
+    if not web.exists():
+        return
+
+    game = web / "game"
+    if game.exists():
+        shutil.rmtree(game)
+    game.mkdir()
+    for item in list(web.iterdir()):
+        if item != game:
+            shutil.move(str(item), str(game / item.name))
+
+    landing = TOOLS / "landing"
+    for source in sorted(landing.iterdir()):
+        if source.is_file():
+            shutil.copy2(source, web / source.name)
+
+    for source in IMAGES_LANDING:
+        if source.exists():
+            shutil.copy2(source, web / source.name)
+        else:
+            print(f"  ! image landing introuvable, ignore : {source.name}")
 
 
 if __name__ == "__main__":

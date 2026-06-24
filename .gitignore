@@ -12,3 +12,5 @@ tools/*
 !tools/web.tmpl
 !tools/templates/
 !tools/templates/index.html
+!tools/landing/
+!tools/landing/index.html
