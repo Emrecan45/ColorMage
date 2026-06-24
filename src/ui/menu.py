@@ -1,9 +1,6 @@
 import pygame
-import sys
 import os
-import random
-import math
-from core.config import LARGEUR_ECRAN, HAUTEUR_ECRAN, VERSION_JEU, COULEUR_BOUTON, COULEUR_SURVOL, COULEUR_BORDURE, resource_path
+from core.config import LARGEUR_ECRAN, HAUTEUR_ECRAN, VERSION_JEU, COULEUR_BOUTON, COULEUR_SURVOL, COULEUR_BORDURE, EST_WEB, resource_path
 from core.son import Son
 from core.assets import police, position_centree
 from core.i18n import t
@@ -31,9 +28,13 @@ class Menu:
         except:
             self.icone_profil = None
         
-        self.bouton_jouer = pygame.Rect(LARGEUR_ECRAN // 2 - 125, HAUTEUR_ECRAN // 2 - 60, 250, 50)
-        self.bouton_grimoire = pygame.Rect(LARGEUR_ECRAN // 2 - 125, HAUTEUR_ECRAN // 2 + 20, 250, 50)
-        self.bouton_parametres = pygame.Rect(LARGEUR_ECRAN // 2 - 125, HAUTEUR_ECRAN // 2 + 100, 250, 50)
+        if EST_WEB:
+            decalage = 40
+        else:
+            decalage = 0
+        self.bouton_jouer = pygame.Rect(LARGEUR_ECRAN // 2 - 125, HAUTEUR_ECRAN // 2 - 60 + decalage, 250, 50)
+        self.bouton_grimoire = pygame.Rect(LARGEUR_ECRAN // 2 - 125, HAUTEUR_ECRAN // 2 + 20 + decalage, 250, 50)
+        self.bouton_parametres = pygame.Rect(LARGEUR_ECRAN // 2 - 125, HAUTEUR_ECRAN // 2 + 100 + decalage, 250, 50)
         self.bouton_quitter = pygame.Rect(LARGEUR_ECRAN // 2 - 125, HAUTEUR_ECRAN // 2 + 180, 250, 50)
         self.bouton_profil = pygame.Rect(LARGEUR_ECRAN - 100, 15, 80, 80)
         
@@ -95,11 +96,12 @@ class Menu:
         self.dessiner_bouton_arrondi(ecran, self.bouton_parametres, couleur_param, t("menu.parametres"), self.font_1)
         
         # Bouton Quitter
-        if self.bouton_quitter.collidepoint(mouse_pos):
-            couleur_quitter = (150, 50, 50)  # Rouge clair au survol
-        else:
-            couleur_quitter = (120, 30, 30)  # Rouge sombre
-        self.dessiner_bouton_arrondi(ecran, self.bouton_quitter, couleur_quitter, t("menu.quitter"), self.font_1)
+        if not EST_WEB:
+            if self.bouton_quitter.collidepoint(mouse_pos):
+                couleur_quitter = (150, 50, 50)
+            else:
+                couleur_quitter = (120, 30, 30)
+            self.dessiner_bouton_arrondi(ecran, self.bouton_quitter, couleur_quitter, t("menu.quitter"), self.font_1)
         
         # Bouton Profil (en haut à droite avec icône)
         if self.bouton_profil.collidepoint(mouse_pos):
@@ -136,8 +138,8 @@ class Menu:
         elif self.bouton_parametres.collidepoint(pos):
             self.son_select.play()
             return "parametres"
-        elif self.bouton_quitter.collidepoint(pos):
+        elif not EST_WEB and self.bouton_quitter.collidepoint(pos):
             self.son_select.play()
-            pygame.time.wait(500) # pour que le son_select s'entende
+            pygame.time.wait(500)
             return "quitter"
         return None

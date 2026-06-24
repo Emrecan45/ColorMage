@@ -497,10 +497,13 @@ frameborder="1"
             if (p.floor - p.cur < 0.2) {
                 p.cur = p.floor;
             }
-        } else if (p.cur < p.cap) {
-            var pas = (p.cap - p.cur) * 0.018;
-            if (pas < 0.03) {
-                pas = 0.03;
+        } else if (p.cur < 99) {
+            var pas = 0.000833;
+            if (p.cur < p.cap) {
+                var boost = (p.cap - p.cur) * 0.018;
+                if (boost > pas) {
+                    pas = boost;
+                }
             }
             p.cur += pas;
         }
