@@ -247,9 +247,6 @@ class Game:
                 fonction, arguments = etapes[idx]
                 fonction(*arguments)
                 idx += 1
-        
-        # Démarrer la musique une fois le chargement terminé
-        musique.jouer(resource_path(os.path.join("assets/audio", "main_theme.ogg")))
 
     def creer_sous_systemes(self):
         """Crée les menus, le niveau, le joueur, etc.."""
@@ -586,7 +583,7 @@ class Game:
                             self.en_cours = False
 
                 elif self.etat == "profil":
-                    action = self.profil.gerer_events(evenement)
+                    action = await self.profil.gerer_events(evenement)
                     if action == "quitter":
                         self.etat = "menu"
                     elif action == "reset_save":
@@ -1537,6 +1534,8 @@ class Game:
             if self.popup_actif is None:
                 self.pause.dessiner_bouton(self.ecran)
                 if est_tactile():
+                    if self.joueur:
+                        self.virtual_gamepad.peut_tirer_active = self.joueur.peut_tirer_feu
                     self.virtual_gamepad.dessiner(self.ecran)
             self.chrono.dessiner(self.ecran)
             
@@ -1732,6 +1731,11 @@ class Game:
         # Alerte
         self.alerte = Alerte(self.gestionnaire_config)
         self.menu_niveaux.alerte = self.alerte
+
+        # Affiche le menu puis lance la musique (evite la musique pendant l'ecran de chargement)
+        self.menu.afficher_menu(self.ecran)
+        pygame.display.flip()
+        musique.jouer(resource_path(os.path.join("assets/audio", "main_theme.ogg")))
 
         # Vérifier si la sauvegarde est corrompue et réinitialiser si nécessaire
         if self.gestionnaire_config.sauvegarde_corrompue:

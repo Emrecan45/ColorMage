@@ -34,7 +34,7 @@ Il contient `index.html` à la racine
 
 ## Déploiement automatique (GitHub Pages)
 
-À chaque push sur `main`, le workflow [`.github/workflows/deploy-web.yml`](.github/workflows/deploy-web.yml) build le jeu et le publie sur **https://emrecan45.github.io/ColorMage/**.
+À chaque push sur `main`, le workflow [`.github/workflows/deploy-web.yml`](.github/workflows/deploy-web.yml) build le jeu et le publie sur **https://emrecan45.github.io/colormage/**.
 
 L'origine de cette URL ne change jamais : les sauvegardes des joueurs (localStorage) persistent entre les mises à jour.
 

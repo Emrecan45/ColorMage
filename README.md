@@ -89,7 +89,7 @@ Pour jouer, télécharge la dernière version dans l'onglet [**Releases**](https
 
 ## 🌐 Jouer dans le navigateur
 
-**▶ Jouer maintenant : [emrecan45.github.io/ColorMage](https://emrecan45.github.io/ColorMage/)**
+**▶ Jouer maintenant : [emrecan45.github.io/colormage](https://emrecan45.github.io/colormage/)**
 
 Une version **web** (zéro installation) est jouable directement dans le navigateur, compilée en WebAssembly avec [pygbag](https://github.com/pygame-web/pygbag). Elle fonctionne aussi sur **mobile et tablette** grâce à un pad tactile (joystick + boutons). La procédure de génération est décrite dans [BUILD.md](BUILD.md).
 

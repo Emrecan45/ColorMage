@@ -385,12 +385,16 @@ class Profil:
         
         return None
     
-    def ouvrir_clavier(self):
+    async def ouvrir_clavier(self):
         """Active l'édition du pseudo et ouvre le clavier (mobile/web)."""
         self.pseudo_avant_edition = self.pseudo
         if EST_WEB:
             import platform
-            valeur = platform.window.prompt(t("profil.pseudo"), self.pseudo)
+            import asyncio
+            platform.window.colormage_show_prompt(t("profil.pseudo"), self.pseudo)
+            while not platform.window.colormage_prompt_done:
+                await asyncio.sleep(0.05)
+            valeur = platform.window.colormage_prompt_result
             if valeur is not None:
                 valeur = valeur.strip()[:15]
                 if valeur:
@@ -409,7 +413,7 @@ class Profil:
         if not EST_WEB:
             pygame.key.stop_text_input()
 
-    def gerer_events(self, evenement):
+    async def gerer_events(self, evenement):
         """Gère les événements de la page profil"""
         if evenement.type == pygame.MOUSEBUTTONDOWN and evenement.button == 1:
             # Clic sur le bouton retour
@@ -421,7 +425,7 @@ class Profil:
             # Clic sur le pseudo pour l'éditer
             if self.pseudo_rect.collidepoint(evenement.pos):
                 self.son_select.play()
-                self.ouvrir_clavier()
+                await self.ouvrir_clavier()
                 return None
             
             # Clic sur le bouton reset

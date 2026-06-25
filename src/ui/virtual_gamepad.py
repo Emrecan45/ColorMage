@@ -1,6 +1,7 @@
 import pygame
 from core.config import LARGEUR_ECRAN, HAUTEUR_ECRAN
 from core.assets import police
+import core.i18n as i18n
 
 
 class VirtualGamepad:
@@ -15,6 +16,7 @@ class VirtualGamepad:
         self.droite_presse = False
         self.saut_presse = False
         self.tir_presse = False
+        self.peut_tirer_active = False
 
         # Joystick : position d'affichage  + position du manche
         self.position_fixe = (170, HAUTEUR_ECRAN - 130)
@@ -116,7 +118,7 @@ class VirtualGamepad:
         """Retourne le nom du bouton sous (x, y), ou None."""
         if self.distance(x, y, self.bouton_saut) <= self.rayon_bouton * 1.3:
             return "saut"
-        if self.distance(x, y, self.bouton_tir) <= self.rayon_bouton * 1.3:
+        if self.peut_tirer_active and self.distance(x, y, self.bouton_tir) <= self.rayon_bouton * 1.3:
             return "tir"
         return None
 
@@ -153,8 +155,16 @@ class VirtualGamepad:
                 dy = dy / dist * self.rayon_joystick
             self.dessiner_cercle(surface, int(cx + dx), int(cy + dy), 45, (255, 255, 255, 110))
 
-        self.dessiner_bouton(surface, self.bouton_saut, "S", self.saut_presse)
-        self.dessiner_bouton(surface, self.bouton_tir, "T", self.tir_presse)
+        if i18n.langue_actuelle == "fr":
+            lettre_saut = "S"
+            lettre_tir = "T"
+        else:
+            lettre_saut = "J"
+            lettre_tir = "S"
+        
+        self.dessiner_bouton(surface, self.bouton_saut, lettre_saut, self.saut_presse)
+        if self.peut_tirer_active:
+            self.dessiner_bouton(surface, self.bouton_tir, lettre_tir, self.tir_presse)
 
     def dessiner_bouton(self, surface, centre, lettre, presse):
         if presse:

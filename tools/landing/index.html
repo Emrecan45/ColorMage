@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>ColorMage</title>
+<title translate="no">C&#8203;olorMage</title>
 <link rel="icon" type="image/x-icon" href="logo.ico">
 <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-6341302313151709" crossorigin="anonymous"></script>
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -27,6 +27,7 @@
         background: radial-gradient(1200px 700px at 50% -10%, #1b1b3a 0%, var(--bg) 60%);
         min-height: 100vh;
         overflow-x: hidden;
+        overscroll-behavior: none;
     }
 
     .stars, .stars2 { position: fixed; inset: 0; pointer-events: none; z-index: 0; }
@@ -84,11 +85,12 @@
         border: 2px solid var(--border); border-radius: 14px; overflow: hidden;
         box-shadow: 0 0 0 1px rgba(255, 200, 60, 0.15), 0 18px 50px rgba(0, 0, 0, 0.55);
     }
-    #game-wrap iframe { width: 100%; height: 100%; border: 0; display: block; }
+    #game-wrap iframe { width: 100%; height: 100%; border: 0; display: block; touch-action: none; }
     #game-wrap:fullscreen { max-width: none; width: 100vw; height: 100vh; aspect-ratio: auto; border: 0; border-radius: 0; }
     /* faux plein ecran : repli pour mobile/iOS ou la Fullscreen API n'existe pas */
-    #game-wrap.fakefull { position: fixed; inset: 0; width: 100vw; height: 100vh; max-width: none; margin: 0; aspect-ratio: auto; z-index: 99999; border: 0; border-radius: 0; }
-    #exitfull { display: none; position: absolute; top: 8px; right: 8px; z-index: 100000; width: 40px; height: 40px; border: 0; border-radius: 8px; cursor: pointer; background: rgba(0, 0, 0, 0.55); color: #fff; font-size: 22px; }
+    #game-wrap.fakefull { position: fixed; inset: 0; width: 100vw; height: 100dvh; max-width: none; margin: 0; aspect-ratio: auto; z-index: 99999; border: 0; border-radius: 0; touch-action: none; overscroll-behavior: none; }
+    /* croix placee sous le bouton pause du jeu (haut-droite, ~10% de hauteur) pour ne pas le recouvrir */
+    #exitfull { display: none; position: absolute; top: 12.5vh; right: 10px; z-index: 100000; width: 38px; height: 38px; border: 0; border-radius: 8px; cursor: pointer; background: rgba(0, 0, 0, 0.55); color: #fff; font-size: 22px; }
     #game-wrap.fakefull #exitfull { display: block; }
 
     .bar { display: flex; justify-content: flex-end; gap: 10px; max-width: 960px; margin: 10px auto 0; }
@@ -128,9 +130,9 @@
     <div class="wrap">
         <header>
             <img class="logo" src="logo.ico" alt="ColorMage">
-            <span class="title">ColorMage</span>
+            <span class="title" translate="no">ColorMage</span>
             <span class="spacer"></span>
-            <a class="profile" href="https://github.com/Emrecan45" target="_blank" rel="noopener">
+            <a class="profile" href="https://emrecan45.github.io/" target="_blank" rel="noopener">
                 <img src="https://github.com/Emrecan45.png" alt="Emrecan45">
                 <span class="name">Emrecan45</span>
             </a>

@@ -258,12 +258,18 @@ function show_infobox() {
             position: fixed;
             top: 0 !important;
             left: 0 !important;
+
+            /* evite que les touches (joystick) declenchent scroll/zoom/barre du navigateur */
+            touch-action: none;
+            -ms-touch-action: none;
         }
 
         html, body {
             overflow: hidden;
             width: 100%;
             height: 100%;
+            overscroll-behavior: none;
+            touch-action: none;
         }
 
         body {
@@ -357,6 +363,18 @@ height="{{cookiecutter.height}}px"
             <source src="video_intro.mp4" type="video/mp4">
         </video>
     </div>
+    <div id="cm-prompt-overlay" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; z-index:2000000; background:rgba(0,0,0,0.75); align-items:center; justify-content:center;">
+        <div style="background:#1a1a2e; border:2px solid #ffffff; border-radius:14px; padding:28px 24px; min-width:280px; max-width:88vw; text-align:center; font-family:arial;">
+            <div id="cm-prompt-label" style="color:#cfcfe0; font-size:17px; font-weight:bold; margin-bottom:16px;"></div>
+            <input id="cm-prompt-input" type="text" maxlength="15" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"
+                style="width:100%; padding:10px 8px; border-radius:7px; border:2px solid #ffc83c; background:#0d0d1a; color:#fff; font-size:17px; box-sizing:border-box; margin-bottom:18px; outline:none;">
+            <div style="display:flex; gap:14px; justify-content:center;">
+                <button id="cm-prompt-cancel" style="padding:10px 22px; border-radius:7px; border:none; background:#444; color:#fff; font-size:15px; cursor:pointer;">Annuler</button>
+                <button id="cm-prompt-ok" style="padding:10px 22px; border-radius:7px; border:none; background:#ffc83c; color:#000; font-size:15px; font-weight:bold; cursor:pointer;">OK</button>
+            </div>
+        </div>
+    </div>
+
     <audio id="intro-audio" preload="auto" src="intro.wav"></audio>
     <audio id="bg-music" loop preload="auto" src="main_theme.ogg"></audio>
 
@@ -551,33 +569,46 @@ frameborder="1"
 
             var a = document.getElementById("intro-audio");
             if (a && !window.colormage_intro_playing) {
+                a.muted = true;
                 a.play().then(function () {
                     if (!window.colormage_intro_playing) {
                         a.pause();
                         a.currentTime = 0;
                     }
-                }).catch(function () {});
+                    a.muted = false;
+                }).catch(function () { a.muted = false; });
             }
             var bg = document.getElementById("bg-music");
             if (bg) {
                 bg.muted = true;
                 bg.play().then(function () {
-                    bg.pause();
-                    bg.currentTime = 0;
+                    if (!window.colormage_music_intent) {
+                        bg.pause();
+                        bg.currentTime = 0;
+                    }
                     bg.muted = false;
                 }).catch(function () { bg.muted = false; });
             }
-            if (window.colormage_actx) {
-                window.colormage_actx.resume();
-            }
+            try {
+                var actx = colormage_actx_get();
+                if (actx.state === "suspended") {
+                    actx.resume();
+                }
+            } catch (e) {}
             document.removeEventListener("pointerdown", unlock, true);
             document.removeEventListener("touchstart", unlock, true);
+            document.removeEventListener("touchend", unlock, true);
+            document.removeEventListener("click", unlock, true);
             document.removeEventListener("keydown", unlock, true);
         }
         document.addEventListener("pointerdown", unlock, true);
         document.addEventListener("touchstart", unlock, true);
+        document.addEventListener("touchend", unlock, true);
+        document.addEventListener("click", unlock, true);
         document.addEventListener("keydown", unlock, true);
     })();
+
+    document.addEventListener("touchmove", function (e) { e.preventDefault(); }, { passive: false });
 
     // Affiche "Touchez pour jouer" quand pygbag attend le geste utilisateur
     window.colormage_show_tap_prompt = function () {
@@ -659,28 +690,63 @@ frameborder="1"
 
     // Musique de fond gérée par le navigateur
     window.colormage_music_volume = 0.5;
+    window.colormage_music_intent = false;
+    window.colormage_bg_gain = null;
+
+    function init_bg_audio() {
+        var a = document.getElementById("bg-music");
+        if (!a) return;
+        var actx = colormage_actx_get();
+        if (!window.colormage_bg_gain) {
+            try {
+                var source = actx.createMediaElementSource(a);
+                window.colormage_bg_gain = actx.createGain();
+                window.colormage_bg_gain.gain.value = window.colormage_music_volume;
+                source.connect(window.colormage_bg_gain);
+                window.colormage_bg_gain.connect(actx.destination);
+            } catch(e) {}
+        }
+    }
+
     window.colormage_play_music = function (fichier) {
         var a = document.getElementById("bg-music");
         if (!a) {
             return;
         }
+        init_bg_audio();
         if (a.getAttribute("src") !== fichier) {
             a.setAttribute("src", fichier);
         }
-        a.volume = window.colormage_music_volume;
+        window.colormage_music_intent = true;
+        if (window.colormage_bg_gain) {
+            window.colormage_bg_gain.gain.value = window.colormage_music_volume;
+        } else {
+            a.volume = window.colormage_music_volume;
+        }
         a.play().catch(function () {});
     };
     window.colormage_set_music_volume = function (v) {
         window.colormage_music_volume = v;
         var a = document.getElementById("bg-music");
-        if (a) {
+        if (!a) return;
+        if (!window.colormage_bg_gain) {
+            init_bg_audio();
+        }
+        if (window.colormage_bg_gain) {
+            window.colormage_bg_gain.gain.value = v;
+        } else {
             a.volume = v;
+        }
+        if (v > 0 && window.colormage_music_intent && a.paused) {
+            a.play().catch(function () {});
         }
     };
     window.colormage_stop_music = function () {
         var a = document.getElementById("bg-music");
+        window.colormage_music_intent = false;
         if (a) {
             a.pause();
+            a.currentTime = 0;
         }
     };
 
@@ -712,7 +778,7 @@ frameborder="1"
         }).catch(function () {});
     };
     window.colormage_play_sfx = function (nom, volume, boucle) {
-        var actx = window.colormage_actx;
+        var actx = colormage_actx_get();
         var buffer = window.colormage_sfx_buffers[nom];
         if (!actx || !buffer) {
             return;
@@ -753,6 +819,48 @@ frameborder="1"
             delete window.colormage_sfx_loops[nom];
         }
     };
+    window.colormage_prompt_done = false;
+    window.colormage_prompt_result = null;
+
+    (function () {
+        function cm_prompt_resolve(value) {
+            window.colormage_prompt_result = value;
+            window.colormage_prompt_done = true;
+            var ov = document.getElementById("cm-prompt-overlay");
+            if (ov) ov.style.display = "none";
+        }
+
+        document.addEventListener("DOMContentLoaded", function () {
+            var ok = document.getElementById("cm-prompt-ok");
+            var cancel = document.getElementById("cm-prompt-cancel");
+            var input = document.getElementById("cm-prompt-input");
+            if (ok) ok.addEventListener("click", function () {
+                cm_prompt_resolve(input ? input.value : "");
+            });
+            if (cancel) cancel.addEventListener("click", function () {
+                cm_prompt_resolve(null);
+            });
+            if (input) input.addEventListener("keydown", function (e) {
+                if (e.key === "Enter") cm_prompt_resolve(input.value);
+                if (e.key === "Escape") cm_prompt_resolve(null);
+            });
+        });
+
+        window.colormage_show_prompt = function (msg, def_val) {
+            var ov = document.getElementById("cm-prompt-overlay");
+            var lbl = document.getElementById("cm-prompt-label");
+            var inp = document.getElementById("cm-prompt-input");
+            if (lbl) lbl.innerText = msg || "";
+            if (inp) { inp.value = def_val || ""; }
+            window.colormage_prompt_done = false;
+            window.colormage_prompt_result = null;
+            if (ov) {
+                ov.style.display = "flex";
+                if (inp) setTimeout(function () { inp.focus(); inp.select(); }, 80);
+            }
+        };
+    })();
+
     // Coupe tout l'audio web (appele au quit : pygame.quit() n'arrete pas
     // l'audio gere par le navigateur)
     window.colormage_stop_all_audio = function () {
